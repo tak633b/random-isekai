@@ -1,0 +1,241 @@
+/* 夜の宿屋の机: 藍の地に羊皮紙の文字、金の縁取り。見出しはドット、本文は丸みのあるゴシック。ピクセル画が映えるよう暗い基調 */
+:root {
+  --bg: #14121f;
+  --bg2: #1a1828;
+  --surface: #211e33;
+  --surface2: #2a2640;
+  --line: #3a3554;
+  --text: #ede4d0;
+  --sub: #b8ad98;
+  --faint: #7e7690;
+  --accent: #e8b44a;
+  --accent-ink: #1c1406;
+  --glow: rgb(232 180 74 / 0.18);
+  --magic: #7cc4d8;
+  --love: #e0857a;
+  --danger: #d86a5a;
+  --good: #8cc48a;
+  --dot: "DotGothic16", "M PLUS 1p", system-ui, sans-serif;
+  --sans: "M PLUS 1p", "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Noto Sans JP", Meiryo, system-ui, sans-serif;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; min-width: 0;
+  background: radial-gradient(1000px 600px at 50% -10%, #262243 0%, transparent 60%), var(--bg);
+  background-attachment: fixed;
+  color: var(--text); font-family: var(--sans); font-size: 15px; line-height: 1.7;
+  line-break: strict; overflow-wrap: anywhere;
+}
+h1, h2, h3, .logo, .brand, .agebig, .pname, .num, .nums b, .age b, .yrage { font-family: var(--dot); font-weight: 400; }
+h1 { font-size: 28px; margin: 6px 0 10px; line-height: 1.3; }
+h2 { font-size: 19px; margin: 0 0 10px; }
+h3 { font-size: 14px; margin: 16px 0 8px; color: var(--sub); letter-spacing: 0.06em; }
+p { margin: 0 0 10px; }
+small, .note { color: var(--sub); font-size: 12.5px; }
+.kicker { color: var(--sub); font-size: 13px; margin: 0; letter-spacing: 0.04em; }
+.lead { font-size: 16px; }
+.story { font-size: 16px; line-height: 1.9; }
+
+button {
+  font: inherit; color: var(--text); background: var(--surface2);
+  border: 1px solid var(--line); border-radius: 6px; padding: 7px 14px; cursor: pointer; min-height: 36px;
+}
+button:hover { border-color: var(--accent); }
+button:focus-visible, select:focus-visible, input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+button.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 700; padding: 10px 24px; box-shadow: 0 0 24px var(--glow); }
+button.quiet, button.back { background: none; color: var(--sub); }
+button.back { border: 0; padding: 4px 0; min-height: 0; }
+button:disabled { opacity: 0.45; cursor: default; border-color: var(--line); }
+input, select {
+  font: inherit; color: var(--text); background: var(--bg2);
+  border: 1px solid var(--line); border-radius: 6px; padding: 7px 9px; width: 100%; max-width: 100%;
+}
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; margin-bottom: 14px; min-width: 0; }
+.choices { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
+.choices.big button { flex: 1 1 200px; padding: 12px 18px; }
+.choices.sticky { position: sticky; bottom: 0; background: rgb(20 18 31 / 0.94); padding: 10px 0; margin: 0; border-top: 1px solid var(--line); z-index: 3; }
+.choices small { margin-left: 4px; }
+
+canvas.pix { image-rendering: pixelated; image-rendering: crisp-edges; display: block; }
+canvas.scene { margin: 0 auto; max-width: 100%; }
+canvas.face { width: 48px; height: auto; border-radius: 6px; background: var(--surface2); border: 1px solid var(--line); flex: none; }
+canvas.face.big { width: 96px; border-color: var(--accent); }
+
+.page { max-width: 900px; margin: 0 auto; padding: 24px 16px 60px; }
+
+/* タイトル */
+.title { max-width: 720px; text-align: center; }
+.langsw { display: flex; justify-content: flex-end; gap: 4px; margin-bottom: 10px; }
+.langsw button { padding: 3px 12px; font-size: 13px; min-height: 30px; }
+.titlescene { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: #0c0b14; margin-bottom: 16px; }
+.logo { font-size: 54px; margin: 8px 0 4px; letter-spacing: 0.02em; line-height: 1.1; }
+.logo span { color: var(--accent); }
+.subtitle { font-family: var(--dot); color: var(--sub); font-size: 17px; }
+.title .lead { text-align: left; }
+.title .note { text-align: left; }
+
+/* 設定 */
+.worlds { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.wcard { padding: 0; overflow: hidden; display: grid; text-align: left; border-radius: 8px; }
+.wcard canvas { width: 100%; height: auto; aspect-ratio: 320 / 100; background: linear-gradient(135deg, #3a3554, #211e33); }
+.wcard span { padding: 6px 8px; font-size: 13px; line-height: 1.35; }
+.wcard.on { box-shadow: 0 0 0 2px var(--accent), 0 0 16px var(--glow); }
+.wcard.on span { color: var(--accent-ink); }
+.row { margin-top: 12px; min-width: 0; }
+.row h3 { margin: 0 0 6px; }
+.row.two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.opts { display: flex; flex-wrap: wrap; gap: 5px; }
+.opts button { padding: 5px 11px; font-size: 14px; min-height: 34px; }
+.preview { display: flex; align-items: flex-end; gap: 14px; margin-top: 12px; padding: 12px; background: var(--bg2); border-radius: 8px; min-height: 80px; }
+.preview .sprite { width: 96px; height: auto; }
+.preview p { margin: 0; display: grid; }
+
+/* 記録 (転生の場面・死亡記録) */
+.record { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; margin-bottom: 16px; }
+.record > header { display: flex; justify-content: space-between; gap: 8px; background: var(--bg2); color: var(--accent); border-bottom: 1px solid var(--line); font-family: var(--dot); font-size: 13px; padding: 8px 16px; }
+.record > canvas.scene { background: #0c0b14; }
+.recbody { padding: 16px 18px 6px; }
+.rechead { display: flex; align-items: center; gap: 16px; margin: 6px 0 14px; }
+.rechead h1 { margin: 0; }
+.age { font-size: 15px; margin: 4px 0 0; }
+.age b { font-size: 30px; color: var(--accent); }
+.age small { margin-left: 10px; }
+.cause { border-left: 3px solid var(--danger); padding: 2px 0 2px 12px; margin-bottom: 14px; }
+.cause b { font-family: var(--dot); font-weight: 400; font-size: 17px; }
+.cause p { margin: 4px 0 0; }
+.why { color: var(--sub); font-size: 13px; }
+.facts { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px 14px; margin: 0 0 8px; }
+.facts dt { font-size: 12px; color: var(--sub); }
+.facts dt em { font-style: normal; font-size: 11px; color: var(--magic); border: 1px solid currentColor; border-radius: 3px; padding: 0 4px; margin-left: 4px; }
+.facts dd { margin: 0; font-weight: 700; }
+.lastwith { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 12px; }
+.lastwith li { display: flex; align-items: center; gap: 8px; }
+.lastwith span { display: grid; line-height: 1.4; }
+.highlights { list-style: none; padding: 0; margin: 0; display: grid; gap: 4px; }
+.highlights li, .mem li { display: grid; grid-template-columns: 4.5em 1fr; gap: 8px; }
+.highlights span, .mem li span { color: var(--accent); font-family: var(--dot); font-size: 13px; }
+.fulllog { margin: 16px 0 12px; }
+.fulllog summary { cursor: pointer; color: var(--accent); }
+.fulllog .timeline { margin-top: 10px; }
+
+/* 年表 */
+.timeline { list-style: none; padding: 0; margin: 0; }
+.yr { display: grid; grid-template-columns: 4.6em 1fr; gap: 8px; padding: 7px 0; border-top: 1px solid var(--line); }
+.yr:first-child { border-top: 0; }
+.yrage { color: var(--accent); font-size: 14px; }
+.yr ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 5px; }
+.yr ul li { padding-left: 9px; border-left: 3px solid var(--line); font-size: 14px; }
+.yr ul li.big { font-weight: 700; }
+.yr .why { display: block; font-weight: 400; font-size: 12px; margin-top: 2px; }
+li.k-love, li.k-family { border-color: var(--love) !important; }
+li.k-loss, li.k-death { border-color: var(--faint) !important; }
+li.k-hard, li.k-ill, li.k-battle { border-color: var(--danger) !important; }
+li.k-power, li.k-arrival { border-color: var(--magic) !important; }
+li.k-fame, li.k-adventure { border-color: var(--accent) !important; }
+li.k-school, li.k-work { border-color: var(--good) !important; }
+li.k-death { font-weight: 700; }
+.logbox { max-height: 560px; overflow: auto; }
+
+/* 人生の画面 */
+.topbar { position: sticky; top: 0; z-index: 5; background: rgb(20 18 31 / 0.94); backdrop-filter: blur(6px); border-bottom: 1px solid var(--line);
+  padding: 8px 16px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; }
+.who { display: flex; align-items: baseline; flex-wrap: wrap; gap: 2px 10px; min-width: 0; }
+.brand { font-size: 15px; color: var(--accent); }
+.agebig { font-size: 26px; }
+#wholine { color: var(--sub); font-size: 13px; }
+.controls { display: flex; flex-wrap: wrap; gap: 6px; }
+.controls button { padding: 5px 12px; }
+.lifegrid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 360px); gap: 16px; max-width: 1240px; margin: 0 auto; padding: 16px; align-items: start; }
+@media (max-width: 860px) { .lifegrid { grid-template-columns: minmax(0, 1fr); } }
+.colmain, .colside { min-width: 0; }
+.scenebox { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: #0c0b14; margin-bottom: 14px; }
+.scenecap { margin: 0; padding: 7px 12px; font-size: 13px; color: var(--sub); background: var(--surface); border-top: 1px solid var(--line); display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.chip { font-size: 11.5px; color: var(--danger); border: 1px solid currentColor; border-radius: 3px; padding: 0 6px; }
+.decision { border-color: var(--accent); box-shadow: 0 0 24px var(--glow); }
+.cards { display: grid; gap: 8px; margin-top: 10px; }
+.cards button { text-align: left; display: grid; grid-template-columns: 1.6em 1fr; column-gap: 8px; padding: 10px 12px; }
+.cards .num { grid-row: span 2; color: var(--accent); }
+.cards small { color: var(--danger); }
+.mehead { display: flex; gap: 12px; align-items: flex-start; }
+.mehead p { margin: 0 0 2px; font-size: 14px; }
+.pname { font-size: 20px; margin: 0 0 2px; }
+.lv { font-family: var(--dot); color: var(--magic); display: flex; flex-wrap: wrap; gap: 4px 12px; }
+.lv b { font-weight: 400; font-size: 18px; }
+.stats { list-style: none; padding: 0; margin: 12px 0 0; display: grid; gap: 4px; }
+.stats li, .bars li { display: grid; grid-template-columns: 6.8em 1fr 2.8em; align-items: center; gap: 8px; font-size: 13px; }
+.stats em, .bars em { font-style: normal; text-align: right; font-variant-numeric: tabular-nums; }
+.meter { display: block; height: 7px; background: var(--bg2); border-radius: 2px; overflow: hidden; }
+.meter b { display: block; height: 100%; background: var(--text); }
+.m-hp { background: var(--good) !important; } .m-power { background: var(--danger) !important; } .m-mind { background: var(--magic) !important; }
+.m-charm { background: var(--love) !important; } .m-luck { background: #b89ae0 !important; } .m-happy { background: var(--accent) !important; }
+.m-wealth { background: #c8a46a !important; } .m-fame { background: #e0d8c0 !important; }
+.ring { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; }
+.ring button { width: 100%; display: flex; align-items: center; gap: 8px; padding: 5px 8px; text-align: left; min-width: 0; }
+.ring button span { display: grid; min-width: 0; flex: 1; line-height: 1.35; }
+.ring button b { font-weight: 700; font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ring button small { font-size: 11.5px; }
+.ring button .meter { height: 4px; margin-top: 3px; }
+.ring button .meter b { background: var(--love); }
+.ring button.on { color: var(--accent-ink); }
+.ring button.on small { color: var(--accent-ink); }
+.ring button.dead, .ring button.left { opacity: 0.5; }
+.ring canvas.face { width: 36px; }
+.mem { margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--line); }
+.mem h3 { margin-top: 0; }
+.mem ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 4px; font-size: 13.5px; }
+.bigrisk { font-size: 14px; }
+.bigrisk b { font-family: var(--dot); font-weight: 400; font-size: 22px; color: var(--danger); margin-left: 6px; }
+.bars { list-style: none; padding: 0; margin: 0; display: grid; gap: 5px; }
+.bars i { display: block; height: 8px; background: var(--bg2); border-radius: 2px; overflow: hidden; }
+.bars i b { display: block; height: 100%; background: var(--danger); }
+
+/* 過去の人生 */
+.pastlist { list-style: none; padding: 0; display: grid; gap: 8px; }
+.pastlist button { width: 100%; display: flex; align-items: center; gap: 12px; text-align: left; }
+.pastlist span { display: grid; line-height: 1.45; }
+
+/* 何回も試す */
+.progress { display: flex; align-items: center; gap: 10px; margin: 8px 0 14px; }
+.progress[hidden] { display: none; }
+.progress i { flex: 1; height: 8px; background: var(--bg2); border-radius: 2px; overflow: hidden; }
+.progress i b { display: block; height: 100%; width: 0; background: var(--accent); }
+.progress span { font-size: 13px; color: var(--sub); font-variant-numeric: tabular-nums; }
+.nums { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.nums div { background: var(--bg2); border-radius: 8px; padding: 8px 10px; display: grid; }
+.nums b { font-size: 22px; color: var(--accent); }
+@media (max-width: 520px) { .nums { grid-template-columns: repeat(2, minmax(0, 1fr)); } .row.two { grid-template-columns: 1fr; } }
+.hist { width: 100%; height: auto; display: block; font-size: 13px; fill: var(--sub); }
+.hist rect { fill: var(--accent); }
+.hist .axis { stroke: var(--line); }
+.hist .mark { stroke: var(--magic); stroke-dasharray: 4 3; }
+.hist .marklabel { fill: var(--magic); }
+.two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 640px) { .two { grid-template-columns: minmax(0, 1fr); } }
+.reach { width: 100%; border-collapse: collapse; font-size: 13px; }
+.reach td { padding: 3px 4px; }
+.reach td:first-child { width: 4em; color: var(--sub); }
+.reach td:last-child { width: 4em; text-align: right; font-variant-numeric: tabular-nums; }
+.reach .meter b { background: var(--good); }
+.causes { padding-left: 1.6em; margin: 0; display: grid; gap: 3px; font-size: 14px; }
+.causes li span { margin-right: 8px; }
+.causes em { font-style: normal; color: var(--sub); }
+.cmp { width: 100%; border-collapse: collapse; font-size: 13.5px; display: block; overflow-x: auto; }
+.cmp th, .cmp td { padding: 6px 8px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; }
+.cmp th:first-child, .cmp td:first-child, .cmp td:last-child, .cmp th:last-child { text-align: left; }
+.cmp th { color: var(--sub); font-weight: 400; }
+
+/* スマホ: 場面 → 選択 → 自分 → 年表 → 人の輪 → 危険 の順に並べ、年表は短く切る */
+@media (max-width: 860px) {
+  .colmain, .colside { display: contents; }
+  .lifegrid { gap: 0; }
+  .scenebox { order: 1; } #decision { order: 2; } #me { order: 3; } .logpanel { order: 4; }
+  .colside > .panel:nth-child(2) { order: 5; } .colside > .panel:nth-child(3) { order: 6; }
+  .logbox { max-height: 55vh; }
+  .yr { grid-template-columns: 3.6em 1fr; }
+  .topbar { padding: 8px 12px; }
+}
+.choices button.primary small { color: var(--accent-ink); opacity: 0.8; }

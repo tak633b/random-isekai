@@ -104,6 +104,9 @@ research/03 の 6-1節(ゴンペルツ=メイカム型)と research/04 の 8.3�
 
 置き換え: `{name}` `{friend}` `{companion}` `{mentor}` `{rival}` `{nemesis}` `{lover}` `{spouse}` `{child}` `{familiar}` `{master}` `{disciple}`
 `{town}` `{god}` `{beast}` `{job}` `{race}` `{guild}` `{lord}`、死因の文では `{age}` も。
+世界の系統: 和風と中華風に共通の出来事は `eastern`、和風だけは `japan`(wa)、仙侠だけは `cultivation`(xianxia)。
+`repeat` の出来事は同じものを5年あけてから。`alone` の出来事(「穏やかな一年だった」)はその年にほかの記録が無いときだけ起きる。
+`stage` は人間換算の年齢で決まるので、エルフの「乳幼児」は十数年続く。誕生そのものや乳飲み子のうちの出来事には実年齢の条件 `age: [0, 0]` などを付ける。
 `{mother}` `{father}` は名ではなく「母」「父」(Mother / Father)と続柄で出る。
 輪の人の置き換えを使う出来事は、その役の人がいるときだけ起きる(`tie.new` なら新しく作る)。`tie` で触れる出来事も、`new` でなければその人が生きてそばにいるときだけ起きる(亡くなった親・孤児の親の出来事は起きない)。
 `tie.dies` を付けると、その出来事でその人が亡くなる(伴侶を看取る・親の葬儀。伴侶なら `married` が外れ `widowed` が立つ)。
