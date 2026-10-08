@@ -239,3 +239,54 @@ li.k-death { font-weight: 700; }
   .topbar { padding: 8px 12px; }
 }
 .choices button.primary small { color: var(--accent-ink); opacity: 0.8; }
+
+/* 第3弾: 組み立て・タグ・追悼館・AI */
+textarea { font: inherit; color: var(--text); background: var(--bg2); border: 1px solid var(--line); border-radius: 6px; padding: 7px 9px; width: 100%; resize: vertical; }
+.field { display: grid; gap: 4px; font-size: 13px; color: var(--sub); margin: 8px 0; }
+.vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.warn { color: var(--danger); font-size: 13px; margin: 8px 0; }
+.budget { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 12px 0 4px; padding: 8px 12px; background: var(--bg2); border-radius: 8px; font-size: 14px; }
+.budget b { font-family: var(--dot); font-weight: 400; font-size: 20px; color: var(--accent); }
+.budget.over b:first-child { color: var(--danger); }
+.errs { margin: 6px 0; padding-left: 1.2em; color: var(--danger); font-size: 13px; }
+.allot { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 6px 14px; }
+.allot li { display: grid; grid-template-columns: 1fr auto 2em auto; align-items: center; gap: 6px; font-size: 14px; }
+.allot b { text-align: center; font-family: var(--dot); font-weight: 400; font-size: 18px; }
+.allot button { min-width: 36px; padding: 4px 0; }
+.chosen { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.chosen button { font-size: 13px; padding: 4px 10px; min-height: 32px; }
+.traitpick { margin-top: 12px; }
+.tabs { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
+.tabs button { font-size: 13.5px; padding: 5px 10px; }
+.tabs button small { color: inherit; opacity: 0.75; }
+.search input { margin-bottom: 8px; }
+.cands { list-style: none; padding: 2px; margin: 0 0 8px; max-height: 520px; overflow: auto; align-content: start; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 6px; }
+.cands button { width: 100%; height: 100%; text-align: left; display: grid; grid-template-columns: 2.4em 1fr; column-gap: 8px; align-items: start; padding: 8px 10px; }
+.cands .cost { grid-row: span 3; font-family: var(--dot); font-size: 17px; color: var(--accent); text-align: center; }
+.cands .cost.neg { color: var(--good); }
+.cands .desc { font-size: 13px; line-height: 1.5; }
+.cands small { font-size: 11.5px; color: var(--magic); line-height: 1.45; }
+.cands button.on .cost, .cands button.on small { color: var(--accent-ink); }
+.tags { display: flex; flex-wrap: wrap; gap: 5px; margin: 10px 0 0; }
+.tag { font-size: 12.5px; border: 1px solid var(--line); border-radius: 4px; background: var(--bg2); max-width: 100%; }
+.tag summary { cursor: pointer; padding: 2px 8px; list-style: none; color: var(--magic); }
+.tag summary::-webkit-details-marker { display: none; }
+.tag.k-weakness summary { color: var(--danger); }
+.tag.k-blessing summary { color: var(--accent); }
+.tag[open] { flex-basis: 100%; }
+.tag span { display: grid; gap: 2px; padding: 4px 8px 6px; font-size: 13px; }
+.risknotes { list-style: none; padding: 0; margin: 6px 0 0; font-size: 12px; color: var(--magic); display: grid; gap: 2px; }
+.loghead { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 12px; }
+.loghead h2 { margin-bottom: 6px; }
+.ai-btn { font-size: 13px; padding: 4px 10px; min-height: 30px; color: var(--magic); }
+.aitag { font-style: normal; font-size: 10px; font-weight: 700; color: var(--magic); border: 1px solid currentColor; border-radius: 3px; padding: 0 3px; margin-right: 6px; vertical-align: 1px; }
+.aiwords p { margin: 0 0 6px; }
+.epitaph { font-family: var(--dot); color: var(--accent); }
+.aipanel summary { cursor: pointer; }
+.aipanel[open] summary { margin-bottom: 8px; }
+.message { color: var(--accent); font-size: 16px; }
+.memlist { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; }
+.memlist button { width: 100%; height: 100%; padding: 0; overflow: hidden; display: grid; align-content: start; text-align: left; border-radius: 8px; }
+.memlist canvas.scene { width: 100% !important; height: auto; }
+.memlist span { display: grid; padding: 8px 10px; line-height: 1.45; }
+.candles { color: var(--accent) !important; }

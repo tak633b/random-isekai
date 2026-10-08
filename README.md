@@ -6,6 +6,8 @@ A browser game where you live one whole life in another world, a year at a time,
 
 You can also live the same setup hundreds of times and see how long people actually last in that world.
 
+Play in your browser: https://tak633b.github.io/random-isekai/
+
 ![A life in progress: the scene with family and companions at the top, the timeline on the left, portrait, stats and people on the right](docs/images/life-en.png)
 
 ## How it plays
@@ -17,7 +19,13 @@ You can also live the same setup hundreds of times and see how long people actua
 5. When you die you get a record: age, cause, a one-line "why" with the numbers behind it, who was with you at the end, the main events and the full timeline.
 6. "Run this setup many times" lives it again 100 or 1000 times and sums up the results.
 
-![The setup screen with world cards and character options](docs/images/setup-en.png)
+For finer control there are three more options.
+
+- Goddess's blessing: until adulthood, the risk of dying from disease, monsters or accidents is cut to a quarter. In the medieval kingdom, the share who die before five drops from 36% to 13%. Without it, you face the world as it is.
+- Starting age: as a baby, in the body of a 5–8 year old, of a 13–16 year old, or summoned as an adult of 17–30.
+- Skills, abilities, blessings, constitutions and weaknesses: build from 409 options within 20 points and 6 slots. Weaknesses give points back (up to three). You can also put points into stats. What you can pick depends on the world (no elemental magic where there is no magic, hacking in space), and every option changes the odds of specific causes of death, how fast you age, your starting stats or how often certain events happen. Leave it on Random and a build is rolled within the budget.
+
+![The setup screen with skills and weaknesses picked and the remaining points and slots shown](docs/images/setup-en.png)
 
 ## Many lives, one setup
 
@@ -41,9 +49,19 @@ For 3000 automatic lives as a human commoner with no perk, the mean age at death
 - 902 events and 232 death descriptions, in Japanese and English. Conditions (world type, life stage, status, job, race, perk, past-life memory, story flags) are declarative, so new events need no code.
 - People: family, friends, party members, mentors, rivals, nemeses, lovers, spouses, children, familiars and disciples. Each has a closeness score from 0 to 100 and shared memories, and ages and dies on their own life table.
 - All pixel art is drawn on canvas at runtime, with no image files. Scenes are 320×100 across 16 worlds, 16 places, 4 times of day and the seasons. Portraits are 48×56 and full-body sprites 32×48, covering 27 races and 42 jobs.
-- You can close the tab and continue later. Up to 20 past lives are kept in localStorage. No server is needed.
+- You can close the tab and continue later. Up to 20 past lives are kept in localStorage. You don't need a server just to play.
 
 <p align="center"><img src="docs/images/death-en.png" width="640" alt="A death record: grave scene, age, cause, the why line and the people at the end"></p>
+
+## Shared memorial
+
+When run with the server, you can leave a finished life in a memorial that other players can read, and light candles for theirs. Only the in-game record and an optional note (up to 140 characters) are stored. Player names, contact details and IP addresses are not kept, and submissions are rate-limited. The server uses `node:sqlite` and has no dependencies. The GitHub Pages build has no server, so the memorial screen says so.
+
+![The memorial: lives other players left behind](docs/images/memorial-en.png)
+
+## Writing details with AI (optional)
+
+The skeleton of every life (who lives and dies, the events, jobs and people) is decided by code. On top of that you can connect an LLM to write small details for a year, and last words and an epitaph at the end. It works with OpenRouter or a local OpenAI-compatible server. Your API key stays in your browser and is only sent to the endpoint you chose. Everything the AI writes is checked before use (length, unknown names, words that change who is alive, altered ages or numbers, HTML) and dropped if it fails.
 
 ## Running it
 
@@ -52,9 +70,10 @@ npm install
 npm run dev      # http://localhost:5288
 npm test         # vitest
 npm run build    # tsc and vite build
+npm start        # serves dist/ and the memorial at http://localhost:8790 (set PORT to change)
 ```
 
-`scripts/e2e.mjs` is a Playwright playthrough. It imports Playwright from an absolute path on the author's machine, so change that import line elsewhere.
+`scripts/e2e.mjs` is a Playwright playthrough. Playwright is not a dependency; point `PLAYWRIGHT_PATH` at it (otherwise it looks for `playwright`). Start the dev server on port 5293 first.
 
 ## A note on sources
 

@@ -1,10 +1,12 @@
 // 設定の画面 (世界と主人公を選ぶ) と、転生の場面 (前世の終わりと女神/召喚、おまかせの項目がどう決まったか)
-import type { Arrival, CheatId, Hero, Level4, MemoryLevel, Policy, RaceId, Setup, Sex, Status, Talent, World, WorldId } from '../engine/types';
-import { CHEATS, CHEAT_IDS, RACE_IDS, STATUSES, TALENTS, WORLDS, WORLD_IDS, availableCheats, makeRng, raceOf, randomSeed, resolveWorld, statusName, worldNames } from '../engine';
+import type { Arrival, CheatId, Hero, Level4, MemoryLevel, Policy, RaceId, Setup, Sex, StartAge, Status, Talent, World, WorldId } from '../engine/types';
+import { BLESSING, CHEATS, CHEAT_IDS, lifeTableFor, RACE_IDS, STATUSES, TALENTS, WORLDS, WORLD_IDS, availableCheats, makeRng, raceOf, randomSeed, resolveWorld, statusName, worldNames } from '../engine';
 import { paintScene } from './scene';
 import { paintSprite } from './sprite';
 import { faceHTML, sceneHTML, sceneOf, paintAll, heroFigure } from './pixel';
-import { ARRIVAL_NAME, MEMORY_NAME, PAST_CAUSE_NAME, POLICY_NAME, SEX_NAME, TALENT_NAME } from './labels';
+import { ARRIVAL_NAME, MEMORY_NAME, PAST_CAUSE_NAME, POLICY_NAME, SEX_NAME, TALENT_NAME, ageText } from './labels';
+import { buildErrors, buildHTML, listHTML, newBuild, onBuildClick, prune, traitTags, type BuildState } from './build';
+import { aiSettingsPanel } from './aipanel';
 import { esc, load, save } from './dom';
 import { screen, type Nav } from './nav';
 import { L, T } from '../i18n';
@@ -14,7 +16,13 @@ export interface Choice {
   magic?: Level4; powers?: Level4; danger?: number; war?: number;
   race?: RaceId; sex?: Sex; status?: Status; talent?: Talent; cheat?: CheatId | 'none';
   arrival?: Arrival; memory?: MemoryLevel; name?: string; policy?: Policy;
+  blessing?: boolean; startAge?: StartAge; build?: BuildState;
 }
+
+const START_AGES: StartAge[] = ['birth', 'child', 'teen', 'adult'];
+const START_NAME: Record<StartAge, string> = {
+  birth: L('赤ちゃんから', 'From birth'), child: L('子ども (5〜8歳)', 'Child (5–8)'), teen: L('十代 (13〜16歳)', 'Teen (13–16)'), adult: L('大人として召喚・転移 (17〜30歳)', 'Summoned as an adult (17–30)'),
+};
 
 const KEY = 'choice';
 const LV: Level4[] = [0, 1, 2, 3];
@@ -25,8 +33,10 @@ const MEMORIES: MemoryLevel[] = ['none', 'faint', 'full'];
 export function toSetup(c: Choice): Setup {
   const world = { preset: c.world, ...(c.magic !== undefined ? { magic: c.magic } : {}), ...(c.powers !== undefined ? { powers: c.powers } : {}),
     ...(c.danger !== undefined ? { danger: c.danger } : {}), ...(c.war !== undefined ? { war: c.war } : {}) };
-  const hero = Object.fromEntries((['race', 'sex', 'status', 'talent', 'cheat', 'arrival', 'memory', 'name'] as const)
+  const hero: Setup['hero'] = Object.fromEntries((['race', 'sex', 'status', 'talent', 'cheat', 'arrival', 'memory', 'name', 'startAge'] as const)
     .filter((k) => c[k] !== undefined && c[k] !== '').map((k) => [k, c[k]]));
+  if (c.blessing) hero.blessing = true;
+  if (c.build?.mode === 'pick') { hero.traits = [...c.build.traits]; hero.points = { ...c.build.points }; }
   // 性格のおまかせはエンジンの既定 (ふつう)
   return { seed: randomSeed(), world, hero, ...(c.policy ? { policy: c.policy } : {}) };
 }
@@ -39,12 +49,12 @@ const cheatsOf = (w: World | null): CheatId[] => (w ? availableCheats(w).map((x)
 // ---- 部品 -----------------------------------------------------------------
 
 // 一つの項目の選択肢。v が undefined の「おまかせ」を先頭に
-function seg<V extends string | number>(k: keyof Choice, cur: V | undefined, opts: [V, string][], wide = false): string {
+function seg<V extends string | number>(k: keyof Choice, cur: V | undefined, opts: [V, string][], wide = false, random = true): string {
   const b = (v: V | undefined, label: string) => {
     const on = v === cur;
     return `<button type="button" data-k="${k}" data-v="${v === undefined ? '' : esc(String(v))}" class="${on ? 'on' : ''}" aria-pressed="${on}">${esc(label)}</button>`;
   };
-  return `<div class="opts${wide ? ' wide' : ''}">${b(undefined, L('おまかせ', 'Random'))}${opts.map(([v, l]) => b(v, l)).join('')}</div>`;
+  return `<div class="opts${wide ? ' wide' : ''}">${random ? b(undefined, L('おまかせ', 'Random')) : ''}${opts.map(([v, l]) => b(v, l)).join('')}</div>`;
 }
 const row = (title: string, body: string, note = '') => `<div class="row"><h3>${title}</h3>${body}${note ? `<p class="note">${note}</p>` : ''}</div>`;
 
@@ -76,14 +86,27 @@ function heroForm(c: Choice, w: World | null): string {
       c.cheat && c.cheat !== 'none' ? esc(T(CHEATS[c.cheat].desc)) : w ? L('この世界の魔法と技術で使える特典だけ。', 'Only gifts that work with this world’s magic and technology.') : '')}
     ${row(L('転生の型', 'Arrival'), seg('arrival', c.arrival, ARRIVALS.map((a) => [a, ARRIVAL_NAME[a]])), L('召喚は今の体のまま来る。現地の生まれは前世を持たない。', 'The summoned arrive as they are. The native-born have no past life.'))}
     ${row(L('前世の記憶', 'Memories of a past life'), seg('memory', c.memory, MEMORIES.map((m) => [m, MEMORY_NAME[m]])))}
+    ${row(L('始まる年齢', 'Starting age'), seg('startAge', c.startAge, START_AGES.map((a) => [a, START_NAME[a]]), true), L('おまかせは転生の型どおり (召喚なら大人、ほかは赤ちゃんから)。', 'Random follows the arrival type (adults when summoned, otherwise from birth).'))}
+    ${row(L('女神の加護', 'Goddess’s blessing'), seg('blessing', c.blessing ? '1' : '0', [['0', L('なし', 'No')], ['1', L('あり', 'Yes')]], false, false), blessingNote(w, c.race))}
     <div class="row"><label><h3>${L('名前 (任意)', 'Name (optional)')}</h3><input id="name" maxlength="24" value="${esc(c.name ?? '')}" placeholder="${L('空ならこの世界らしい名前', 'Leave empty for a local name')}" autocomplete="off"></label></div>
     ${row(L('自動で選ぶときの性格', 'When choosing automatically'), seg('policy', c.policy, POLICIES.map((p) => [p, POLICY_NAME[p]])), L('「最後まで」や何回も試すときに、選択肢をどう選ぶか。', 'How choices are made when you skip ahead or run many lives.'))}`;
+}
+
+// 加護の説明。その世界・種族の生命表で、5歳までに亡くなる割合がおよそどう変わるか (5歳までの死はほぼ幼い日の病なので l5 の BLESSING 乗で近似)
+function blessingNote(w: World | null, race?: RaceId): string {
+  const t = lifeTableFor(w ?? WORLDS.medieval, race ?? 'human');
+  const base = 1 - t.l[5], blessed = 1 - t.l[5] ** BLESSING;
+  const pc = (v: number) => `${(v * 100).toFixed(v < 0.1 ? 1 : 0)}%`;
+  return L(`成人するまで、病・魔物・事故で亡くなる危険が ${BLESSING}倍になる。${w ? 'この世界' : '剣と魔法の中世'}で5歳までに亡くなる割合が およそ${pc(base)} → ${pc(blessed)}。なしは、その世界の厳しさのまま。`,
+    `Until adulthood, the risk of dying from illness, monsters or accidents is ×${BLESSING}. In ${w ? 'this world' : 'the Sword-and-Sorcery Kingdom'}, the share who die before 5 goes from about ${pc(base)} to ${pc(blessed)}. Without it, the world is as harsh as it is.`);
 }
 
 // ---- 設定の画面 -------------------------------------------------------------
 
 export function showSetup(nav: Nav): void {
   const c: Choice = { world: 'random', ...load<Partial<Choice>>(KEY, {}) };
+  c.build = { ...newBuild(), ...(c.build ?? {}), query: '', more: false };
+  let removed: string[] = [];
   if (c.world !== 'random' && !WORLD_IDS.includes(c.world)) c.world = 'random';
   const cards = (['random', ...WORLD_IDS] as const).map((id) => `<button type="button" class="wcard" data-world="${id}" aria-pressed="false">
     <canvas class="pix" width="320" height="100" ${id === 'random' ? '' : `data-mini="${id}"`} aria-hidden="true"></canvas><span>${id === 'random' ? L('おまかせ', 'Random') : esc(T(WORLDS[id].name))}</span></button>`).join('');
@@ -94,17 +117,27 @@ export function showSetup(nav: Nav): void {
     <p class="note">${L('どの項目も「おまかせ」のままでいい。選ばなかったものは生まれるときに決まる。', 'Leave anything on Random. Whatever you skip is decided at birth.')}</p>
     <section class="panel"><h2>${L('世界', 'World')}</h2><div class="worlds">${cards}</div><div id="knobs"></div></section>
     <section class="panel"><h2>${L('主人公', 'You')}</h2><div id="heroform"></div></section>
-    <div class="choices sticky"><button class="primary" data-go="start">${L('この設定で転生', 'Be reborn')}</button><button data-go="reset">${L('全部おまかせに戻す', 'Reset all to Random')}</button></div>
+    <section class="panel"><h2>${L('スキル・能力・加護・体質・弱点', 'Skills, abilities, blessings, constitution, weaknesses')}</h2><div id="build"></div></section>
+    <div id="aibox"></div>
+    <div class="choices sticky"><button class="primary" data-go="start" id="startbtn">${L('この設定で転生', 'Be reborn')}</button><button data-go="reset">${L('全部おまかせに戻す', 'Reset all to Random')}</button></div>
   </main>`, (t) => {
     if (t.closest('[data-go=title]')) return nav.title();
-    if (t.closest('[data-go=start]')) { save(KEY, c); return nav.start(toSetup(c)); }
-    if (t.closest('[data-go=reset]')) { for (const k of Object.keys(c) as (keyof Choice)[]) delete c[k]; c.world = 'random'; return refresh(); }
+    if (t.closest('[data-go=start]')) { if (buildErrors(c.build!, worldOf(c), c.race).length) return; save(KEY, c); return nav.start(toSetup(c)); }
+    if (t.closest('[data-go=reset]')) { for (const k of Object.keys(c) as (keyof Choice)[]) delete c[k]; c.world = 'random'; c.build = newBuild(); return refresh(); }
+    const bt = t.closest<HTMLElement>('[data-b]');
+    if (bt) {
+      const what = onBuildClick(bt, c.build!, worldOf(c), c.race);
+      const sel = `[data-b="${bt.dataset.b}"]${bt.dataset.k ? `[data-k="${bt.dataset.k}"]` : ''}${bt.dataset.v ? `[data-v="${bt.dataset.v}"]` : ''}`;
+      if (what === 'list') { renderList(); app.querySelector<HTMLElement>(sel)?.focus(); }
+      else if (what === 'all') refresh(sel);
+      return;
+    }
     const wb = t.closest<HTMLElement>('[data-world]');
     if (wb) { c.world = wb.dataset.world as Choice['world']; return refresh(); }
     const b = t.closest<HTMLElement>('[data-k]');
     if (b) {
       const k = b.dataset.k as keyof Choice, v = b.dataset.v!;
-      const val = v === '' ? undefined : k === 'magic' || k === 'powers' ? Number(v) : v;
+      const val = k === 'blessing' ? v === '1' : v === '' ? undefined : k === 'magic' || k === 'powers' ? Number(v) : v;
       (c as unknown as Record<string, unknown>)[k] = val;
       refresh(`[data-k="${k}"][data-v="${v}"]`);
     }
@@ -116,12 +149,31 @@ export function showSetup(nav: Nav): void {
     const s = (e.target as HTMLElement).closest<HTMLSelectElement>('[data-sel]');
     if (s) { const k = s.dataset.sel as 'danger' | 'war'; c[k] = s.value === '' ? undefined : Number(s.value); }
   };
-  app.oninput = (e) => { if ((e.target as HTMLElement).id === 'name') c.name = (e.target as HTMLInputElement).value.trim() || undefined; };
+  app.oninput = (e) => {
+    const el = e.target as HTMLInputElement;
+    if (el.id === 'name') c.name = el.value.trim() || undefined;
+    if (el.id === 'tq') { c.build!.query = el.value; c.build!.more = false; renderList(); const q = document.getElementById('tq') as HTMLInputElement; q.focus(); q.setSelectionRange(q.value.length, q.value.length); }
+  };
+  document.getElementById('aibox')!.append(aiSettingsPanel());
+
+  function renderList(): void {
+    const w = worldOf(c), box = app.querySelector<HTMLElement>('.traitpick');
+    if (box && w && c.race) box.innerHTML = listHTML(c.build!, w, c.race);
+  }
 
   function refresh(focus?: string): void {
     const w = worldOf(c);
     if (c.race && !racesOf(w).includes(c.race)) delete c.race;
     if (c.cheat && c.cheat !== 'none' && !cheatsOf(w).includes(c.cheat)) delete c.cheat;
+    const gone = prune(c.build!, w, c.race);
+    if (gone.length) removed = gone;
+    else if (focus && !focus.startsWith('[data-b')) removed = [];
+    if (!w || !c.race) c.build!.mode = 'auto';
+    document.getElementById('build')!.innerHTML = buildHTML(c.build!, w, c.race, removed);
+    const errs = buildErrors(c.build!, w, c.race);
+    const start = document.getElementById('startbtn') as HTMLButtonElement;
+    start.disabled = errs.length > 0;
+    start.title = errs.join(' / ');
     app.querySelectorAll<HTMLElement>('[data-world]').forEach((b) => { const on = b.dataset.world === c.world; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); });
     document.getElementById('knobs')!.innerHTML = knobs(c, w);
     document.getElementById('heroform')!.innerHTML = heroForm(c, w);
@@ -168,6 +220,8 @@ export function showArrival(h: Hero, asked: Setup, nav: Nav): void {
     [L('転生特典', 'Gift'), h.cheat ? T(CHEATS[h.cheat].name) : L('なし', 'None'), !!a.cheat],
     [L('転生の型', 'Arrival'), ARRIVAL_NAME[h.arrival], !!a.arrival],
     [L('前世の記憶', 'Memories'), MEMORY_NAME[h.memory], !!a.memory],
+    [L('始まる年齢', 'Starting age'), ageText(h.age), !!a.startAge],
+    [L('女神の加護', 'Goddess’s blessing'), h.blessing ? L('あり', 'Yes') : L('なし', 'No'), true],
     [L('名前', 'Name'), f.name ?? h.given, !!a.name],
     [L('性格', 'Temperament'), POLICY_NAME[h.policy], !!asked.policy],
   ];
@@ -182,6 +236,7 @@ export function showArrival(h: Hero, asked: Setup, nav: Nav): void {
         <p class="story">${esc(meeting(h))}</p>
         <p class="story">${esc(h.log[0]?.text ?? '')}</p>
         <div class="rechead">${faceHTML(heroFigure(h), 'face big')}<div><p class="kicker">${L('名前', 'Name')}</p><h1>${esc(h.name)}</h1></div></div>
+        ${h.traits.length || h.blessing ? `<h3>${L(`持って生まれたもの${a.traits ? '' : ' (おまかせ)'}`, `Born with${a.traits ? '' : ' (random)'}`)}</h3>${traitTags(h.traits, h.blessing)}` : ''}
         <h3>${L('どう決まったか', 'How it was decided')}</h3>
         <dl class="facts decided">${items.map(([k, v, picked]) => `<div><dt>${esc(k)} ${rnd(picked)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>
         <div class="choices"><button class="primary" data-go="live">${L('人生を始める', 'Begin this life')}</button><button data-go="setup">${L('設定に戻る', 'Back to setup')}</button></div>

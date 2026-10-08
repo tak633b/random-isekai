@@ -358,7 +358,8 @@ export interface EventDef {
   ja: string;
   en: string;
   eff?: Partial<Record<StatKey | 'level', number>>; // 能力の増減
-  set?: string;               // 立てるしるし
+  set?: string;               // 立てるしるし (hero / saint / knighted / lord は職業も 勇者 / 聖女 / 騎士 / 領主 に変わる)
+  job?: JobId;                // この出来事で就く職業 (弟子入り・入門・任官など、文が職業の変化を語るとき)
   tie?: { role: Role; new?: boolean; d?: number; dies?: boolean }; // 輪の人と共有する (new: その役の人を新しく作る。d: 近さの変化。dies: この出来事でその人が亡くなる)
   risk?: { hazard: Hazard; p: number };              // この出来事でその年に亡くなりうる追加の確率
   why?: Text;                 // なぜの一行 (省略可)
@@ -368,6 +369,7 @@ export interface EventDef {
       ja: string; en: string; // 選択肢のラベル
       eff?: Partial<Record<StatKey | 'level', number>>;
       set?: string;
+      job?: JobId;            // この選択肢で就く職業
       risk?: { hazard: Hazard; p: number };
       log?: Text;             // 選んだ後の一文
     }[];

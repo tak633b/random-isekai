@@ -4,6 +4,10 @@ import { advanceYear, choose, deathChance, fromSaved, heqOf, liveOut, raceOf, ri
 import { drawScene, faceHTML, heroFigure, paintAll, sceneOf, tieFigure } from './pixel';
 import { barList, fmtPct } from './charts';
 import { logHTML } from './records';
+import { traitTags } from './build';
+import { addAi, aiOf, restoreAi, saveAi } from './ailog';
+import { aiYearButton } from './aipanel';
+import { aiReady } from '../ai/settings';
 import { ROLE_NAME, STAT_NAME, ageText, jobName } from './labels';
 import { esc, load, save } from './dom';
 import { screen, type Nav } from './nav';
@@ -15,9 +19,9 @@ export const savedLife = (): SavedHero | null => load<SavedHero | null>(CURRENT,
 export function resumeLife(): Hero | null {
   const s = savedLife();
   if (!s) return null;
-  try { return fromSaved(s); } catch { save(CURRENT, null); return null; }
+  try { const h = fromSaved(s); restoreAi(h); return h; } catch { save(CURRENT, null); return null; }
 }
-const persist = (h: Hero) => save(CURRENT, h.alive ? toSaved(h) : null);
+const persist = (h: Hero) => { save(CURRENT, h.alive ? toSaved(h) : null); saveAi(h.alive ? h : null); };
 
 const STATS: StatKey[] = ['hp', 'power', 'mind', 'charm', 'luck', 'happy', 'wealth', 'fame'];
 
@@ -37,7 +41,7 @@ export function showLife(h: Hero, nav: Nav): void {
     <section class="colmain">
       <div class="scenebox"><canvas class="pix scene" id="scenecv" width="320" height="100" role="img" aria-label="${L('今の場面', 'Current scene')}"></canvas><p class="scenecap" id="scenecap"></p></div>
       <div id="decision" aria-live="polite"></div>
-      <div class="panel logpanel"><h2>${L('年表', 'Timeline')}</h2><div id="log" class="logbox"></div></div>
+      <div class="panel logpanel"><div class="loghead"><h2>${L('年表', 'Timeline')}</h2><div id="aiyear"></div></div><div id="log" class="logbox"></div></div>
     </section>
     <aside class="colside">
       <div class="panel" id="me"></div>
@@ -82,12 +86,18 @@ export function showLife(h: Hero, nav: Nav): void {
     const chips = [st.war > 0 && L('戦争中', 'At war'), st.plague > 0 && L('大疫病', 'Plague'), st.famine > 0 && L('飢饉', 'Famine'), st.demonKing && L('魔王がいる', 'A Demon King reigns')].filter(Boolean) as string[];
     document.getElementById('scenecap')!.innerHTML = `${esc(T(h.world.name))}${chips.map((c) => `<span class="chip">${esc(c)}</span>`).join('')}`;
     document.getElementById('decision')!.innerHTML = decisionHTML(h);
-    document.getElementById('log')!.innerHTML = logHTML(h.log, true);
+    document.getElementById('log')!.innerHTML = logHTML([...h.log, ...aiOf(h)], true);
+    // AI をつないでいるときだけ、今の年を書き足すボタンを出す
+    const ai = document.getElementById('aiyear')!;
+    ai.replaceChildren();
+    if (aiReady() && h.alive) ai.append(aiYearButton(h, (e) => { addAi(h, e); persist(h); render(); }));
     document.getElementById('me')!.innerHTML = meHTML(h, heq, gamey);
     document.getElementById('ring')!.innerHTML = ringHTML(h, sel);
     const risk = riskBreakdown(h).slice(0, 5);
+    const notes = risk.flatMap((r) => r.notes);
     document.getElementById('risk')!.innerHTML = `<p class="bigrisk">${L('この1年で亡くなる確率', 'Chance of dying this year')} <b>${fmtPct(deathChance(h))}</b></p>
-      ${barList(risk.map((r) => ({ label: r.label, p: r.p })), 'risk')}<p class="note">${L('棒は危険のうちわけ (合計100%)。', 'Bars show how the risk splits (sums to 100%).')}</p>`;
+      ${barList(risk.map((r) => ({ label: r.label, p: r.p })), 'risk')}<p class="note">${L('棒は危険のうちわけ (合計100%)。', 'Bars show how the risk splits (sums to 100%).')}</p>
+      ${notes.length ? `<ul class="risknotes">${notes.map((n) => `<li>${esc(n)}</li>`).join('')}</ul>` : ''}`;
     paintAll(document.getElementById('app')!);
   }
   persist(h);
@@ -110,6 +120,7 @@ function meHTML(h: Hero, heq: number, gamey: boolean): string {
       <p class="note">${ageText(h.age)}${heq !== h.age ? L(`(人間でいえば${heq}歳)`, ` (about ${heq} in human years)`) : ''}${h.cheat ? `${L('・', ' · ')}${esc(T(CHEATS[h.cheat].name))}` : ''}${h.revives ? L(`・死の取り消し残り${h.revives}回`, ` · can undo death ${h.revives} more ${h.revives === 1 ? 'time' : 'times'}`) : ''}</p>
       ${gamey ? `<p class="lv">Lv <b>${Math.round(h.level)}</b>${h.rank ? `<span>${L('ギルドランク', 'Guild rank')} <b>${h.rank}</b></span>` : ''}</p>` : ''}
     </div></div>
+    ${traitTags(h.traits, h.blessing)}
     <ul class="stats">${STATS.map((k) => `<li><span>${STAT_NAME[k]}</span><i class="meter"><b class="m-${k}" style="width:${h.stats[k]}%"></b></i><em>${Math.round(h.stats[k])}</em></li>`).join('')}</ul>`;
 }
 

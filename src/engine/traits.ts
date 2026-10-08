@@ -122,17 +122,24 @@ export const heroTraits = (h: Hero): TraitDef[] => {
   return out;
 };
 
+// 重ねがけの上限。1つずつは穏やか (死因 0.5〜2.0、老い 0.8〜1.3) でも、予算いっぱいに重ねると極端になるので積を抑える。
+// 実測 (2026-10-09, 中世・人間・転生): 老いを遅らせる trait を7つ重ねると積 0.495 で最長171歳 (人間の上限110を大きく越える)。
+// 下限 0.7 なら老いは最大でおよそ4割遅いだけ (人間換算100歳に届くのが実年齢136歳)。死因の倍率は 0.25〜3 倍に収める
+export const TRAIT_MULT_RANGE: [number, number] = [0.25, 3];
+export const TRAIT_AGING_RANGE: [number, number] = [0.7, 1.5];
+const within = (v: number, [lo, hi]: [number, number]) => Math.min(hi, Math.max(lo, v));
+
 // trait が掛ける倍率の積 (その死因)
 export function traitMult(h: Hero, hz: Hazard): number {
   let m = 1;
   for (const id of h.traits) { const v = byId.get(id)?.mult?.[hz]; if (v !== undefined) m *= v; }
-  return m;
+  return m === 1 ? 1 : within(m, TRAIT_MULT_RANGE);
 }
 
 export function traitAging(h: Hero): number {
   let m = 1;
   for (const id of h.traits) { const v = byId.get(id)?.aging; if (v !== undefined) m *= v; }
-  return m;
+  return m === 1 ? 1 : within(m, TRAIT_AGING_RANGE);
 }
 
 export function traitAttention(h: Hero): number {

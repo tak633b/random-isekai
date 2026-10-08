@@ -282,7 +282,7 @@ export const EVENTS: EventDef[] = [
     id: 'fa.conscripted', stage: ['adult'], tags: F, jobs: ['farmer', 'miner', 'servant', 'cook', 'none'], w: 0.4, kind: 'battle',
     ja: '徴兵の触れが{town}に回った。{name}も槍を一本渡されて隊列に加わった。',
     en: 'The conscription notice went around {town}. {name} was handed a spear and put in the ranks.',
-    eff: { happy: -5, power: 2 }, risk: { hazard: 'war', p: 0.03 }, set: 'conscripted',
+    eff: { happy: -5, power: 2 }, risk: { hazard: 'war', p: 0.03 }, set: 'drafted',
   },
   {
     id: 'fa.soldier-rout', stage: ['adult'], tags: F, jobs: ['soldier', 'mercenary'], w: 0.6, kind: 'battle',

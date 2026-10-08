@@ -7,6 +7,7 @@ import { showArrival, showSetup } from './ui/setup';
 import { resumeLife, savedLife, showLife } from './ui/life';
 import { showDeath } from './ui/death';
 import { showTrials } from './ui/trials';
+import { showMemorial } from './ui/memorial';
 import { screen, type Nav } from './ui/nav';
 import { hash } from './ui/raster';
 import { esc } from './ui/dom';
@@ -27,6 +28,7 @@ const nav: Nav = {
   death: (h) => showDeath(h, nav),
   trials: (setup) => showTrials(setup, nav),
   past: () => showPast(nav),
+  memorial: (id) => showMemorial(nav, id),
 };
 
 function title(): void {
@@ -48,6 +50,7 @@ function title(): void {
       <button class="${cur ? '' : 'primary'}" data-go="random">${L('完全ランダムで転生', 'Reborn at random')}</button>
       <button data-go="setup">${L('設定して転生', 'Choose your rebirth')}</button>
       <button data-go="past">${L('過去の人生', 'Past lives')}${n ? ` <small>${n}</small>` : ''}</button>
+      <button data-go="memorial">${L('追悼館', 'Memorial')}</button>
     </div>
     <p class="note">${L('絵も人生もその場で作る。記録はこの端末にだけ残る。幼い子の死や戦争など重い出来事も、その世界の確率どおりに起きる。', 'Every picture and life is made on the spot. Records stay on this device only. Hard things, like children dying or war, happen at that world’s odds.')}</p>
   </main>`, (t) => {
@@ -58,6 +61,7 @@ function title(): void {
     if (go === 'random') nav.start({ seed: randomSeed(), world: { preset: 'random' }, hero: {} });
     if (go === 'setup') nav.setup();
     if (go === 'past') nav.past();
+    if (go === 'memorial') nav.memorial();
   });
   paintAll(document.getElementById('app')!);
 }

@@ -5,6 +5,7 @@ import { heroFigure, sceneOf, tieFigure, faceHTML, sceneHTML, paintAll } from '.
 import { ARRIVAL_NAME, KIND_NAME, ROLE_NAME, SEX_NAME, ageText, jobName } from './labels';
 import { esc, load, save } from './dom';
 import { screen, type Nav } from './nav';
+import { aiOf } from './ailog';
 import { isEn, L, T } from '../i18n';
 
 const KEY = 'lives';
@@ -50,7 +51,7 @@ export function toRecord(h: Hero): LifeRecord {
     cause: s.cause ?? '', text: s.text ?? '', why: s.why ?? '',
     face: heroFigure(h), scene: sceneOf(h, s.lastWith), facts,
     lastWith: s.lastWith.map((t) => ({ name: t.name, role: t.role, face: tieFigure(h, t) })),
-    highlights: s.highlights, log: h.log,
+    highlights: s.highlights, log: [...h.log, ...aiOf(h)],
   };
 }
 
@@ -61,12 +62,13 @@ export function keep(r: LifeRecord): void {
 }
 
 // 年表。年ごとにまとめ、big は太く、why は小さく添える。newest なら新しい年を上に
-export function logHTML(log: LogEntry[], newest = false): string {
-  const years = new Map<number, LogEntry[]>();
+type Entry = LogEntry & { ai?: boolean };
+export function logHTML(log: Entry[], newest = false): string {
+  const years = new Map<number, Entry[]>();
   for (const e of log) years.set(e.age, [...(years.get(e.age) ?? []), e]);
   const ages = [...years.keys()].sort((a, b) => (newest ? b - a : a - b));
   return `<ol class="timeline">${ages.map((a) => `<li class="yr"><span class="yrage">${ageText(a)}</span><ul>${years.get(a)!.map((e) =>
-    `<li class="k-${e.kind}${e.big ? ' big' : ''}" title="${esc(KIND_NAME[e.kind])}">${esc(e.text)}${e.why ? `<small class="why">${esc(e.why)}</small>` : ''}</li>`).join('')}</ul></li>`).join('')}</ol>`;
+    `<li class="k-${e.kind}${e.big ? ' big' : ''}" title="${esc(KIND_NAME[e.kind])}">${e.ai ? '<i class="aitag" title="AI">AI</i>' : ''}${esc(e.text)}${e.why ? `<small class="why">${esc(e.why)}</small>` : ''}</li>`).join('')}</ul></li>`).join('')}</ol>`;
 }
 
 export function recordHTML(r: LifeRecord): string {

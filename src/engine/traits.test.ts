@@ -1,10 +1,11 @@
 import { describe, it, expect, afterAll } from 'vitest';
-import { allTraits, availableTraits, POINT_BUDGET, randomBuild, TRAIT_SLOTS, useTraits, validateBuild } from './traits';
+import { allTraits, availableTraits, POINT_BUDGET, randomBuild, TRAIT_AGING_RANGE, TRAIT_SLOTS, useTraits, validateBuild } from './traits';
+import { agingOf } from './mortality';
 import { createHero, heqToAge } from './hero';
 import { liveOut } from './life';
 import { makeRng } from './rng';
-import { WORLDS } from './worlds';
-import { RACES } from './races';
+import { TABLE_E0, WORLD_IDS, WORLDS } from './worlds';
+import { RACE_IDS, RACES } from './races';
 import type { HeroChoice, TraitDef } from './types';
 
 const ORIGINAL = allTraits();
@@ -134,4 +135,74 @@ describe('始まる年齢', () => {
       expect(createHero({ seed: s, world: { preset: 'medieval' }, hero: { arrival: 'reborn' }, auto: true }).age).toBe(0);
     }
   });
+});
+
+// ---- 本物のデータ (src/data/traits/) の検査 ------------------------------------
+describe('trait のデータ', () => {
+  const all = ORIGINAL;
+  const ids = new Map(all.map((t) => [t.id, t]));
+  it('件数があり、id が重ならない', () => {
+    expect(all.length).toBeGreaterThan(300); // 2026-10-09 時点 409件 (skills 194・gifts 215)
+    expect(ids.size).toBe(all.length);
+  });
+  it('excl の相手が実在し、相互に書いてある', () => {
+    const bad: string[] = [];
+    for (const t of all) for (const e of t.excl ?? []) if (!ids.get(e)?.excl?.includes(t.id)) bad.push(`${t.id} → ${e}`);
+    expect(bad).toEqual([]);
+  });
+  it('倍率・老い・コストの範囲 (死因 0.5〜2.0、老い 0.8〜1.3、弱点は負・ほかは1〜6)', () => {
+    const bad: string[] = [];
+    for (const t of all) {
+      for (const [k, v] of Object.entries(t.mult ?? {})) if (v! < 0.5 || v! > 2) bad.push(`${t.id}.${k}=${v}`);
+      if (t.aging !== undefined && (t.aging < 0.8 || t.aging > 1.3)) bad.push(`${t.id}.aging=${t.aging}`);
+      if (t.kind === 'weakness' ? !(t.cost <= -1 && t.cost >= -4) : !(t.cost >= 1 && t.cost <= 6)) bad.push(`${t.id}.cost=${t.cost}`);
+    }
+    expect(bad).toEqual([]);
+  });
+  // 実測 (2026-10-09): 人間で選べる数は 227 (cyberpunk・space) 〜 295 (wa)。どの種族でも人間と同じ数 (種族限定の trait は人間以外に足される側)
+  it('どの世界でも人間なら100件以上選べ、全 trait がどこかの世界・種族で選べる', () => {
+    const reach = new Set<string>();
+    for (const w of WORLD_IDS) {
+      expect(availableTraits(WORLDS[w], 'human', all).length, w).toBeGreaterThanOrEqual(100);
+      for (const r of RACE_IDS) for (const t of availableTraits(WORLDS[w], r, all)) reach.add(t.id);
+    }
+    expect(all.filter((t) => !reach.has(t.id)).map((t) => t.id)).toEqual([]);
+  });
+});
+
+// おまかせの組み立て (traits と points を省略) で生きた人生の平均享年と、表の e0。
+// 実測 (2026-10-09, 本物のデータ 409件, 現地の生まれ・人間・平民, 2000人): 表との差は -1.3 (academy) 〜 +2.8 (xianxia)。
+// このうち組み立てで増えたぶんは -0.2 (frontier) 〜 +1.5年 (steampunk・desert) (何も持たない人生との差。xianxia は持たなくても +2.0)。±3年に収まるので重みは変えていない
+describe('おまかせの組み立てでも、平均享年は表の e0 から大きく外れない', () => {
+  for (const w of WORLD_IDS) {
+    it(w, () => {
+      useTraits(ORIGINAL);
+      const N = 1500;
+      const ages: number[] = [];
+      for (let s = 1; s <= N; s++) ages.push(liveOut(createHero({ seed: s * 7919, world: { preset: w }, hero: { race: 'human', status: 'commoner', cheat: 'none', arrival: 'native' }, auto: true })).age + 0.5);
+      const mean = ages.reduce((a, b) => a + b, 0) / N;
+      const sd = Math.sqrt(ages.reduce((a, b) => a + (b - mean) ** 2, 0) / N);
+      // 許容幅 = 3 (DESIGN 2節のねらい) + 2 × 標本誤差
+      expect(Math.abs(mean - TABLE_E0[w]), `平均 ${mean.toFixed(1)}`).toBeLessThan(3 + 2 * sd / Math.sqrt(N));
+    }, 30_000);
+  }
+});
+
+// 予算いっぱいに老いを遅らせる trait を重ねた組み立て (中世・人間・転生)。
+// 実測 (2026-10-09): 重ねがけの上限なしでは老いの積 0.495・最長171歳・成人の平均享年 68.3。
+// 上限 (老い 0.7倍まで) を入れて 最長132歳・成人の平均 59.2 (何も持たない人生は 最長99・成人の平均 53.0)。
+// 病・魔物・暴力を下げる構成 (sk.palate ほか6つ) は病の積 0.38・疫病 0.26 で、平均享年 35.7・最長102
+describe('強い組み立てでも極端にならない', () => {
+  const LONG = ['gf.unlucky', 'gf.late-bloom', 'gf.elf-blood', 'gf.long-line', 'gf.strong-heart', 'gf.demigod-blood', 'gf.forest-spirit'];
+  it('老いの重ねがけは 0.7倍で止まり、人間は150歳に届かない', () => {
+    useTraits(ORIGINAL);
+    expect(validateBuild(WORLDS.medieval, 'human', { traits: LONG, points: {} })).toEqual([]);
+    let max = 0;
+    for (let s = 1; s <= 1000; s++) {
+      const h = liveOut(createHero({ seed: s * 7919, world: { preset: 'medieval' }, hero: { ...base, traits: LONG }, auto: true }));
+      expect(agingOf(h)).toBeCloseTo(TRAIT_AGING_RANGE[0], 9);
+      max = Math.max(max, h.age);
+    }
+    expect(max).toBeLessThan(150);
+  }, 30_000);
 });

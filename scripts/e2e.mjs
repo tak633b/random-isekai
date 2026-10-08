@@ -1,6 +1,8 @@
 // 通しプレイ: タイトル → 完全ランダム → 最後まで → 死亡記録 → 100回 / 比べる、と、
 // 設定画面で全項目を選んで転生 → 何年か進めて選択肢を選ぶ → 最後まで → 過去の人生、を日本語と英語で。
 // コンソールのエラーと、幅 375px / 1280px での横のはみ出しを数える。スクリーンショットは docs/images/ に。
+// 追悼館: サーバ (PORT=8790 node server/server.mjs) を起動した状態で回すと 残す→一覧→ろうそく まで試す。
+// MEMORIAL=off で回すと、サーバが無いときの案内文だけを確かめる (このとき /api の失敗はブラウザが出す通信エラーなので数えない)。
 // 使い方: (vite を 5293 で起動してから) node scripts/e2e.mjs [http://localhost:5293]
 // Playwright は依存に入れていない。入っている場所を PLAYWRIGHT_PATH で渡す (無ければ 'playwright' を探す)
 const { chromium } = await import(process.env.PLAYWRIGHT_PATH ?? 'playwright');
@@ -15,6 +17,7 @@ mkdirSync(OUT, { recursive: true });
 const errors = [];
 const overflow = [];
 const notes = [];
+const OFF = process.env.MEMORIAL === 'off';
 
 async function widths(page, name) {
   const size = page.viewportSize();
@@ -42,13 +45,35 @@ async function run(lang) {
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
   await ctx.addInitScript((l) => { try { localStorage.setItem('lang', l); } catch {} }, lang);
   const page = await ctx.newPage();
-  page.on('console', (m) => { if (m.type() === 'error') errors.push(`[${lang}] console: ${m.text()}`); });
+  page.on('console', (m) => {
+    if (m.type() !== 'error') return;
+    // サーバ無しのときの /api の失敗は、ブラウザが通信エラーとして出すもの (画面のエラーではない)
+    if (OFF && /Failed to load resource/.test(m.text())) return void notes.push(`[${lang}] (ignored) ${m.text()}`);
+    errors.push(`[${lang}] console: ${m.text()}`);
+  });
   page.on('pageerror', (e) => errors.push(`[${lang}] pageerror: ${e.message}`));
   page.on('dialog', (d) => d.dismiss());
   const sfx = lang === 'ja' ? '' : '-en';
 
-  // A: 完全ランダム
   await page.goto(BASE);
+  if (OFF) {
+    // サーバが無いとき: 追悼館の欄に案内文、ローカルの過去の人生は見られる
+    await page.click('[data-go=memorial]');
+    await page.waitForSelector('.memorial-off');
+    await widths(page, `${lang} memorial-off`);
+    await page.click('[data-go=past]');
+    await page.waitForSelector('.pastlist');
+    await page.click('[data-go=title]');
+    await page.click('[data-go=random]');
+    await page.click('[data-go=live]');
+    await page.click('[data-act=end]');
+    await page.waitForSelector('#leave .memorial-off');
+    notes.push(`[${lang}] memorial off: notice shown on memorial and death screens`);
+    await browser.close();
+    return;
+  }
+
+  // A: 完全ランダム
   await page.waitForSelector('.logo');
   await widths(page, `${lang} title`);
   await shot(page, `title${sfx}.png`);
@@ -75,6 +100,19 @@ async function run(lang) {
   await page.waitForSelector('.death');
   await widths(page, `${lang} death`);
   await shot(page, `death${sfx}.png`);
+  // 追悼館に残す → 館で見る → ろうそく → 一覧
+  await page.waitForSelector('#postbtn');
+  await page.fill('#note', lang === 'ja' ? 'よく生きた。' : 'You lived well.');
+  await page.click('#postbtn');
+  await page.click('#postmsg [data-mem]');
+  await page.waitForSelector('[data-candle]');
+  await page.click('[data-candle]');
+  await page.waitForFunction(() => /灯した|Candle lit/.test(document.querySelector('[data-candle]')?.textContent ?? ''));
+  notes.push(`[${lang}] memorial: posted, candle -> ${await page.locator('[data-candle]').innerText()}`);
+  await page.click('[data-list]');
+  await page.waitForSelector('.memlist [data-id]');
+  await widths(page, `${lang} memorial`);
+  await shot(page, `memorial${sfx}.png`);
   await page.click('[data-go=title]');
   if (await page.locator('[data-go=resume]').count()) errors.push(`[${lang}] resume button still shown after death`);
   await page.click('[data-go=past]');
@@ -112,9 +150,35 @@ async function run(lang) {
   await page.click('[data-k=memory][data-v=full]');
   await page.fill('#name', lang === 'ja' ? 'リリア' : 'Lilia');
   await page.click('[data-k=policy][data-v=careful]');
+  await page.click('[data-k=startAge][data-v=teen]');
+  await page.click('[data-k=blessing][data-v="1"]');
+  // 組み立て: 加護を2つ、弱点を1つ、ポイントを健康に2
+  await page.click('[data-b=mode][data-v=pick]');
+  await page.click('[data-b=tab][data-v=blessing]');
+  await page.locator('#cands [data-b=add]').nth(0).click();
+  await page.locator('#cands [data-b=add]').nth(1).click();
+  await page.click('[data-b=tab][data-v=weakness]');
+  await page.locator('#cands [data-b=add]').nth(0).click();
+  const first = (await page.locator('#cands [data-b=add] b').first().innerText()).slice(0, 2);
+  await page.fill('#tq', first);
+  if (!(await page.locator('#cands [data-b=add]').count())) errors.push(`[${lang}] search "${first}" found nothing`);
+  await page.fill('#tq', '');
+  for (let i = 0; i < 2; i++) await page.click('[data-b=pt][data-k=hp][data-v="1"]');
+  // 予算を超えたら転生できない
+  for (const k of ['hp', 'power', 'mind', 'charm', 'luck']) for (let i = 0; i < 4; i++) { const b = page.locator(`[data-b=pt][data-k=${k}][data-v="1"]`); if (await b.isEnabled()) await b.click(); }
+  if (!(await page.locator('#startbtn').isDisabled())) errors.push(`[${lang}] start button enabled while over budget`);
+  else notes.push(`[${lang}] over budget: start disabled (${await page.locator('.errs li').first().innerText()})`);
+  for (const k of ['power', 'mind', 'charm', 'luck']) for (let i = 0; i < 4; i++) { const b = page.locator(`[data-b=pt][data-k=${k}][data-v="-1"]`); if (await b.isEnabled()) await b.click(); }
+  if (await page.locator('#startbtn').isDisabled()) errors.push(`[${lang}] start still disabled after fixing budget: ${await page.locator('.errs').innerText().catch(() => '')}`);
+  // AI の設定パネルが開ける
+  await page.click('.aipanel summary');
+  if (!(await page.locator('.aipanel[open] select').isVisible())) errors.push(`[${lang}] AI panel did not open`);
+  await page.click('.aipanel summary');
   await widths(page, `${lang} setup`);
   await shot(page, `setup${sfx}.png`);
   await page.click('[data-go=start]');
+  await page.waitForSelector('[data-go=live]');
+  notes.push(`[${lang}] arrival tags: ${await page.locator('.tags .tag').count()}, starts at ${await page.locator('.decided div').nth(10).innerText().then((t) => t.replace(/\s+/g, ' '))}`);
   let chosen = 0, lives = 1;
   for (;;) {
     await page.waitForSelector('[data-go=live]');

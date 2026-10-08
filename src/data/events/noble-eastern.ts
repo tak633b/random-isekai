@@ -666,7 +666,7 @@ export const EVENTS: EventDef[] = [
     },
   },
   {
-    id: 'ne.e.sect-gate', stage: ['child', 'teen'], tags: CU, flag: 'ne.rooted', noFlag: 'ne.sect', w: 4, kind: 'school', big: true,
+    id: 'ne.e.sect-gate', stage: ['child', 'teen'], job: 'cultivator', tags: CU, flag: 'ne.rooted', noFlag: 'ne.sect', w: 4, kind: 'school', big: true,
     ja: '入門の試験は、雲の上の山門まで続く九千段の石段だった。日が落ちる頃、{name}は膝を震わせながら最後の段に手をついた。',
     en: "The entrance trial was a stairway of nine thousand stone steps up to a sect's gate above the clouds. At sunset, knees shaking, {name} laid a hand on the last step.",
     set: 'ne.sect', eff: { power: 3, fame: 1 }, tie: { role: 'friend', new: true, d: 8 },
@@ -696,7 +696,7 @@ export const EVENTS: EventDef[] = [
     eff: { power: 2, happy: -1 },
   },
   {
-    id: 'ne.e.ninja-village', stage: ['child'], tags: JP, status: ['orphan', 'poor'], w: 1, kind: 'school',
+    id: 'ne.e.ninja-village', stage: ['child'], job: 'ninja', tags: JP, status: ['orphan', 'poor'], w: 1, kind: 'school',
     ja: '身寄りのない{name}は、山奥の忍びの里に引き取られた。{mentor}は最初に、足音を立てずに板の間を歩く方法を教えた。',
     en: "Orphaned, {name} was taken in by a hidden ninja village deep in the mountains. The first thing {mentor} taught was how to cross a wooden floor without a sound.",
     eff: { power: 2, luck: 1 }, tie: { role: 'mentor', new: true, d: 8 },
@@ -957,7 +957,7 @@ export const EVENTS: EventDef[] = [
     eff: { happy: -4, mind: 1 },
   },
   {
-    id: 'ne.e.magistrate', stage: ['adult', 'middle'], tags: CU, flag: 'ne.exam', w: 2, kind: 'work',
+    id: 'ne.e.magistrate', stage: ['adult', 'middle'], job: 'scholar', tags: CU, flag: 'ne.exam', w: 2, kind: 'work',
     ja: '{name}は地方の知県として赴任した。最初の訴えは、隣家の鶏が自分の庭で卵を産んだのはどちらの物か、だった。',
     en: "{name} took up a post as a county magistrate. The first case: when a neighbor's hen lays an egg in your yard, whose egg is it?",
     eff: { wealth: 3, fame: 2, mind: 1 },

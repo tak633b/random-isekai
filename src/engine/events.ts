@@ -1,7 +1,7 @@
 // 出来事のデータ (src/data/events/*.ts の EVENTS) と死因の文 (src/data/deaths.ts の DEATHS) を読み込み、
 // 条件の判定・重み付きの抽選・置き換え ({name} など)・効果の適用・選択肢 (Decision) 化・その年の追加の危険を受け持つ。
 // データが1件も無くても動く (他の担当がデータを書き終える前でも、テストと画面が壊れないように)
-import type { DeathDef, DeathRecord, Decision, EventDef, Hazard, Hero, Option, Role, Stage, Tie } from './types';
+import type { DeathDef, DeathRecord, Decision, EventDef, Hazard, Hero, JobId, Option, Role, Stage, Tie } from './types';
 import { makeRng, pickWeighted } from './rng';
 import { addTie, byRole, bump, callName, log, shared } from './bonds';
 import { beastName, personName, worldNames } from './names';
@@ -172,6 +172,16 @@ export function fill(text: string, h: Hero, ties: Partial<Record<Role, Tie>> = {
 
 export type Die = (h: Hero, hz: Hazard) => void;
 
+// 職業の変化を伴うしるし。文が「勇者として名を呼ばれた」のに職業が農民のまま、にならないように (DESIGN 5節)
+const FLAG_JOBS: Record<string, JobId> = { hero: 'hero', saint: 'saint', knighted: 'knight', lord: 'lord' };
+
+// しるしを立て、職業を変える (出来事と選択肢の両方から)
+function mark(h: Hero, set: string | undefined, job: JobId | undefined): void {
+  if (set) h.flags[set] = h.age;
+  const j = job ?? (set ? FLAG_JOBS[set] : undefined);
+  if (j && h.job !== j) { h.job = j; h.jobYears = 0; delete h.flags.retired; }
+}
+
 // その年だけの追加の危険: その場で引く。重さは世界の死亡率に合わせて軽くし (mortality.ts の riskScale)、
 // 転生特典の倍率もかける (超再生なら同じ決闘でも助かりやすい)
 // (trait の倍率と女神の加護も同じように効かせる)
@@ -231,7 +241,7 @@ export function eventDecision(h: Hero, def: EventDef, die: Die): Decision {
     ...(o.risk ? { hint: L(`命の危険 ${pctOf(scaled(h, o.risk.p, o.risk.hazard))}%`, `${pctOf(scaled(h, o.risk.p, o.risk.hazard))}% risk of death`) } : {}),
     apply: (x: Hero) => {
       if (o.eff) bump(x, o.eff);
-      if (o.set) x.flags[o.set] = x.age;
+      mark(x, o.set, o.job);
       if (o.log) log(x, fill(T(o.log), x), def.kind, false);
       roll(x, o.risk, die);
     },
@@ -250,7 +260,7 @@ export function applyEvent(h: Hero, def: EventDef, die: Die): Decision | null {
   if (!def.repeat) h.used.push(def.id);
   else h.recent = { ...h.recent, [def.id]: h.age };
   if (def.eff) bump(h, def.eff);
-  if (def.set) h.flags[def.set] = h.age;
+  mark(h, def.set, def.job);
   const who = Object.values(ties);
   const e = who.length ? shared(h, who, text, def.kind, def.tie?.d ?? 0, !!def.big) : log(h, text, def.kind, !!def.big);
   if (def.why) e.why = fill(T(def.why), h, ties);

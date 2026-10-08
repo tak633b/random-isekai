@@ -991,13 +991,13 @@ export const EVENTS: EventDef[] = [
 
   // ---- 十代: 仕事と弟子入り -----------------------------------------------
   {
-    id: 'fy.t-smith-apprentice', stage: ['teen'], tags: ['fantasy'], jobs: ['none'], status: ['commoner', 'poor', 'orphan'], w: 1, kind: 'work',
+    id: 'fy.t-smith-apprentice', stage: ['teen'], job: 'smith', tags: ['fantasy'], jobs: ['none'], status: ['commoner', 'poor', 'orphan'], w: 1, kind: 'work',
     ja: '{name}は鍛冶屋の{master}に弟子入りした。最初の一年は、炉に炭をくべることしか許されなかった。',
     en: '{name} was apprenticed to {master} the smith. For the first year, all {name} was allowed to do was feed charcoal to the forge.',
     eff: { power: 3, hp: 1 }, tie: { role: 'master', new: true, d: 4 },
   },
   {
-    id: 'fy.t-merchant-boy', stage: ['teen'], tags: ['fantasy'], jobs: ['none'], status: ['commoner', 'poor'], w: 1, kind: 'work',
+    id: 'fy.t-merchant-boy', stage: ['teen'], job: 'merchant', tags: ['fantasy'], jobs: ['none'], status: ['commoner', 'poor'], w: 1, kind: 'work',
     ja: '商家の丁稚に出された{name}は、主人の{master}から帳簿の数字を一つでも間違えたら飯抜きだと言われた。',
     en: '{name} went to work as an errand hand at a trading house. {master}, the owner, said one wrong figure in the ledger meant no supper.',
     eff: { mind: 3, wealth: 1 }, tie: { role: 'master', new: true, d: 2 },

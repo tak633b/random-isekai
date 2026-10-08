@@ -9,6 +9,7 @@ export interface Nav {
   death(h: Hero): void;
   trials(setup: Setup): void;
   past(): void;
+  memorial(id?: number): void;  // 共有の追悼館 (id があればその1件)
 }
 
 export const app = (): HTMLElement => document.getElementById('app')!;

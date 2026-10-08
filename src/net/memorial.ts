@@ -75,8 +75,9 @@ export async function postMemorial(h: Hero, note?: string): Promise<MemorialResu
 }
 
 /** 新しい順に1ページ */
-export async function listMemorial(offset = 0, limit = 20): Promise<MemorialResult<MemorialPage>> {
-  const r = await call<MemorialEntry[]>(`/memorial?offset=${Math.max(0, Math.floor(offset))}&limit=${limit}`);
+// lang を渡すと、その言語で残された人生だけ (英語の画面に日本語の記録を並べないため)
+export async function listMemorial(offset = 0, limit = 20, lang?: 'ja' | 'en'): Promise<MemorialResult<MemorialPage>> {
+  const r = await call<MemorialEntry[]>(`/memorial?offset=${Math.max(0, Math.floor(offset))}&limit=${limit}${lang ? `&lang=${lang}` : ''}`);
   if (!r.ok) return r;
   const m = r.meta as { total: number; offset: number; limit: number };
   return { ok: true, data: { items: r.data, ...m } };

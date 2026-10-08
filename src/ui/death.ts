@@ -1,8 +1,12 @@
-// 亡くなったとき: 死亡記録を出し、この端末に残す。同じ設定で何回も試す・もう一度・新しく転生
+// 亡くなったとき: 死亡記録を出し、この端末に残す。追悼館に残す・AI の最後の言葉 (任意)。同じ設定で何回も試す・もう一度・新しく転生
 import type { Hero } from '../engine/types';
 import { randomSeed } from '../engine';
 import { keep, recordHTML, toRecord } from './records';
 import { paintAll } from './pixel';
+import { memorialAvailable, postMemorial } from '../net/memorial';
+import { memorialOffHTML } from './memorial';
+import { aiEpitaph } from './aipanel';
+import { aiReady } from '../ai/settings';
 import { screen, type Nav } from './nav';
 import { L } from '../i18n';
 
@@ -12,6 +16,8 @@ export function showDeath(h: Hero, nav: Nav): void {
   screen(`
   <main class="page death">
     ${recordHTML(r)}
+    <div id="aiepi"></div>
+    <section class="panel" id="leave"><h2>${L('追悼館に残す', 'Leave it in the memorial')}</h2><p class="note">${L('確かめています…', 'Checking…')}</p></section>
     <div class="choices">
       <button class="primary" data-go="trials">${L('同じ設定で何回も試す', 'Run this setup many times')}</button>
       <button data-go="again">${L('同じ設定でもう一度', 'Same setup, new life')}</button>
@@ -25,6 +31,55 @@ export function showDeath(h: Hero, nav: Nav): void {
     if (go === 'again') nav.start({ ...h.setup, seed: randomSeed() });
     if (go === 'new') nav.setup();
     if (go === 'title') nav.title();
+    if (go === 'post') void post();
+    const m = t.closest<HTMLElement>('[data-mem]')?.dataset.mem;
+    if (m) nav.memorial(Number(m));
   });
-  paintAll(document.getElementById('app')!);
+  const app = document.getElementById('app')!;
+  paintAll(app);
+  const leave = document.getElementById('leave')!;
+  const alive = () => document.getElementById('leave') === leave;
+
+  // AI の最後の言葉と墓碑銘。AI の文は textContent で出す
+  if (aiReady()) {
+    const box = document.getElementById('aiepi')!;
+    const out = document.createElement('div');
+    out.className = 'panel aiwords';
+    box.append(aiEpitaph(h, (d) => {
+      out.replaceChildren();
+      for (const w of d.words) {
+        const p = document.createElement('p');
+        const tag = document.createElement('i'); tag.className = 'aitag'; tag.textContent = 'AI';
+        p.append(tag, `${w.name}${L('「', ': “')}${w.text}${L('」', '”')}`);
+        out.append(p);
+      }
+      if (d.epitaph) { const p = document.createElement('p'); p.className = 'epitaph'; p.textContent = d.epitaph; out.append(p); }
+      box.append(out);
+    }));
+  }
+
+  void memorialAvailable().then((ok) => {
+    if (!alive()) return;
+    leave.innerHTML = `<h2>${L('追悼館に残す', 'Leave it in the memorial')}</h2>` + (ok
+      ? `<p class="note">${L('ほかの人もこの人生を読めるようになる。一言は任意 (140字まで)。', 'Others will be able to read this life. A few words are optional (up to 140 characters).')}</p>
+        <label class="field"><span class="vh">${L('一言', 'A few words')}</span><textarea id="note" maxlength="140" rows="2" placeholder="${L('この人へ一言 (任意)', 'A few words for them (optional)')}"></textarea></label>
+        <div class="choices"><button data-go="post" id="postbtn">${L('追悼館に残す', 'Leave it in the memorial')}</button><span class="note" id="postmsg" role="status"></span></div>`
+      : memorialOffHTML());
+  });
+
+  async function post(): Promise<void> {
+    const btn = document.getElementById('postbtn') as HTMLButtonElement;
+    const msg = document.getElementById('postmsg')!;
+    btn.disabled = true;
+    msg.textContent = L('残しています…', 'Saving…');
+    const res = await postMemorial(h, (document.getElementById('note') as HTMLTextAreaElement).value);
+    if (!alive()) return;
+    if (res.ok || res.status === 409) {
+      const id = res.ok ? res.data.id : res.id;
+      msg.innerHTML = `${res.ok ? L('残した。', 'Saved.') : L('この人生はもう館にある。', 'This life is already in the memorial.')} ${id !== undefined ? `<button data-mem="${Number(id)}">${L('追悼館で見る', 'See it in the memorial')}</button>` : ''}`;
+    } else {
+      btn.disabled = false;
+      msg.textContent = res.status === 429 ? L('少し時間をおいてから。', 'Please wait a little.') : `${L('残せなかった: ', 'Could not save: ')}${res.error}`;
+    }
+  }
 }

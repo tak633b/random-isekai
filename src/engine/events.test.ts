@@ -168,6 +168,31 @@ describe('親と伴侶', () => {
   });
 });
 
+describe('職業の変化を語る出来事', () => {
+  it('勇者・聖女・騎士・領主のしるしで職業も変わる (job を書いた出来事はその職業に)', () => {
+    const h = hero();
+    h.age = 25; h.job = 'farmer';
+    applyEvent(h, ev({ id: 't.hero', set: 'hero' }), die);
+    expect(h.job).toBe('hero');
+    applyEvent(h, ev({ id: 't.lord', set: 'lord' }), die);
+    expect(h.job).toBe('lord');
+    applyEvent(h, ev({ id: 't.apprentice', job: 'smith' }), die);
+    expect(h.job).toBe('smith');
+  });
+  it('本物のデータで「勇者として名を呼ばれた」人生は、職業が勇者か勇者のしるしが立つ', () => {
+    let seen = 0;
+    for (let s = 1; s <= 3000 && seen < 5; s++) {
+      const h = createHero({ seed: s, world: { preset: 'game' }, hero: { race: 'human' }, auto: true });
+      while (h.alive && h.age < 60) {
+        advanceYear(h);
+        const e = h.log.find((x) => x.age === h.age && /勇者として名を呼ばれた|勇者に選ばれ/.test(x.text));
+        if (e) { seen++; expect(h.job === 'hero' || h.flags.hero !== undefined).toBe(true); expect(h.job).toBe('hero'); break; }
+      }
+    }
+    expect(seen).toBeGreaterThan(0);
+  }, 60_000);
+});
+
 describe('選択肢', () => {
   const choice = ev({
     id: 't.choice', ja: '分かれ道', en: 'a fork',
