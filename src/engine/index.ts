@@ -13,4 +13,7 @@ export { closest, callName, around } from './bonds';
 export { deathWhy, hazardName, riskBreakdown } from './why';
 export { allEvents, allDeaths, candidates } from './events';
 export { advanceYear, liveOut, choose, toSaved, fromSaved, summary, type SavedHero, type Summary } from './life';
+export { availableTraits, validateBuild, randomBuild, POINT_BUDGET, TRAIT_SLOTS, MAX_WEAKNESS, POINT_STEP, POINT_MAX, ALLOT_KEYS, traitOf, allTraits, type Build } from './traits';
+export { BLESSING, attentionOf } from './mortality';
+export { heqToAge } from './hero';
 export { runTrials, trialStart, trialAdd, trialFinish, trialSeed, REACH_AGES, TRIAL_MAX_YEARS, type TrialResult, type TrialState } from './trials';

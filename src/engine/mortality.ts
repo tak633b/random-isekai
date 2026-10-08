@@ -7,6 +7,7 @@ import { raceOf } from './races';
 import { statusExecution, statusMult, statusRank } from './status';
 import { jobOf, jobsIn } from './jobs';
 import { CHEATS } from './cheats';
+import { traitAging, traitAttention, traitMult } from './traits';
 import { hasTag } from './worlds';
 
 export const HAZARDS: Hazard[] = ['infant', 'disease', 'monster', 'violence', 'war', 'accident', 'childbirth', 'magic', 'execution', 'famine', 'plague', 'age'];
@@ -35,7 +36,7 @@ export function agingOf(h: Hero): number {
   let k = 1;
   // 修行で寿命が延びるのは、魔法が世の理を左右する世界 (magic 3、仙侠) だけ。和風の世界にも同じしるしの出来事はあるが、そこでは物語の味付けにとどめる
   if (h.world.magic >= 3) for (const [flag, v] of CULTIVATION) if (h.flags[flag] !== undefined) { k = v; break; }
-  return c * j * k;
+  return c * j * k * traitAging(h);
 }
 
 export const heqOf = (h: Hero) => heq(h.age, raceOf(h.race), agingOf(h));
@@ -188,7 +189,7 @@ export function hazards(h: Hero): Hazards {
     if (w.magic >= 2 && h.talent === 'magic') z.magic += 0.0005;
     z.magic += powersH(w);
     // 目立つ特典を持つ人は暗殺と断罪が増える。ばれていれば (outed) 2倍
-    const att = h.cheat ? Math.max(0, CHEATS[h.cheat].attention) : 0;
+    const att = attentionOf(h);
     const k = h.flags.outed !== undefined ? 2 : 1;
     z.violence += 0.0006 * att * k;
     z.execution += 0.0003 * att * k;
@@ -222,7 +223,20 @@ export function hazards(h: Hero): Hazards {
       z.monster *= t; z.violence *= t; z.war *= t;
     }
   }
+  // スキル・体質・弱点の倍率。割り戻し (deflate) より後に掛けるので打ち消されない (trait を選んだ人生は表から外れてよい)
+  if (h.traits.length) for (const k of HAZARDS) z[k] *= traitMult(h, k);
+  // 女神の加護: 主人公だけ、成人前の死を減らす
+  if (h.blessing && e < ADULT_HEQ) { z.infant *= BLESSING; z.disease *= BLESSING; z.monster *= BLESSING; z.accident *= BLESSING; }
   return z;
+}
+
+// 女神の加護の倍率。research/07 の 6.2節「転生者には乳幼児期の死亡率を 0.2〜0.3倍にする『女神の加護』」の中ほど。
+// 同じ節の 6.4節で、加護ありの転生主人公が子ども時代に死ぬ割合の目安は 5〜10%。乳幼児だけでなく成人前の病・魔物・事故にも掛けて、そこに寄せる
+export const BLESSING = 0.25;
+
+// 目立ちやすさ: 特典の attention + trait の attention (0 より下にはしない)
+export function attentionOf(h: Hero): number {
+  return Math.max(0, (h.cheat ? CHEATS[h.cheat].attention : 0) + traitAttention(h));
 }
 
 export const total = (z: Hazards) => HAZARDS.reduce((s, k) => s + z[k], 0);

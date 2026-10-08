@@ -3,7 +3,8 @@
 import type { Decision, Hazard, Hero, JobId, LogEntry, Tie } from './types';
 import { makeRng, pickWeighted } from './rng';
 import { agePeople, byRole, bump, closest, log, mourn, shared } from './bonds';
-import { deathChance, hazards, heq, HAZARDS, maternalRisk, mustDie, agingOf, heqOf, warStartP, WAR_MEAN_YEARS, plagueP, famineP, FAMINE_MEAN_YEARS, ADULT_HEQ } from './mortality';
+import { traitFertility } from './traits';
+import { attentionOf, deathChance, hazards, heq, HAZARDS, maternalRisk, mustDie, agingOf, heqOf, warStartP, WAR_MEAN_YEARS, plagueP, famineP, FAMINE_MEAN_YEARS, ADULT_HEQ } from './mortality';
 import { raceOf } from './races';
 import { CHEATS } from './cheats';
 import { jobOf, jobsFor, jobWeight, JOBS, type JobDef } from './jobs';
@@ -101,7 +102,7 @@ function demonKing(h: Hero): void {
     return;
   }
   const e = heqOf(h);
-  const att = h.cheat ? CHEATS[h.cheat].attention : 0;
+  const att = attentionOf(h);
   if (h.flags.hero === undefined && h.flags.saint === undefined && h.alive && e >= 14 && e <= 35) {
     const heroish = att >= 2 || h.cheat === 'sword_saint' || h.talent === 'might';
     const saintly = h.cheat === 'holy_power' || (h.sex === 'F' && h.talent === 'magic');
@@ -228,7 +229,7 @@ function adultLife(h: Hero, e: number): void {
   // 子 (結婚していて、人間換算 16〜45歳)。女性の主人公は翌年に産む (その年の出産の危険を受ける)
   const sp = byRole(h, 'spouse');
   const fertileHeq = h.sex === 'F' ? e : sp ? heq(sp.age, raceOf(sp.race)) : 99;
-  if (sp && h.flags.pregnant === undefined && fertileHeq < 45 && h.rng() < raceOf(h.race).fertility * 0.7) {
+  if (sp && h.flags.pregnant === undefined && fertileHeq < 45 && h.rng() < raceOf(h.race).fertility * 0.7 * traitFertility(h)) {
     if (h.sex === 'F') h.flags.pregnant = h.age;
     else born(h, sp);
   }

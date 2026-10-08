@@ -2,7 +2,8 @@
 // 死の why は、その世界の数字 (5歳までに亡くなる割合・その年齢まで生きる割合) と、
 // その人に効いた倍率 (職業・身分・特典) を、平民と比べた何倍かで書く
 import type { Hazard, Hero } from './types';
-import { HAZARDS, hazards, lifeTableFor, lAt, maternalRisk, plagueH, famineH, warServeH, qAt, total, heqOf, type Hazards } from './mortality';
+import { traitNotes } from './traits';
+import { BLESSING, HAZARDS, hazards, lifeTableFor, lAt, maternalRisk, plagueH, famineH, warServeH, qAt, total, heqOf, type Hazards } from './mortality';
 import { jobOf } from './jobs';
 import { CHEATS } from './cheats';
 import { statusName } from './status';
@@ -81,6 +82,10 @@ export function deathWhy(h: Hero, hz: Hazard): string {
       parts.push(reach, L(`${age}歳の1年で亡くなる確率は約${pct(qAt(t, age))}%`, `at ${age}, the chance of dying within a year is about ${pct(qAt(t, age))}%`));
   }
   if (hz !== 'age' && hz !== 'infant') parts.push(ratioWhy(h, hz));
+  parts.push(...traitNotes(h, hz, hazardName(hz)));
+  if (h.blessing && heqOf(h) < 16 && (hz === 'infant' || hz === 'disease' || hz === 'monster' || hz === 'accident')) {
+    parts.push(L(`女神の加護があった (幼い日の死 ${BLESSING}倍) が、それでも`, `even with the goddess's blessing (childhood deaths ×${BLESSING})`));
+  }
   if (h.state.war > 0 && (hz === 'violence' || hz === 'famine')) parts.push(L('戦争の最中だった', 'a war was raging'));
   return joinWhy(parts);
 }
@@ -91,8 +96,15 @@ export function reviveWhy(h: Hero): string {
 }
 
 // その年の危険の内訳 (画面の「危険の内訳」用): 大きい順に、割合つき
-export function riskBreakdown(h: Hero): { hazard: Hazard; label: string; p: number }[] {
+// notes: その死因に効いている trait と加護 (「頑健な体: 病の死 0.7倍」)
+export function riskBreakdown(h: Hero): { hazard: Hazard; label: string; p: number; notes: string[] }[] {
   const z = hazards(h);
   const sum = total(z);
-  return HAZARDS.filter((k) => z[k] > 0).map((k) => ({ hazard: k, label: hazardName(k), p: sum > 0 ? z[k] / sum : 0 })).sort((a, b) => b.p - a.p);
+  const young = h.blessing && heqOf(h) < 16;
+  return HAZARDS.filter((k) => z[k] > 0).map((k) => {
+    const label = hazardName(k);
+    const notes = traitNotes(h, k, label);
+    if (young && (k === 'infant' || k === 'disease' || k === 'monster' || k === 'accident')) notes.push(L(`女神の加護: ${label}の死 ${BLESSING}倍`, `Goddess's blessing: ${label.toLowerCase()} deaths ×${BLESSING}`));
+    return { hazard: k, label, p: sum > 0 ? z[k] / sum : 0, notes };
+  }).sort((a, b) => b.p - a.p);
 }

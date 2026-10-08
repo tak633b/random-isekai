@@ -5,7 +5,8 @@ import type { DeathDef, DeathRecord, Decision, EventDef, Hazard, Hero, Option, R
 import { makeRng, pickWeighted } from './rng';
 import { addTie, byRole, bump, callName, log, shared } from './bonds';
 import { beastName, personName, worldNames } from './names';
-import { heqOf, riskScale, setEventRisk, stageOf } from './mortality';
+import { attentionOf, BLESSING, heqOf, riskScale, setEventRisk, stageOf } from './mortality';
+import { traitMult, traitOf } from './traits';
 import { jobOf } from './jobs';
 import { raceOf } from './races';
 import { CHEATS } from './cheats';
@@ -72,7 +73,7 @@ function staticKey(h: Hero): string {
   let k = keyCache.get(h);
   if (!k) {
     const w = h.world;
-    k = `${w.id}|${w.tags.join()}|${w.magic}|${w.powers}|${w.tech}|${h.status}|${h.race}|${h.cheat}|${h.arrival}|${h.sex}`;
+    k = `${w.id}|${w.tags.join()}|${w.magic}|${w.powers}|${w.tech}|${h.status}|${h.race}|${h.cheat}|${h.arrival}|${h.sex}|${h.traits.join()}`;
     keyCache.set(h, k);
   }
   return k;
@@ -173,8 +174,16 @@ export type Die = (h: Hero, hz: Hazard) => void;
 
 // その年だけの追加の危険: その場で引く。重さは世界の死亡率に合わせて軽くし (mortality.ts の riskScale)、
 // 転生特典の倍率もかける (超再生なら同じ決闘でも助かりやすい)
-const scaled = (h: Hero, p: number, hz?: Hazard) =>
-  p * riskScale(h.world, h.age, heqOf(h)) * (hz && h.cheat ? CHEATS[h.cheat].mult[hz] ?? 1 : 1);
+// (trait の倍率と女神の加護も同じように効かせる)
+const scaled = (h: Hero, p: number, hz?: Hazard) => {
+  let k = riskScale(h.world, h.age, heqOf(h));
+  if (hz) {
+    if (h.cheat) k *= CHEATS[h.cheat].mult[hz] ?? 1;
+    k *= traitMult(h, hz);
+    if (h.blessing && heqOf(h) < 16 && (hz === 'infant' || hz === 'disease' || hz === 'monster' || hz === 'accident')) k *= BLESSING;
+  }
+  return p * k;
+};
 function roll(h: Hero, risk: { hazard: Hazard; p: number } | undefined, die: Die): void {
   if (risk && h.alive && h.rng() < scaled(h, risk.p, risk.hazard)) die(h, risk.hazard);
 }
@@ -257,10 +266,13 @@ export function applyEvent(h: Hero, def: EventDef, die: Die): Decision | null {
 }
 
 // 目立つ特典を持つ人は、暗殺・断罪の絡む出来事を引きやすい (research/02 の 10.3節)
+// trait の events は、その種類 (YearKind) の出来事の起きやすさに掛ける
 function weight(h: Hero, d: EventDef): number {
-  const att = h.cheat ? CHEATS[h.cheat].attention : 0;
+  const att = attentionOf(h);
   const targeted = d.risk && (d.risk.hazard === 'violence' || d.risk.hazard === 'execution');
-  return d.w * (targeted && att > 0 ? 1 + 0.3 * att : 1);
+  let w = d.w * (targeted && att > 0 ? 1 + 0.3 * att : 1);
+  for (const id of h.traits) { const m = traitOf(id)?.events?.[d.kind]; if (m !== undefined) w *= m; }
+  return w;
 }
 
 // 段階の候補の重みの累積 (一生変わらない条件の組ごとに一度だけ作る)

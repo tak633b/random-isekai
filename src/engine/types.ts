@@ -128,6 +128,40 @@ export interface HeroChoice {
   arrival?: Arrival;
   memory?: MemoryLevel;
   name?: string;
+  blessing?: boolean;          // 女神の加護。幼いうちの死を減らす (省略 = なし。史実どおりの厳しさ)
+  startAge?: StartAge;         // この世界で人生が始まる年齢 (省略 = 転生の型どおり)
+  traits?: string[];           // 選んだスキル・能力・加護・体質・弱点の id (省略 = おまかせ。[] = 何も持たない)
+  points?: Partial<Record<AllotKey, number>>; // 能力へのポイント配分 (省略 = おまかせ)
+}
+
+// 人生が始まる年齢。child/teen は「その年齢の子の体で目を覚ます」、adult は成人として召喚・転移される
+export type StartAge = 'birth' | 'child' | 'teen' | 'adult';
+
+// ポイントを振れる能力。1ポイントで +5
+export type AllotKey = 'hp' | 'power' | 'mind' | 'charm' | 'luck';
+
+// スキル・能力・加護・体質・弱点 (src/data/traits/)。ポイントと枠の中で選ぶ
+export type TraitKind = 'skill' | 'ability' | 'blessing' | 'constitution' | 'weakness';
+export interface TraitDef {
+  id: string;                 // 一意。ファイルの頭文字を付ける
+  kind: TraitKind;
+  name: Text;
+  desc: Text;                 // 一行の説明。効き目が分かるように (例: 毒による死が半分になる)
+  cost: number;               // ポイント。弱点は負 (選ぶとポイントが戻る)
+  tags?: WorldTag[];          // この系統の世界でだけ選べる (省略 = どこでも)
+  not?: WorldTag[];
+  magic?: number;             // 世界の magic がこれ以上
+  powers?: number;
+  tech?: [number, number];
+  races?: RaceId[];           // この種族だけ
+  excl?: string[];            // 同時に持てない trait の id
+  mult?: Partial<Record<Hazard, number>>;              // 死因ごとのハザードの倍率
+  aging?: number;             // 老化の速さの倍率
+  stats?: Partial<Record<StatKey, number>>;            // 始まりの能力の増減
+  events?: Partial<Record<YearKind, number>>;          // その種類の出来事の起きやすさの倍率
+  jobs?: Partial<Record<JobId, number>>;               // その職業に就きやすくなる倍率
+  attention?: number;         // 目立ちやすさの足し算 (0–3)
+  fertility?: number;         // 子を授かる確率の倍率
 }
 
 // 自動で選ぶときの性格。慎重=死ににくい方を、無謀=得の大きい方を選ぶ
@@ -254,6 +288,8 @@ export interface Hero {
   status: Status;
   talent: Talent;
   cheat: CheatId | null;
+  traits: string[];     // 持っているスキル・能力・加護・体質・弱点
+  blessing: boolean;
   arrival: Arrival;
   memory: MemoryLevel;
   memoryAwake: boolean; // 前世の記憶が今あるか (awaken は途中で true になる)

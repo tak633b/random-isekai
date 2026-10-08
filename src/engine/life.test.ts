@@ -5,7 +5,7 @@ import { advanceYear, fromSaved, liveOut, toSaved } from './life';
 import type { JobId, Setup, WorldId } from './types';
 
 const plain = (seed: number, preset: WorldId): Setup =>
-  ({ seed, world: { preset }, hero: { race: 'human', status: 'commoner', cheat: 'none', arrival: 'native' }, auto: true });
+  ({ seed, world: { preset }, hero: { race: 'human', status: 'commoner', cheat: 'none', arrival: 'native', traits: [], points: {} }, auto: true });
 
 // 特典なし・平民・人間・現地の生まれ・自動で生きた人生の平均享年 (死んだ年 + 0.5) を、research/03 5-3節の e0 と比べる。
 // 戦争・疫病・飢饉・出産・職業・出来事の危険は別に引くので、その見込みを基準から割り戻してある (mortality.ts の deflate)。

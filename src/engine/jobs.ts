@@ -4,6 +4,7 @@
 // risk は世界の基準のハザードにかける倍率、add は基準に無い死因 (魔法・処刑) や職業そのものの危険に足す年あたりの値
 import type { Hazard, Hero, JobId, StatKey, Status, Talent, World, WorldTag } from './types';
 import { statusRank } from './status';
+import { traitOf } from './traits';
 
 type Mult = Partial<Record<Hazard, number>>;
 
@@ -107,5 +108,6 @@ export const jobsFor = (h: Hero): JobDef[] => jobsIn(h.world, h.status);
 export function jobWeight(h: Hero, j: JobDef): number {
   let w = j.w * (j.talent && j.talent === h.talent ? 3 : 1);
   if (h.status === 'merchant' && j.id === 'merchant') w *= 8;
+  for (const id of h.traits) w *= traitOf(id)?.jobs?.[j.id] ?? 1; // trait の jobs: その職業に就きやすくなる
   return w;
 }
