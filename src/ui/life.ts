@@ -12,7 +12,7 @@ import { aiYearButton } from './aipanel';
 import { aiReady } from '../ai/settings';
 import { ROLE_NAME, STAT_NAME, ageText, jobName } from './labels';
 import { esc, load, save } from './dom';
-import { FF_SPEED, SPEEDS, lifeSpan, loadPlay, quietYear, savePlay, yearSec, type PlayState } from './play';
+import { AFTER_CHOICE_SEC, SPEEDS, lifeSpan, loadPlay, savePlay, scaledMs, yearSec, type PlayState } from './play';
 import { screen, type Nav } from './nav';
 import { L, T } from '../i18n';
 
@@ -76,7 +76,11 @@ export function showLife(h: Hero, nav: Nav, resumed = false): void {
       case 'y1': step(1); break;
       case 'y10': step(10); break;
       case 'end': liveOut(h); break;
-      case 'opt': choose(h, Number(b.dataset.i)); closeModal(); break;
+      case 'opt':
+        choose(h, Number(b.dataset.i)); closeModal();
+        // 選んだ後は、その年の残りを最低 3秒 (1×) 流す
+        progress = Math.min(progress, Math.max(0, 1 - (AFTER_CHOICE_SEC * 1000) / yearMs));
+        break;
       case 'tie': sel = sel === Number(b.dataset.id) ? undefined : Number(b.dataset.id); break;
       case 'exit': stop(); persist(h); savePlay(play); nav.title(); return;
       default: return;
@@ -101,7 +105,7 @@ export function showLife(h: Hero, nav: Nav, resumed = false): void {
   // 年が変わったら、その年に掛ける時間を決め直す
   function newYear(): void {
     progress = 0;
-    yearMs = yearSec(h, span, quietYear(h)) * 1000;
+    yearMs = yearSec(h, span, FIGHT_MS / 1000) * 1000;
   }
 
   function frame(t: number): void {
@@ -110,7 +114,7 @@ export function showLife(h: Hero, nav: Nav, resumed = false): void {
     last = t;
     const waiting = h.pending.length > 0 && !h.auto;
     if (!play.paused && !waiting && h.alive && !document.hidden) {
-      progress += (dt * (ff ? FF_SPEED : play.speed)) / yearMs;
+      progress += dt / scaledMs(yearMs, play.speed, ff);
       let n = 0;
       // 速いときは1フレームに何年か進め、描くのは最後に1回
       while (progress >= 1 && n < 8 && h.alive) {
@@ -143,7 +147,7 @@ export function showLife(h: Hero, nav: Nav, resumed = false): void {
     persist(h);
     // 戦いで倒れた年は、演出を見届けてから
     const lost = h.log.at(-1)?.fight?.result === 'lose' || h.log.some((e) => e.age === h.age && e.fight?.result === 'lose');
-    setTimeout(() => { if (document.getElementById('scenecv') === cv) { stage.destroy(); nav.death(h); } }, reduced ? 300 : lost ? Math.min(FIGHT_MS, yearMs / play.speed) + 800 : 1500);
+    setTimeout(() => { if (document.getElementById('scenecv') === cv) { stage.destroy(); nav.death(h); } }, reduced ? 300 : lost ? Math.min(FIGHT_MS, scaledMs(yearMs, play.speed, ff) * 0.85) + 800 : 1500);
   }
 
   // ---- 選択のモーダル: 選ぶまで年は進まない。Esc では閉じない。Tab はモーダルの中だけを回る
@@ -197,7 +201,7 @@ export function showLife(h: Hero, nav: Nav, resumed = false): void {
     document.getElementById('age')!.textContent = ageText(h.age);
     document.getElementById('wholine')!.textContent = `${h.name}${heq !== h.age ? L(`・人間でいえば${heq}歳`, ` · about ${heq} in human years`) : ''}${L(`・寿命の目安 ${Math.round(span)}年`, ` · lifespan about ${Math.round(span)}`)}`;
     controls();
-    stage.show(h, { budgetMs: yearMs / (ff ? FF_SPEED : play.speed), fast: ff || play.speed >= 8 });
+    stage.show(h, { budgetMs: scaledMs(yearMs, play.speed, ff), fast: ff || play.speed >= 8 });
     const st = h.state;
     const chips = [st.war > 0 && L('戦争中', 'At war'), st.plague > 0 && L('大疫病', 'Plague'), st.famine > 0 && L('飢饉', 'Famine'), st.demonKing && L('魔王がいる', 'A Demon King reigns')].filter(Boolean) as string[];
     document.getElementById('scenecap')!.innerHTML = `${esc(T(h.world.name))}${chips.map((c) => `<span class="chip">${esc(c)}</span>`).join('')}`;

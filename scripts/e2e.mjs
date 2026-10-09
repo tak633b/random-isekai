@@ -72,24 +72,24 @@ async function autoplay(page, lang) {
 async function autoplayChecks(page, lang) {
   const alive = async () => !(await page.locator('.death').count()) && await page.locator('#scenecv').count() > 0;
   if (!(await page.locator('#autobtn.on').count())) await page.click('#autobtn'); // 選択で止まらないように
-  await page.click('[data-act=speed][data-v="4"]');
+  await page.click('[data-act=speed][data-v="8"]'); // 1×は1年10秒なので、8×で数年ぶん
   const a0 = await ageOf(page);
   await page.waitForTimeout(3500);
   if (!(await alive())) { notes.push(`[${lang}] autoplay: died during the wait (still counts as moving)`); return; }
   const a1 = await ageOf(page);
-  if (a1 <= a0) errors.push(`[${lang}] autoplay: age did not move (${a0} -> ${a1})`); else notes.push(`[${lang}] autoplay: ${a0} -> ${a1} in 3.5s at 4x`);
+  if (a1 <= a0) errors.push(`[${lang}] autoplay: age did not move (${a0} -> ${a1})`); else notes.push(`[${lang}] autoplay: ${a0} -> ${a1} in 3.5s at 8x`);
   await page.click('#pausebtn').catch(() => {});
   if (!(await alive())) { notes.push(`[${lang}] autoplay: died before pausing`); return; }
   const p0 = await ageOf(page);
   await page.waitForTimeout(2000);
   if (await ageOf(page) !== p0) errors.push(`[${lang}] pause: age moved while paused`);
-  await page.click('[data-act=speed][data-v="8"]');
-  if ((await pressed(page, '[data-act=speed][data-v="8"]')) !== 'true') errors.push(`[${lang}] speed: 8x not selected`);
+  await page.click('[data-act=speed][data-v="4"]');
+  if ((await pressed(page, '[data-act=speed][data-v="4"]')) !== 'true') errors.push(`[${lang}] speed: 4x not selected`);
   // 選択で止まる: 自動で決めるを切り、16×で選択が来るまで流す
   await page.click('#autobtn');
   await page.click('[data-act=speed][data-v="16"]');
   await page.click('#pausebtn');
-  const got = await page.waitForSelector('#modal:not([hidden]) [data-act=opt]', { timeout: 40000 }).then(() => true).catch(() => false);
+  const got = await page.waitForSelector('#modal:not([hidden]) [data-act=opt]', { timeout: 60000 }).then(() => true).catch(() => false);
   if (!(await alive())) { notes.push(`[${lang}] choice: died before a choice came`); return; }
   if (got) {
     const c0 = await ageOf(page);
@@ -99,7 +99,7 @@ async function autoplayChecks(page, lang) {
     if (await page.locator('#modal[hidden]').count()) errors.push(`[${lang}] choice: Esc closed the modal`);
     await page.keyboard.press('1');
     notes.push(`[${lang}] choice: stopped at ${c0}, chose with key 1`);
-  } else notes.push(`[${lang}] choice: none came within 40s`);
+  } else notes.push(`[${lang}] choice: none came within 60s`);
   await pause(page);
   if (!(await alive())) return;
   // 続きから: 速さ 8×・一時停止の状態で中断して戻る
@@ -152,7 +152,7 @@ async function stageChecks(page, lang, browser) {
   if (!f) { errors.push(`[${lang}] stage: no fight life found`); return; }
   await page.reload();
   await page.click('[data-go=resume]');
-  const sawEnemy = await page.waitForFunction(() => document.getElementById('scenecv')?.dataset.enemy === '1', null, { timeout: 15000 }).then(() => true).catch(() => false);
+  const sawEnemy = await page.waitForFunction(() => document.getElementById('scenecv')?.dataset.enemy === '1', null, { timeout: 40000 }).then(() => true).catch(() => false);
   if (!sawEnemy) errors.push(`[${lang}] stage: no enemy drawn in the fight year (seed ${f.seed}, age ${f.at})`);
   else {
     await page.waitForTimeout(1000);
