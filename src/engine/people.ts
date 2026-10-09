@@ -94,6 +94,16 @@ function metLine(h: Hero, t: Tie): string {
 // ---- 人物像 -----------------------------------------------------------------
 
 // 人物像が無ければ作る (古いセーブ・新しく輪に入った人・生まれた時の家族)。人と輪に入った年で決まるので、何度呼んでも同じ
+// 世界と種族ごとの、人物像に付けられる技の一覧。輪の人ごとに数百の trait を絞り直すと、何千回もの試行で重い。
+// 世界は人生ごとに作り直されるので、絞り込みに効く値を鍵にする
+const skillCache = new Map<string, ReturnType<typeof availableTraits>>();
+function skillsFor(world: Hero['world'], race: Tie['race']) {
+  const key = `${world.tags.join(',')}|${world.magic}|${world.powers}|${world.tech}|${race}`;
+  let list = skillCache.get(key);
+  if (!list) skillCache.set(key, (list = availableTraits(world, race).filter((x) => x.kind === 'skill' || x.kind === 'ability')));
+  return list;
+}
+
 export function ensureProfile(h: Hero, t: Tie): void {
   if (t.profile) return;
   const r = sideRng(h, t, t.since, K_PROFILE);
@@ -106,7 +116,7 @@ export function ensureProfile(h: Hero, t: Tie): void {
   const level = fighter(t) && e >= 14 ? Math.max(1, Math.round(base)) : 1 + Math.floor(r() * 3);
   const p: Profile = { level, personality, met: metLine(h, t), story: [] };
   if (rankJob(t.job)) p.rank = RANKS[Math.min(5, Math.floor(level / 6))];
-  const skills = availableTraits(h.world, t.race).filter((x) => x.kind === 'skill' || x.kind === 'ability');
+  const skills = skillsFor(h.world, t.race);
   const roll = r();
   if (skills.length && e >= 12 && (fighter(t) || roll < 0.5)) {
     p.skill = pickWeighted(r, skills, (x) => (t.job ? x.jobs?.[t.job] ?? 1 : 1)).id;

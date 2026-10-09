@@ -50,7 +50,9 @@ describe('集計の形', () => {
   it('1000回が数秒で終わる', () => {
     const t0 = performance.now();
     runTrials(setup('human'), 1000);
-    expect(performance.now() - t0).toBeLessThan(3000);
+    // 実測 (2026-10-09, M3 Max): 英雄の筋・人物像・転生者を入れる前 353ms、入れた後 798ms。GitHub Actions の機械はおよそ3倍遅い。
+    // 手元の上限は今の倍ほどにして、重くなったらここで気づけるようにする
+    expect(performance.now() - t0).toBeLessThan((globalThis as { process?: { env: Record<string, string | undefined> } }).process?.env.CI ? 6000 : 1600);
   }, 20_000);
 });
 

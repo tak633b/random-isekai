@@ -112,7 +112,7 @@ describe('主人公の乱数の並びを変えない', () => {
     }
     console.log(`享年か死因が変わった人生: ${changed}/1000`);
     expect(changed).toBeLessThan(40);
-  });
+  }, 60_000); // 2000本の人生を生きるので、遅い CI では既定の5秒を越える
 });
 
 describe('alliesFor', () => {
