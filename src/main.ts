@@ -20,6 +20,8 @@ import { CUSTOM, isUnlocked, priceOf, unlock } from './meta/unlocks';
 import { setRandom } from './ui/mode';
 import { showAchievements, showCollection } from './ui/collection';
 import { toast } from './ui/toast';
+import { accountClick, accountHTML, paintAccount } from './ui/account';
+import { accountEnabled, initAccount } from './net/account';
 
 document.documentElement.lang = lang;
 if (isEn) {
@@ -41,6 +43,7 @@ const nav: Nav = {
   achievements: () => showAchievements(nav),
 };
 exposeDev(); // 開発ビルドでだけ window.__ri (本番では何もしない)
+void initAccount(); // ログイン済みなら記録の同期を始める (ログインを出さないビルドでは何もしない)
 
 function title(): void {
   const s = randomSeed();
@@ -66,10 +69,12 @@ function title(): void {
       <button data-go="achievements">${L('実績', 'Achievements')}</button>
     </div>
     <div id="unlockask" role="alertdialog" aria-live="polite" hidden></div>
-    <p class="note">${L('絵も人生もその場で作る。記録はこの端末にだけ残る。幼い子の死や戦争など重い出来事も、その世界の確率どおりに起きる。', 'Every picture and life is made on the spot. Records stay on this device only. Hard things, like children dying or war, happen at that world’s odds.')}</p>
+    ${accountHTML()}
+    <p class="note">${L(`絵も人生もその場で作る。${accountEnabled ? '記録はこの端末に残る (ログインすると、チケット・解放・図鑑・実績はアカウントにも)。' : '記録はこの端末にだけ残る。'}幼い子の死や戦争など重い出来事も、その世界の確率どおりに起きる。`, `Every picture and life is made on the spot. ${accountEnabled ? 'Records stay on this device (sign in to also keep tickets, unlocks, collection and achievements in your account).' : 'Records stay on this device only.'} Hard things, like children dying or war, happen at that world’s odds.`)}</p>
     ${adHTML('title')}
     <footer class="note legal"><a href="about.html${isEn ? '#en' : ''}">${L('このゲームについて', 'About')}</a> · <a href="privacy.html${isEn ? '#en' : ''}">${L('プライバシー', 'Privacy')}</a> · <a href="terms.html${isEn ? '#en' : ''}">${L('利用規約', 'Terms')}</a> · <a href="contact.html${isEn ? '#en' : ''}">${L('お問い合わせ', 'Contact')}</a></footer>
   </main>`, (t) => {
+    if (accountClick(t)) return;
     const lg = t.closest<HTMLElement>('[data-lang]')?.dataset.lang;
     if ((lg === 'ja' || lg === 'en') && lg !== lang) return setLang(lg);
     const go = t.closest<HTMLElement>('[data-go]')?.dataset.go;
@@ -84,6 +89,7 @@ function title(): void {
     if (go === 'memorial') nav.memorial();
   });
   paintAll(document.getElementById('app')!);
+  paintAccount();
 }
 
 // 「設定して転生」: 閉じているあいだは鍵とチケットの進み具合 (例 6/10)

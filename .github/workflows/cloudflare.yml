@@ -37,6 +37,8 @@ jobs:
           VITE_ADSENSE_SLOT_DEATH: ${{ vars.VITE_ADSENSE_SLOT_DEATH }}
           VITE_ADSENSE_SLOT_PAST: ${{ vars.VITE_ADSENSE_SLOT_PAST }}
           VITE_ADSENSE_SLOT_COLLECTION: ${{ vars.VITE_ADSENSE_SLOT_COLLECTION }}
+          # Google でログイン (記録の引き継ぎ) のクライアント ID。秘密ではない。無ければログインなしでビルドされる
+          VITE_GOOGLE_CLIENT_ID: ${{ vars.VITE_GOOGLE_CLIENT_ID }}
       - name: D1 のマイグレーション (まだのものだけ)
         if: env.HAS_CF == 'true'
         run: npx wrangler d1 migrations apply random-isekai-memorial --remote

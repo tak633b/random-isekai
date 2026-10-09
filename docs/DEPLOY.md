@@ -9,6 +9,7 @@ Random Isekai を、自分のドメインで Cloudflare Pages に出し、追悼
 | ゲーム本体 (静的) | Cloudflare Pages | `npm run build` が作る `dist/` (法務ページ・`ads.txt`・`robots.txt` などは `public/` から入る) |
 | 追悼館の API | Pages Functions | `functions/api/[[path]].js` → `server/cf-api.mjs`。道と返す形は `server/server.mjs` (Node 版) と同じ |
 | 追悼館のデータ | Cloudflare D1 | `migrations/0001_memorial.sql` |
+| アカウント (任意) | Pages Functions + D1 | `server/account.mjs`・`migrations/0002_account.sql`。Google でログインした人の記録 (チケット・図鑑・実績など) を端末をまたいで残す。手順 11 |
 | 広告 | Google AdSense | `src/ui/ads.ts` (枠) と `vite.config.ts` (タグ)。ID はビルド時の環境変数 |
 | 出す仕組み | GitHub Actions | `.github/workflows/cloudflare.yml` (テスト → ビルド → D1 マイグレーション → Pages) |
 
@@ -104,6 +105,7 @@ curl -I https://randomisekai.com/ads.txt
   - `CLOUDFLARE_ACCOUNT_ID`: `npx wrangler whoami` が出す Account ID
 - Variables (広告の ID。手順 8 のあとで入れる。空なら広告なしでビルドされる)
   - `VITE_ADSENSE_CLIENT` (`ca-pub-…`)、`VITE_ADSENSE_SLOT_TITLE`、`VITE_ADSENSE_SLOT_DEATH`、`VITE_ADSENSE_SLOT_PAST`、`VITE_ADSENSE_SLOT_COLLECTION`
+  - `VITE_GOOGLE_CLIENT_ID` (Google でログイン。手順 11。空ならログインなしでビルドされる)
 
 ## 7. 自動で出す
 
@@ -148,6 +150,37 @@ EEA・英国・スイスからのアクセスには、Google 認定の同意管�
 - **追悼館だけ止める**: `functions/` を消して出し直すと、ゲームは「追悼館はサーバーで動かすと使える」の案内に切り替わり、ほかはそのまま遊べます。
 - **D1 を前の状態に戻す**: D1 は過去の状態を自動で残しています (無料プランは7日、有料は30日)。`npx wrangler d1 time-travel info random-isekai-memorial` で時点を見て、`npx wrangler d1 time-travel restore random-isekai-memorial --timestamp=<時刻>`。
 - **GitHub Pages に戻す**: pages.yml を再び有効にして push、ドメインの DNS を GitHub Pages に向け直す。
+
+## 11. Google でログイン (記録の引き継ぎ)
+
+入れなければログインの欄は出ず、今までどおり端末だけで遊べます。入れると、タイトルに「Google でログイン」が出て、チケット・解放・図鑑・実績・合計がアカウントに残ります (過去の人生の記録は端末だけ)。サーバーに残すのは Google の番号 (`sub`) と記録だけで、メール・名前は残しません。
+
+1. https://console.cloud.google.com/ でプロジェクトを作る (または選ぶ)
+2. **APIs & Services → OAuth consent screen**: User type は External、アプリ名 `Random Isekai`、サポートのメール、ホームページ `https://randomisekai.com`、プライバシーポリシー `https://randomisekai.com/privacy.html`。スコープは足さない (既定の `openid` だけで足りる)。**Publish app** で本番にする (テストのままだと登録したテストユーザーしかログインできない)
+3. **APIs & Services → Credentials → Create credentials → OAuth client ID**: 種類は **Web application**。**Authorized JavaScript origins** に次を入れる (リダイレクト URI は要らない)
+   - `https://randomisekai.com`
+   - `https://www.randomisekai.com`
+   - `http://localhost:5173` などの手元の origin (下の「手元で確かめる」と同じ port。`http://localhost` も足しておくとよい)
+4. 出た **クライアント ID** (`….apps.googleusercontent.com`。秘密ではない。クライアント シークレットは使わない) を2か所に入れる
+   - GitHub の Variables に `VITE_GOOGLE_CLIENT_ID` (ビルドに入り、画面がボタンを出す)
+   - `wrangler.toml` の `[vars]` に `GOOGLE_CLIENT_ID = "…"` (同じ値。サーバーが ID トークンの宛先を確かめる。秘密ではないのでコミットしてよい)。`wrangler.toml` がある Pages では、変数はダッシュボードではなくこのファイルが正になる
+5. D1 に表を足す。Actions が出すときに `migrations apply --remote` で自動で入る。手で入れるなら
+   ```sh
+   npx wrangler d1 migrations apply random-isekai-memorial --remote
+   ```
+6. 出したあと、タイトルでログイン → 別のブラウザでもログインして、チケットの枚数と実績が同じになることを確かめる
+
+手元で確かめる: ログインの道は Cloudflare 版 (`server/cf-api.mjs` → `server/account.mjs`) にだけあります。Node 版 (`npm run dev:server` と `npm run dev` の組) には無く、ボタンを押しても失敗するだけです。
+
+```sh
+# .env.local (gitignore 済み) に VITE_GOOGLE_CLIENT_ID=123456789-xxxx.apps.googleusercontent.com のように書いておく
+npx vite build
+npx wrangler d1 migrations apply random-isekai-memorial --local
+npx wrangler pages dev --port 5173   # GOOGLE_CLIENT_ID は wrangler.toml の [vars] から
+# http://localhost:5173/ を開く (127.0.0.1 ではなく localhost。登録した origin と同じ port に)
+```
+
+アカウントを消すのは、ログインした人がタイトルの「アカウントを消す」から (表 `account`・`session`・`progress` の行が消える)。問い合わせで頼まれたときは、その人に画面から消してもらうのが確実です。
 
 ## 費用の目安
 

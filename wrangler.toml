@@ -13,3 +13,5 @@ migrations_dir = "migrations"
 # 秘密 (コードに書かない): ADMIN_TOKEN は `npx wrangler pages secret put ADMIN_TOKEN --project-name random-isekai`
 [vars]
 REPORT_HIDE = "3"
+# Google でログインのクライアント ID (秘密ではない)。消すとアカウントの道は 404。docs/DEPLOY.md 手順 11
+GOOGLE_CLIENT_ID = "298399330453-lav4djll5fnm96fljdb56tlomgo3gsqp.apps.googleusercontent.com"

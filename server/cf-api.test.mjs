@@ -1,10 +1,11 @@
 // Cloudflare 版の追悼館 API (server/cf-api.mjs) を、node:sqlite で作った D1 の代わりの上で確かめる。
 // 言葉の網 (server/moderation.mjs) と、ゲームが作る文がその網に掛からないことも
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
 import { join } from 'node:path';
 import { handle, LIMITS } from './cf-api.mjs';
+import { COOKIE, forgetKeys, verifyGoogleIdToken } from './account.mjs';
 import { blocked } from './moderation.mjs';
 import { validEntry } from './validate.mjs';
 import { WORLD_IDS, createHero, liveOut } from '../src/engine';
@@ -16,7 +17,7 @@ const ROOT = join(import.meta.dirname, '..');
 // D1 の使っている所だけを node:sqlite で
 function fakeD1() {
   const db = new DatabaseSync(':memory:');
-  db.exec(readFileSync(join(ROOT, 'migrations', '0001_memorial.sql'), 'utf8'));
+  for (const f of readdirSync(join(ROOT, 'migrations')).sort()) db.exec(readFileSync(join(ROOT, 'migrations', f), 'utf8'));
   const stmt = (sql, args = []) => ({
     bind: (...a) => stmt(sql, a),
     first: async () => db.prepare(sql).get(...args) ?? null,
@@ -26,7 +27,7 @@ function fakeD1() {
       return { meta: { changes: Number(r.changes), last_row_id: Number(r.lastInsertRowid) } };
     },
   });
-  return { raw: db, prepare: (sql) => stmt(sql), batch: (ss) => Promise.all(ss.map((s) => s.all())) };
+  return { raw: db, prepare: (sql) => stmt(sql), batch: async (ss) => { const out = []; for (const s of ss) out.push(await s.all()); return out; } };
 }
 
 const ADMIN = 'test-admin-token-0123456789';
@@ -190,5 +191,209 @@ describe('Cloudflare 版の API', () => {
     let last;
     for (let i = 0; i <= LIMITS.adminFail[0]; i++) last = await call('GET', '/api/admin/reported', { auth: `guess-${i}`, now });
     expect(last.status).toBe(429);
+  });
+});
+
+// ---- アカウント (server/account.mjs) -------------------------------------------
+// Google の代わりに手元で RSA の鍵を作り、JWKS の取得 (fetch) をそれに差し替える
+const CLIENT = 'test-client.apps.googleusercontent.com';
+const ORIGIN = 'https://x.test';
+const { privateKey, publicKey } = await crypto.subtle.generateKey({ name: 'RSASSA-PKCS1-v1_5', modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: 'SHA-256' }, true, ['sign', 'verify']);
+const JWK = { ...(await crypto.subtle.exportKey('jwk', publicKey)), kid: 'k1', use: 'sig', alg: 'RS256' };
+const b64u = (x) => Buffer.from(typeof x === 'string' ? x : new Uint8Array(x)).toString('base64url');
+async function idToken(claims = {}, { kid = 'k1', key = privateKey } = {}) {
+  const t = Math.floor(Date.now() / 1000);
+  const body = `${b64u(JSON.stringify({ alg: 'RS256', kid, typ: 'JWT' }))}.${b64u(JSON.stringify({ iss: 'https://accounts.google.com', aud: CLIENT, sub: '1234567890', iat: t, exp: t + 3600, email: 'x@example.com', ...claims }))}`;
+  return `${body}.${b64u(await crypto.subtle.sign('RSASSA-PKCS1-v1_5', key, new TextEncoder().encode(body)))}`;
+}
+const stubCerts = () => vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ keys: [JWK] }))));
+
+function accountApi() {
+  const env = { DB: fakeD1(), ADMIN_TOKEN: ADMIN, GOOGLE_CLIENT_ID: CLIENT };
+  let cookie = '';
+  const call = async (method, path, { body, origin = ORIGIN, ct = 'application/json', ip = '203.0.113.9', jar = true } = {}) => {
+    const headers = { 'CF-Connecting-IP': ip };
+    if (ct) headers['Content-Type'] = ct;
+    if (origin) headers.Origin = origin;
+    if (cookie && jar) headers.Cookie = `${COOKIE}=${cookie}`;
+    const r = await handle(new Request(`${ORIGIN}${path}`, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) }), env);
+    const sc = r.headers.get('Set-Cookie');
+    if (sc && jar) cookie = sc.split(';')[0].slice(COOKIE.length + 1);
+    return { status: r.status, j: await r.json(), setCookie: sc };
+  };
+  const login = async (claims) => call('POST', '/api/auth/google', { body: { credential: await idToken(claims) } });
+  return { env, call, login, cookie: () => cookie, setCookie: (c) => { cookie = c; } };
+}
+
+describe('アカウント: Google の ID トークン', () => {
+  afterEach(() => { vi.unstubAllGlobals(); forgetKeys(); });
+
+  it('正しいものは sub だけを返す。aud・期限・署名・iss・alg が違えば断る', async () => {
+    stubCerts();
+    expect(await verifyGoogleIdToken(await idToken(), CLIENT)).toEqual({ sub: '1234567890' });
+    expect(await verifyGoogleIdToken(await idToken({ iss: 'accounts.google.com' }), CLIENT)).toEqual({ sub: '1234567890' });
+    const t = Math.floor(Date.now() / 1000);
+    const other = (await crypto.subtle.generateKey({ name: 'RSASSA-PKCS1-v1_5', modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: 'SHA-256' }, true, ['sign'])).privateKey;
+    const bad = {
+      aud: await idToken({ aud: 'someone-else' }),
+      exp: await idToken({ iat: t - 7200, exp: t - 3600 }),
+      iat: await idToken({ iat: t + 3600 }),
+      iss: await idToken({ iss: 'https://evil.example' }),
+      sig: await idToken({}, { key: other }),
+      kid: await idToken({}, { kid: 'nope' }),
+      sub: await idToken({ sub: '' }),
+    };
+    for (const [why, tok] of Object.entries(bad)) await expect(verifyGoogleIdToken(tok, CLIENT), why).rejects.toThrow(why);
+    // 中身を書き換えると署名が合わない
+    const [h, , s] = (await idToken()).split('.');
+    await expect(verifyGoogleIdToken(`${h}.${b64u(JSON.stringify({ iss: 'accounts.google.com', aud: CLIENT, sub: '999', iat: t, exp: t + 60 }))}.${s}`, CLIENT)).rejects.toThrow('sig');
+    await expect(verifyGoogleIdToken(`${b64u('{"alg":"none","kid":"k1"}')}.${b64u('{}')}.`, CLIENT)).rejects.toThrow('alg');
+    await expect(verifyGoogleIdToken('garbage', CLIENT)).rejects.toThrow('shape');
+  });
+});
+
+describe('アカウント: ログイン・記録の同期・削除', () => {
+  afterEach(() => { vi.unstubAllGlobals(); forgetKeys(); });
+
+  it('GOOGLE_CLIENT_ID が無ければ道ごと無い', async () => {
+    const { env, call } = accountApi();
+    delete env.GOOGLE_CLIENT_ID;
+    expect((await call('GET', '/api/auth/me')).status).toBe(404);
+  });
+
+  it('ログイン → me → ログアウト。Cookie は HttpOnly・Secure・SameSite=Lax・Path=/api、D1 には sub とハッシュだけ', async () => {
+    stubCerts();
+    const { env, call, login, cookie } = accountApi();
+    expect((await call('GET', '/api/auth/me')).j.data).toEqual({ signedIn: false });
+    expect((await call('POST', '/api/auth/google', { body: { credential: 'x.y.z' } })).status).toBe(401);
+    const r = await login();
+    expect(r.j).toEqual({ success: true, data: { signedIn: true, provider: 'google' } });
+    for (const part of ['HttpOnly', 'Secure', 'SameSite=Lax', 'Path=/api']) expect(r.setCookie).toContain(part);
+    expect((await call('GET', '/api/auth/me')).j.data).toEqual({ signedIn: true, provider: 'google' });
+    const dump = JSON.stringify([env.DB.raw.prepare('SELECT * FROM account').all(), env.DB.raw.prepare('SELECT * FROM session').all()]);
+    expect(dump).toContain('1234567890');
+    expect(dump).not.toContain(cookie()); // Cookie の値そのものは残さない
+    expect(dump).not.toContain('example.com'); // メールはトークンにあっても残さない
+    // 同じ人がもう一度ログインしてもアカウントは1つ
+    await login();
+    expect(env.DB.raw.prepare('SELECT COUNT(*) AS n FROM account').get().n).toBe(1);
+    expect((await call('POST', '/api/auth/logout')).setCookie).toContain('Max-Age=0');
+    expect((await call('GET', '/api/auth/me')).j.data).toEqual({ signedIn: false });
+  });
+
+  it('CSRF: 状態を変える道は、よその Origin・Origin 無し・JSON でない本文を 403 で断る', async () => {
+    stubCerts();
+    const { call, login } = accountApi();
+    const cred = { credential: await idToken() };
+    expect((await call('POST', '/api/auth/google', { body: cred, origin: 'https://evil.example' })).status).toBe(403);
+    expect((await call('POST', '/api/auth/google', { body: cred, origin: null })).status).toBe(403);
+    expect((await call('POST', '/api/auth/google', { body: cred, ct: 'text/plain' })).status).toBe(403);
+    await login();
+    expect((await call('DELETE', '/api/account', { origin: 'https://evil.example' })).status).toBe(403);
+    expect((await call('PUT', '/api/progress', { body: { data: { v: 1 }, baseRev: 0 }, ct: 'application/x-www-form-urlencoded' })).status).toBe(403);
+    expect((await call('GET', '/api/auth/me')).j.data.signedIn).toBe(true); // 断った呼び出しは何も変えていない
+  });
+
+  it('記録: ログインしないと 401。PUT は合わせて rev を進め、古い rev からの書き込みは合わせ直す', async () => {
+    stubCerts();
+    const { call, login } = accountApi();
+    expect((await call('GET', '/api/progress')).status).toBe(401);
+    await login();
+    expect((await call('GET', '/api/progress')).j.data).toEqual({ data: null, rev: 0 });
+    const ach = (id, at) => ({ [id]: { at, name: 'A', world: 'medieval' } });
+    // 端末 A: 10 枚と実績 x
+    const a1 = await call('PUT', '/api/progress', { body: { data: { v: 1, tickets: 10, unlocked: ['world:dark'], achievements: ach('x', 5) }, baseRev: 0 } });
+    expect(a1.j.data.rev).toBe(1);
+    // 端末 A が rev 1 から 3 枚使った: 送った枚数がそのまま残る (max で戻さない)
+    const a2 = await call('PUT', '/api/progress', { body: { data: { ...a1.j.data.data, tickets: 7 }, baseRev: 1 } });
+    expect(a2.j.data).toMatchObject({ rev: 2, data: { tickets: 7 } });
+    // 端末 B は rev 0 のまま (知らない): 合わせる。チケットは大きい方、実績と解放は両方
+    const b = await call('PUT', '/api/progress', { body: { data: { v: 1, tickets: 4, unlocked: ['race:elf'], achievements: ach('y', 9) }, baseRev: 0 } });
+    expect(b.j.data.rev).toBe(3);
+    expect(b.j.data.data.tickets).toBe(7);
+    expect(b.j.data.data.unlocked).toEqual(['race:elf', 'world:dark']);
+    expect(Object.keys(b.j.data.data.achievements)).toEqual(['x', 'y']);
+    expect((await call('GET', '/api/progress')).j.data).toEqual(b.j.data);
+    // reset: true は合わせずに置き換える (古い rev からでも)
+    const z = await call('PUT', '/api/progress', { body: { data: { v: 1 }, baseRev: 0, reset: true } });
+    expect(z.j.data).toMatchObject({ rev: 4, data: { tickets: 0, unlocked: [], achievements: {} } });
+    // 形の違うもの・大きすぎるものは断る
+    expect((await call('PUT', '/api/progress', { body: { data: { v: 2 }, baseRev: 4 } })).status).toBe(400);
+    expect((await call('PUT', '/api/progress', { body: { data: { v: 1 }, baseRev: 'x' } })).status).toBe(400);
+    expect((await call('PUT', '/api/progress', { body: { data: { v: 1, granted: ['x'.repeat(300 * 1024)] }, baseRev: 3 } })).status).toBe(413);
+  });
+
+  it('アカウントの削除: アカウント・ログイン・記録の行がすべて消え、ほかの人のものは残る', async () => {
+    stubCerts();
+    const { env, call, login } = accountApi();
+    const other = accountApi();
+    other.env.DB = env.DB;
+    await other.login({ sub: 'other-person' });
+    await other.call('PUT', '/api/progress', { body: { data: { v: 1, tickets: 1 }, baseRev: 0 } });
+    await login();
+    await call('PUT', '/api/progress', { body: { data: { v: 1, tickets: 3 }, baseRev: 0 } });
+    expect((await call('DELETE', '/api/account')).j.data).toEqual({ deleted: true });
+    const n = (t) => env.DB.raw.prepare(`SELECT COUNT(*) AS n FROM ${t}`).get().n;
+    expect([n('account'), n('session'), n('progress')]).toEqual([1, 1, 1]);
+    expect(JSON.stringify(env.DB.raw.prepare('SELECT sub FROM account').all())).not.toContain('1234567890');
+    expect((await call('GET', '/api/progress')).status).toBe(401);
+    expect((await other.call('GET', '/api/progress')).j.data.data.tickets).toBe(1);
+  });
+
+  it('ログインと記録の書き込みは制限に掛かる', async () => {
+    stubCerts();
+    const { login } = accountApi();
+    let last;
+    for (let i = 0; i <= LIMITS.loginMin[0]; i++) last = await login();
+    expect(last.status).toBe(429);
+    const { call: c2, login: l2 } = accountApi();
+    await l2();
+    for (let i = 0; i <= LIMITS.progressMin[0]; i++) last = await c2('PUT', '/api/progress', { body: { data: { v: 1 }, baseRev: 0 } });
+    expect(last.status).toBe(429);
+  });
+});
+
+describe('アカウント: クライアント (src/net/account.ts) から', () => {
+  afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); forgetKeys(); });
+
+  it('ログインで端末とサーバの記録を合わせ、以後は書くたびに送る。使ったチケットは戻らない', async () => {
+    const store = await import('../src/meta/store');
+    const acct = await import('../src/net/account');
+    const { env, call, login, cookie } = accountApi();
+    // サーバには別の端末の記録 (実績 x・8 枚) がある
+    stubCerts();
+    await login();
+    await call('PUT', '/api/progress', { body: { data: { v: 1, tickets: 8, achievements: { x: { at: 1, name: 'A', world: 'medieval' } } }, baseRev: 0 } });
+    // この端末のクライアントの fetch を、同じ Cookie をつけて handle に回す
+    const sid = cookie();
+    vi.stubGlobal('fetch', vi.fn(async (url, init = {}) => {
+      if (String(url).startsWith('https://www.googleapis.com/')) return new Response(JSON.stringify({ keys: [JWK] }));
+      return handle(new Request(`${ORIGIN}${url}`, { ...init, headers: { ...init.headers, Origin: ORIGIN, Cookie: `${COOKIE}=${sid}` } }), env);
+    }));
+    store.setStorage(null);
+    store.resetProgress();
+    store.saveProgress({ ...store.newProgress(), tickets: 3, unlocked: ['world:dark'] });
+    vi.useFakeTimers();
+    expect(await acct.signIn(await idToken())).toBe(true);
+    await vi.advanceTimersByTimeAsync(10);
+    await vi.waitFor(() => expect(acct.accountState().syncing).toBe(false));
+    expect(store.loadProgress()).toMatchObject({ tickets: 8, unlocked: ['world:dark'], achievements: { x: { at: 1 } } });
+    // 5 枚使う → 少し待って送られる。サーバも 3 枚 (max で 8 に戻らない)
+    store.saveProgress({ ...store.loadProgress(), tickets: 3 });
+    await vi.advanceTimersByTimeAsync(5000);
+    await vi.waitFor(async () => expect((await call('GET', '/api/progress')).j.data.data.tickets).toBe(3));
+    expect(store.loadProgress().tickets).toBe(3);
+    // ログイン中に「最初から」: アカウントの記録も空になり、次の同期でも戻らない
+    store.resetProgress();
+    await vi.advanceTimersByTimeAsync(10);
+    await vi.waitFor(async () => expect((await call('GET', '/api/progress')).j.data.data).toMatchObject({ tickets: 0, unlocked: [], achievements: {} }));
+    store.saveProgress({ ...store.loadProgress(), unlocked: ['race:elf'] });
+    await vi.advanceTimersByTimeAsync(5000);
+    await vi.waitFor(async () => expect((await call('GET', '/api/progress')).j.data.data.unlocked).toEqual(['race:elf']));
+    expect(store.loadProgress()).toMatchObject({ tickets: 0, unlocked: ['race:elf'], achievements: {} });
+    store.saveProgress({ ...store.loadProgress(), unlocked: ['world:dark'] });
+    await acct.signOut();
+    expect(acct.accountState().signedIn).toBe(false);
+    expect(store.loadProgress().unlocked).toEqual(['race:elf', 'world:dark']); // ログアウトしても端末の記録は残る
   });
 });

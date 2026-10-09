@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>プライバシーポリシー / Privacy Policy | Random Isekai</title>
-<meta name="description" content="Random Isekai のプライバシーポリシー。端末に残るもの、追悼館に送るもの、広告と Cookie について。">
+<meta name="description" content="Random Isekai のプライバシーポリシー。端末に残るもの、追悼館に送るもの、Google でのログイン、広告と Cookie について。">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="legal.css">
 </head>
@@ -14,7 +14,7 @@
 <section lang="ja">
 <h1>プライバシーポリシー</h1>
 <p class="dim">最終更新: 2026年10月9日 ・ 運営者: ainuma</p>
-<p>Random Isekai (以下「本サイト」) は、ブラウザで遊ぶ人生シミュレーションです。会員登録はなく、遊んだ人の名前・メールアドレスなどは集めません。ここでは、どんな情報がどこに置かれ、誰に送られるかを書きます。</p>
+<p>Random Isekai (以下「本サイト」) は、ブラウザで遊ぶ人生シミュレーションです。ログインは任意で、しなくても遊べます。遊んだ人の名前・メールアドレスなどは集めません。ここでは、どんな情報がどこに置かれ、誰に送られるかを書きます。</p>
 
 <h2>1. この端末にだけ残るもの</h2>
 <p>次のものはブラウザの localStorage に保存され、本サイトのサーバーには送られません。ブラウザのサイトデータを消すと消えます。</p>
@@ -30,10 +30,20 @@
 <p>連続投稿を防ぐため、また「報告」を1人1回に数えるため、送信元の IP アドレスを使います。IP アドレスはそのままでは保存せず、秘密の鍵で変換した値 (HMAC) だけを使います。送信量の制限に使う値は最長1日で消し、報告の記録はその追悼の記録が残っている間保存します。</p>
 <p>残した記録を消したいときは、<a href="contact.html">お問い合わせ</a>から追悼館の番号 (No.) を添えて連絡してください。</p>
 
-<h2>3. AI 機能 (任意)</h2>
+<h2>3. Google でログインしたとき (任意)</h2>
+<p>タイトル画面で Google アカウントでログインすると、チケット・解放したもの・図鑑・実績・合計の数などの遊びの積み重ねを本サイトのサーバーに保存し、別の端末やブラウザでも引き継げるようにします。過去の人生の記録と途中の人生は、これまでどおり端末にだけ残ります。</p>
+<ul>
+<li>保存するもの: Google が発行するアカウントの識別番号 (人が読める情報ではない番号) と、上の遊びの記録だけです。メールアドレス・名前・写真は、Google から届いても保存しません。</li>
+<li>ログインの状態を保つため、ブラウザに Cookie (<code>ri_sid</code>、最長180日) を置きます。サーバーにはその値をそのまま残さず、変換した値 (SHA-256) だけを残します。</li>
+<li>ログインの画面とボタンは Google が表示します。そのときの Google での扱いは <a href="https://policies.google.com/privacy?hl=ja" rel="noopener">Google のプライバシーポリシー</a>に従います。</li>
+<li>ログインと記録の送信の回数を制限するため、2 と同じ方法 (IP アドレスの HMAC) を使います。</li>
+<li>消すとき: ログイン中にタイトル画面の「アカウントを消す」を押すと、アカウント・ログインの記録・サーバーの遊びの記録をすぐに消します。端末の記録は残ります。ログアウトしても、サーバーの記録は消えません。</li>
+</ul>
+
+<h2>4. AI 機能 (任意)</h2>
 <p>AI の設定をした場合、ゲームの文の材料と API キーは、ブラウザから直接、選んだ接続先 (OpenRouter、または自分で入力した URL) に送られます。本サイトのサーバーは中継せず、API キーを受け取ることも保存することもありません。送り先での扱いは、それぞれのサービスの規約とプライバシーポリシーに従います。</p>
 
-<h2>4. 広告 (Google AdSense) と Cookie</h2>
+<h2>5. 広告 (Google AdSense) と Cookie</h2>
 <p>本サイトは、第三者配信の広告サービス Google AdSense を利用しています。</p>
 <ul>
 <li>Google などの第三者配信事業者は Cookie を使い、利用者が本サイトや他のサイトに過去にアクセスした情報に基づいて広告を配信します。</li>
@@ -43,21 +53,21 @@
 <li>欧州経済領域 (EEA)・英国・スイスからのアクセスには、Google の認定同意管理ツールで同意を確認してから広告を表示します。</li>
 </ul>
 
-<h2>5. そのほかの外部サービス</h2>
+<h2>6. そのほかの外部サービス</h2>
 <ul>
 <li>ホスティング: Cloudflare (Cloudflare Pages / D1)。配信のため、アクセスの記録 (IP アドレスなど) が Cloudflare で処理されます。</li>
 <li>フォント: Google Fonts。表示の際にブラウザが Google のサーバーからフォントを読み込みます。</li>
 </ul>
 <p>本サイトはアクセス解析ツールを使っていません。</p>
 
-<h2>6. 変更</h2>
+<h2>7. 変更</h2>
 <p>このポリシーを変えるときは、このページを更新し、最終更新日を改めます。</p>
 </section>
 
 <section id="en" lang="en">
 <h1>Privacy Policy</h1>
 <p class="dim">Last updated: 2026-10-09 · Operator: ainuma</p>
-<p>Random Isekai ("this site") is a life simulation game played in the browser. There are no accounts, and we do not collect players' names, email addresses or similar details. This page explains what information is kept where, and who it is sent to.</p>
+<p>Random Isekai ("this site") is a life simulation game played in the browser. Signing in is optional; you can play without it. We do not collect players' names, email addresses or similar details. This page explains what information is kept where, and who it is sent to.</p>
 
 <h2>1. Kept only on your device</h2>
 <p>The following are saved in your browser's localStorage and are never sent to our server. Clearing the site data in your browser deletes them.</p>
@@ -73,10 +83,20 @@
 <p>To prevent flooding and to count each "report" once per person, we use the sender's IP address. It is not stored as is; we only use a value derived from it with a secret key (HMAC). Values used for rate limiting are deleted within one day; report records are kept as long as the entry exists.</p>
 <p>To have an entry removed, <a href="contact.html#en">contact us</a> with its memorial number (No.).</p>
 
-<h2>3. AI features (optional)</h2>
+<h2>3. Signing in with Google (optional)</h2>
+<p>If you sign in with your Google account on the title screen, your progress (tickets, unlocks, collection, achievements and running totals) is saved on our server so you can carry it to other devices and browsers. Past lives and the life in progress stay on your device only, as before.</p>
+<ul>
+<li>What we store: the account identifier Google issues (a number, not readable personal details) and the progress above. We do not store your email address, name or picture, even when Google sends them.</li>
+<li>To keep you signed in, we set a cookie (<code>ri_sid</code>, up to 180 days). Our server does not keep its value, only a hash of it (SHA-256).</li>
+<li>The sign-in window and button are shown by Google. <a href="https://policies.google.com/privacy" rel="noopener">Google's Privacy Policy</a> applies to what happens there.</li>
+<li>To limit sign-ins and progress uploads, we use the same method as in section 2 (an HMAC of your IP address).</li>
+<li>Deleting: while signed in, press "Delete account" on the title screen. Your account, sign-in records and the progress on our server are deleted right away. The records on your device stay. Signing out does not delete the progress on our server.</li>
+</ul>
+
+<h2>4. AI features (optional)</h2>
 <p>If you set up AI, game text and your API key are sent directly from your browser to the service you chose (OpenRouter, or a URL you entered). Our server does not relay these requests and never receives or stores your API key. That service's terms and privacy policy apply.</p>
 
-<h2>4. Advertising (Google AdSense) and cookies</h2>
+<h2>5. Advertising (Google AdSense) and cookies</h2>
 <p>This site uses Google AdSense, a third-party advertising service.</p>
 <ul>
 <li>Third-party vendors, including Google, use cookies to serve ads based on your prior visits to this site or other websites.</li>
@@ -86,14 +106,14 @@
 <li>Visitors from the European Economic Area, the UK and Switzerland are asked for consent through a Google-certified consent management platform before ads are shown.</li>
 </ul>
 
-<h2>5. Other services</h2>
+<h2>6. Other services</h2>
 <ul>
 <li>Hosting: Cloudflare (Cloudflare Pages / D1). Access logs (including IP addresses) are processed by Cloudflare to deliver the site.</li>
 <li>Fonts: Google Fonts. Your browser loads fonts from Google's servers.</li>
 </ul>
 <p>This site does not use analytics tools.</p>
 
-<h2>6. Changes</h2>
+<h2>7. Changes</h2>
 <p>If this policy changes, we will update this page and its date.</p>
 </section>
 </main>

@@ -2,6 +2,7 @@
 // 道と返す形は server/server.mjs と同じ。足したのは 報告 (N 件で非表示) と、管理者の非表示。
 // 残すのはゲームの記録だけ。IP はそのまま残さず、ADMIN_TOKEN を鍵にした HMAC にして制限と報告の数えに使う。
 import { ENUMS, Invalid, LIST_MAX, MAX_BODY, validEntry } from './validate.mjs';
+import { accountRoute } from './account.mjs';
 
 const LANGS = new Set(ENUMS.lang);
 export const REPORT_HIDE = 3; // この人数が報告したら非表示 (env.REPORT_HIDE で変えられる)
@@ -13,6 +14,8 @@ export const LIMITS = {
   candleMin: [20, 60_000],
   reportHour: [10, 3_600_000],
   adminFail: [10, 600_000],
+  loginMin: [10, 60_000],     // IP ごと
+  progressMin: [30, 60_000],  // アカウントごと
 };
 
 const json = (status, body) => new Response(JSON.stringify(body), {
@@ -57,7 +60,7 @@ async function readJson(request) {
   return JSON.parse(t);
 }
 
-/** Request と env ({ DB, ADMIN_TOKEN?, REPORT_HIDE? }) から Response を返す */
+/** Request と env ({ DB, ADMIN_TOKEN?, REPORT_HIDE?, GOOGLE_CLIENT_ID? }) から Response を返す */
 export async function handle(request, env, now = Date.now()) {
   try {
     return await route(request, env, now);
@@ -148,6 +151,9 @@ async function route(request, env, now) {
     }
     return json(200, { success: true, data: { reported: true } });
   }
+
+  const a = await accountRoute(request, env, now, { json, ng, allow, who });
+  if (a) return a;
 
   if (p.startsWith('/api/admin/')) return admin(request, env, db, url, m, now, who);
   return ng(404, 'not found');

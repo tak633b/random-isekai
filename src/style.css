@@ -77,6 +77,10 @@ canvas.face.big { width: 96px; border-color: var(--accent); }
 .subtitle { font-family: var(--dot); color: var(--sub); font-size: 17px; }
 .title .lead { text-align: left; }
 .title .note { text-align: left; }
+.account { text-align: left; margin: 0 0 8px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+.account p { margin: 0 0 8px; }
+.account .gsi { min-height: 32px; }
+.account .bad { color: var(--bad, #e0707a); }
 
 /* 設定 */
 .worlds { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
