@@ -2,7 +2,8 @@
 // 場面・顔と能力・年表・人の輪・その年の危険の内訳が年ごとに変わる。選択が来たらモーダルで止まる。手で 1年 / 10年 / 最後まで も残す
 import type { Hero, StatKey, Tie } from '../engine/types';
 import { advanceYear, choose, deathChance, fromSaved, heqOf, liveOut, raceOf, riskBreakdown, statusName, toSaved, CHEATS, type SavedHero } from '../engine';
-import { drawScene, faceHTML, heroFigure, paintAll, sceneOf, tieFigure } from './pixel';
+import { faceHTML, heroFigure, paintAll, tieFigure } from './pixel';
+import { FIGHT_MS, Stage } from './stage';
 import { barList, fmtPct } from './charts';
 import { logHTML } from './records';
 import { traitTags } from './build';
@@ -89,6 +90,7 @@ export function showLife(h: Hero, nav: Nav, resumed = false): void {
     nextModal();
   });
   const cv = document.getElementById('scenecv') as HTMLCanvasElement;
+  const stage = new Stage(cv);
   const onScreen = () => document.getElementById('scenecv') === cv && !leaving;
   let raf = 0;
 
@@ -139,7 +141,9 @@ export function showLife(h: Hero, nav: Nav, resumed = false): void {
     ending = true;
     stop();
     persist(h);
-    setTimeout(() => { if (document.getElementById('scenecv') === cv) nav.death(h); }, reduced ? 300 : 1500);
+    // 戦いで倒れた年は、演出を見届けてから
+    const lost = h.log.at(-1)?.fight?.result === 'lose' || h.log.some((e) => e.age === h.age && e.fight?.result === 'lose');
+    setTimeout(() => { if (document.getElementById('scenecv') === cv) { stage.destroy(); nav.death(h); } }, reduced ? 300 : lost ? Math.min(FIGHT_MS, yearMs / play.speed) + 800 : 1500);
   }
 
   // ---- 選択のモーダル: 選ぶまで年は進まない。Esc では閉じない。Tab はモーダルの中だけを回る
@@ -182,6 +186,7 @@ export function showLife(h: Hero, nav: Nav, resumed = false): void {
     ab.classList.toggle('on', h.auto);
     ab.setAttribute('aria-pressed', String(h.auto));
     for (const id of ['b1', 'b10']) (document.getElementById(id) as HTMLButtonElement).disabled = h.pending.length > 0;
+    stage.setPaused(play.paused);
     document.getElementById('lifebar')!.style.width = `${Math.min(100, (h.age / span) * 100).toFixed(1)}%`;
   }
 
@@ -192,7 +197,7 @@ export function showLife(h: Hero, nav: Nav, resumed = false): void {
     document.getElementById('age')!.textContent = ageText(h.age);
     document.getElementById('wholine')!.textContent = `${h.name}${heq !== h.age ? L(`・人間でいえば${heq}歳`, ` · about ${heq} in human years`) : ''}${L(`・寿命の目安 ${Math.round(span)}年`, ` · lifespan about ${Math.round(span)}`)}`;
     controls();
-    drawScene(cv, sceneOf(h));
+    stage.show(h, { budgetMs: yearMs / (ff ? FF_SPEED : play.speed), fast: ff || play.speed >= 8 });
     const st = h.state;
     const chips = [st.war > 0 && L('戦争中', 'At war'), st.plague > 0 && L('大疫病', 'Plague'), st.famine > 0 && L('飢饉', 'Famine'), st.demonKing && L('魔王がいる', 'A Demon King reigns')].filter(Boolean) as string[];
     document.getElementById('scenecap')!.innerHTML = `${esc(T(h.world.name))}${chips.map((c) => `<span class="chip">${esc(c)}</span>`).join('')}`;
@@ -205,10 +210,8 @@ export function showLife(h: Hero, nav: Nav, resumed = false): void {
     document.getElementById('me')!.innerHTML = meHTML(h, heq, gamey);
     document.getElementById('ring')!.innerHTML = ringHTML(h, sel);
     const risk = riskBreakdown(h).slice(0, 5);
-    const notes = risk.flatMap((r) => r.notes);
     document.getElementById('risk')!.innerHTML = `<p class="bigrisk">${L('この1年で亡くなる確率', 'Chance of dying this year')} <b>${fmtPct(deathChance(h))}</b></p>
-      ${barList(risk.map((r) => ({ label: r.label, p: r.p })), 'risk')}<p class="note">${L('棒は危険のうちわけ (合計100%)。', 'Bars show how the risk splits (sums to 100%).')}</p>
-      ${notes.length ? `<ul class="risknotes">${notes.map((n) => `<li>${esc(n)}</li>`).join('')}</ul>` : ''}`;
+      ${barList(risk.map((r) => ({ label: r.label, p: r.p, sub: r.notes })), 'risk')}<p class="note">${L('棒は危険のうちわけ (合計100%)。小さな字はそれに効いている力。', 'Bars show how the risk splits (sums to 100%). Small text shows what affects it.')}</p>`;
     paintAll(document.getElementById('app')!);
     // 1年の描き直しにかかった時間 (確かめる用)
     const ms = performance.now() - t0;
@@ -231,11 +234,16 @@ function meHTML(h: Hero, heq: number, gamey: boolean): string {
       <h2 class="pname">${esc(h.name)}</h2>
       <p>${esc(T(raceOf(h.race).name))}${L('・', ' · ')}${esc(statusName(h.status, h.world))}${L('・', ' · ')}${esc(job)}</p>
       <p class="note">${ageText(h.age)}${heq !== h.age ? L(`(人間でいえば${heq}歳)`, ` (about ${heq} in human years)`) : ''}${h.cheat ? `${L('・', ' · ')}${esc(T(CHEATS[h.cheat].name))}` : ''}${h.revives ? L(`・死の取り消し残り${h.revives}回`, ` · can undo death ${h.revives} more ${h.revives === 1 ? 'time' : 'times'}`) : ''}</p>
-      ${gamey ? `<p class="lv">Lv <b>${Math.round(h.level)}</b>${h.rank ? `<span>${L('ギルドランク', 'Guild rank')} <b>${h.rank}</b></span>` : ''}</p>` : ''}
+      ${gamey ? `<p class="lv">Lv <b>${Math.round(h.level)}</b>${h.rank ? `<span>${L('ギルドランク', 'Guild rank')} <b>${h.rank}</b></span>` : ''}${titlesOf(h).map((t) => `<span class="title">${esc(t)}</span>`).join('')}</p>` : ''}
     </div></div>
     ${traitTags(h.traits, h.blessing)}
     <ul class="stats">${STATS.map((k) => `<li><span>${STAT_NAME[k]}</span><i class="meter"><b class="m-${k}" style="width:${h.stats[k]}%"></b></i><em>${Math.round(h.stats[k])}</em></li>`).join('')}</ul>`;
 }
+
+// 称号 (立ったしるしから)
+const TITLES: [string, string, string][] = [['demonKingSlain', '魔王を討った者', 'Demon King’s bane'], ['hero', '勇者', 'Hero'], ['saint', '聖女', 'Saint'],
+  ['lord', '領主', 'Lord'], ['knighted', '騎士', 'Knight'], ['famous', '名の知れた者', 'Renowned'], ['exiled', '追放された者', 'Exile']];
+const titlesOf = (h: Hero): string[] => TITLES.filter(([f]) => h.flags[f] !== undefined).map(([, ja, en]) => L(ja, en));
 
 // 近い順。亡くなった人・離れた人は後ろで薄く
 const order = (a: Tie, b: Tie) => +(!a.alive || a.until !== undefined) - +(!b.alive || b.until !== undefined) || b.bond - a.bond;

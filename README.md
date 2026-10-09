@@ -10,6 +10,10 @@ Play in your browser: https://tak633b.github.io/random-isekai/
 
 ![A life in progress: the scene with family and companions at the top, the timeline on the left, portrait, stats and people on the right](docs/images/life-en.png)
 
+Once you are reborn, the years play out on their own (1× to 16×, pause, skip to the next choice, or let it decide for you). The pixel art moves a little, companions line up behind you as you gain them, and when a year brings monsters, bandits or war, an enemy walks in for a short fight. The outcome is whatever the engine already decided.
+
+![A fight: bandits confront the hero and companions, and the hero wins that year](docs/images/battle-en.png)
+
 ## How it plays
 
 1. On the title screen, choose "Reborn at random" or "Choose your rebirth".

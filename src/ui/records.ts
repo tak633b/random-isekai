@@ -6,6 +6,8 @@ import { ARRIVAL_NAME, KIND_NAME, ROLE_NAME, SEX_NAME, ageText, jobName } from '
 import { esc, load, save } from './dom';
 import { screen, type Nav } from './nav';
 import { aiOf } from './ailog';
+import { kindIcon } from './icons';
+import { FOE_NAME, RESULT_NAME } from './stage';
 import { isEn, L, T } from '../i18n';
 
 const KEY = 'lives';
@@ -68,7 +70,7 @@ export function logHTML(log: Entry[], newest = false): string {
   for (const e of log) years.set(e.age, [...(years.get(e.age) ?? []), e]);
   const ages = [...years.keys()].sort((a, b) => (newest ? b - a : a - b));
   return `<ol class="timeline">${ages.map((a) => `<li class="yr"><span class="yrage">${ageText(a)}</span><ul>${years.get(a)!.map((e) =>
-    `<li class="k-${e.kind}${e.big ? ' big' : ''}" title="${esc(KIND_NAME[e.kind])}">${e.ai ? '<i class="aitag" title="AI">AI</i>' : ''}${esc(e.text)}${e.why ? `<small class="why">${esc(e.why)}</small>` : ''}</li>`).join('')}</ul></li>`).join('')}</ol>`;
+    `<li class="k-${e.kind}${e.big ? ' big' : ''}" title="${esc(KIND_NAME[e.kind])}">${kindIcon(e.kind)}${e.ai ? '<i class="aitag" title="AI">AI</i>' : ''}${esc(e.text)}${e.fight ? `<small class="fight">${L(`vs ${FOE_NAME[e.fight.foe]}・${RESULT_NAME[e.fight.result]}`, `vs ${FOE_NAME[e.fight.foe]}: ${RESULT_NAME[e.fight.result]}`)}</small>` : ''}${e.why ? `<small class="why">${esc(e.why)}</small>` : ''}</li>`).join('')}</ul></li>`).join('')}</ol>`;
 }
 
 export function recordHTML(r: LifeRecord): string {

@@ -40,7 +40,7 @@ async function chooseIfAny(page) {
   if (await opt.count()) { await opt.click(); return true; }
   return false;
 }
-const ageOf = async (page) => Number((await page.locator('#age').innerText()).replace(/\D/g, ''));
+const ageOf = async (page) => Number((await page.locator('#age').innerText({ timeout: 3000 })).replace(/\D/g, ''));
 const pressed = (page, sel) => page.locator(sel).getAttribute('aria-pressed');
 // 人生の画面に入って、手で進める流れのために一時停止する (自動再生は別に確かめる)
 async function enterLife(page) {
@@ -61,7 +61,15 @@ async function pause(page) {
 }
 
 // 自動再生: 放置で年が進む・一時停止で止まる・速さの切り替え・選択で止まる・続きからで状態が戻る
+// 確かめている途中に主人公が亡くなることがある (確率どおり)。そのときは死亡記録へ移るのを待って先へ進む
 async function autoplay(page, lang) {
+  try { await autoplayChecks(page, lang); } catch (e) {
+    const dead = await page.waitForSelector('.page.death', { timeout: 5000 }).then(() => true).catch(() => false);
+    if (!dead) throw e;
+    notes.push(`[${lang}] autoplay: the hero died during the checks`);
+  }
+}
+async function autoplayChecks(page, lang) {
   const alive = async () => !(await page.locator('.death').count()) && await page.locator('#scenecv').count() > 0;
   if (!(await page.locator('#autobtn.on').count())) await page.click('#autobtn'); // 選択で止まらないように
   await page.click('[data-act=speed][data-v="4"]');
@@ -103,6 +111,106 @@ async function autoplay(page, lang) {
   const ok = (await pressed(page, '[data-act=speed][data-v="8"]')) === 'true' && (await pressed(page, '#pausebtn')) === 'true' && await ageOf(page) === before;
   if (!ok) errors.push(`[${lang}] resume: speed/pause/age not restored`); else notes.push(`[${lang}] resume: 8x, paused, age ${before} restored`);
   notes.push(`[${lang}] render ms: last ${await page.locator('#app').getAttribute('data-render-ms')}, max ${await page.locator('#app').getAttribute('data-render-max')}`);
+}
+
+// 動く場面: テスト用の人生を作って「続きから」に入れ、戦いの年・仲間の並ぶ年をその場で見る
+// kind: 'fight' は次の年に戦いがある所、'party' は仲間が2人以上いる所で止めた人生を保存する
+async function plant(page, kind) {
+  return page.evaluate(async (kind) => {
+    const E = await import('/src/engine/index.ts');
+    const PARTY = ['companion', 'mentor', 'spouse', 'lover', 'fiance', 'familiar', 'disciple', 'servant', 'master'];
+    for (let seed = 1; seed < 400; seed++) {
+      const setup = { seed, world: { preset: 'medieval' }, hero: { race: 'human', arrival: 'reborn', blessing: true }, auto: true, policy: 'bold' };
+      const h = E.createHero(setup);
+      let at = -1;
+      for (let i = 0; i < 90 && h.alive; i++) {
+        E.advanceYear(h);
+        const year = h.log.filter((e) => e.age === h.age);
+        if (kind === 'fight' && h.age >= 18 && year.some((e) => e.fight && e.fight.result !== 'lose')) { at = h.age; break; }
+        if (kind === 'party' && h.age >= 20 && E.around(h).filter((t) => PARTY.includes(t.role)).length >= 2) { at = h.age; break; }
+      }
+      if (at < 0) continue;
+      const g = E.createHero(setup);
+      const stopAt = kind === 'fight' ? at - 1 : at;
+      while (g.alive && g.age < stopAt) E.advanceYear(g);
+      if (!g.alive || g.age !== stopAt) continue;
+      localStorage.setItem('current', JSON.stringify(E.toSaved(g)));
+      localStorage.setItem('current-ai', 'null');
+      localStorage.setItem('play', JSON.stringify({ speed: 1, paused: kind === 'party' }));
+      return { seed, at };
+    }
+    return null;
+  }, kind);
+}
+const pixels = (page) => page.evaluate(() => document.getElementById('scenecv').toDataURL());
+
+async function stageChecks(page, lang, browser) {
+  const sfx = lang === 'ja' ? '' : '-en';
+  // 戦い: 1×で次の年に戦いがある人生から再開し、敵が描かれるのを待つ
+  await page.goto(BASE);
+  const f = await plant(page, 'fight');
+  if (!f) { errors.push(`[${lang}] stage: no fight life found`); return; }
+  await page.reload();
+  await page.click('[data-go=resume]');
+  const sawEnemy = await page.waitForFunction(() => document.getElementById('scenecv')?.dataset.enemy === '1', null, { timeout: 15000 }).then(() => true).catch(() => false);
+  if (!sawEnemy) errors.push(`[${lang}] stage: no enemy drawn in the fight year (seed ${f.seed}, age ${f.at})`);
+  else {
+    await page.waitForTimeout(1000);
+    await shot(page, `battle${sfx}.png`, false);
+    notes.push(`[${lang}] battle: seed ${f.seed}, age ${f.at}, caption "${await page.locator('.stagecap').innerText().catch(() => '')}"`);
+  }
+  // 動いている: 0.3秒おきに2回読んで画素が変わる
+  const a = await pixels(page); await page.waitForTimeout(300); const b = await pixels(page);
+  if (a === b) errors.push(`[${lang}] stage: canvas did not change while playing`);
+  // 一時停止で止まる
+  await pause(page);
+  if (await page.locator('#scenecv').count()) {
+    await page.waitForTimeout(250);
+    const c = await pixels(page); await page.waitForTimeout(400); const d = await pixels(page);
+    if (c !== d) errors.push(`[${lang}] stage: canvas changed while paused`);
+  }
+  // 仲間の並ぶ場面 (一時停止のまま再開して撮る) と、動いている様子の連続コマ
+  await page.goto(BASE);
+  const p = await plant(page, 'party');
+  if (!p) notes.push(`[${lang}] party: none found`);
+  else {
+    await page.reload();
+    await page.click('[data-go=resume]');
+    await page.waitForSelector('#scenecv');
+    await page.click('#pausebtn'); // 再生して、加わった仲間が歩いて入ってくるのを待つ
+    await page.waitForTimeout(1500);
+    await shot(page, `party${sfx}.png`, false);
+    const m = await page.evaluate(() => ({ ...document.getElementById('scenecv').dataset }));
+    notes.push(`[${lang}] party: seed ${p.seed}, age ${p.at}; idle redraw ${m.fps}/s, frame avg ${m.frameMs}ms max ${m.frameMax}ms`);
+    if (lang === 'ja') {
+      const frames = [];
+      for (let i = 0; i < 4; i++) { frames.push(await pixels(page)); await page.waitForTimeout(160); }
+      const pg = await browser.newPage({ viewport: { width: 1320, height: 230 } });
+      await pg.setContent(`<body style="margin:0;background:#14121f;display:flex;gap:8px;padding:8px">${frames.map((u) => `<img src="${u}" style="width:320px;image-rendering:pixelated">`).join('')}</body>`);
+      await pg.screenshot({ path: join(OUT, 'anim-frames.png'), fullPage: true });
+      await pg.close();
+    }
+    await pause(page);
+  }
+  // reduced-motion では止まる
+  const ctx2 = await browser.newContext({ viewport: { width: 1280, height: 900 }, reducedMotion: 'reduce' });
+  await ctx2.addInitScript((l) => { try { localStorage.setItem('lang', l); } catch {} }, lang);
+  const r = await ctx2.newPage();
+  r.on('pageerror', (e) => errors.push(`[${lang}] reduced pageerror: ${e.message}`));
+  await r.goto(BASE);
+  await plant(r, 'party');
+  await r.evaluate(() => localStorage.setItem('play', JSON.stringify({ speed: 1, paused: false })));
+  await r.reload();
+  await r.click('[data-go=resume]');
+  await r.waitForSelector('#scenecv');
+  await r.waitForTimeout(300);
+  const x = await pixels(r); await r.waitForTimeout(500); const y = await pixels(r);
+  const age0 = await ageOf(r);
+  if (x !== y && await ageOf(r) === age0) errors.push(`[${lang}] stage: canvas moved under reduced-motion`);
+  else notes.push(`[${lang}] reduced-motion: still`);
+  await ctx2.close();
+  await page.goto(BASE);
+  await page.evaluate(() => { localStorage.removeItem('current'); localStorage.removeItem('play'); });
 }
 
 async function run(lang) {
@@ -301,6 +409,7 @@ async function run(lang) {
   await page.click('.pastlist [data-i="0"]');
   await page.waitForSelector('#pastdetail .record');
   await widths(page, `${lang} past`);
+  await stageChecks(page, lang, browser);
   await browser.close();
 }
 

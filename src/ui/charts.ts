@@ -3,9 +3,10 @@ import { esc } from './dom';
 import { L } from '../i18n';
 
 // 横棒の一覧。p は 0〜1。大きいものほど長い (いちばん大きいものを満杯にする)
-export function barList(rows: { label: string; p: number; note?: string }[], cls = ''): string {
+// sub はその行の下に小さく添える説明 (効いている能力や加護など)
+export function barList(rows: { label: string; p: number; note?: string; sub?: string[] }[], cls = ''): string {
   const top = Math.max(...rows.map((r) => r.p), 1e-9);
-  return `<ul class="bars ${cls}">${rows.map((r) => `<li><span>${esc(r.label)}</span><i><b style="width:${((r.p / top) * 100).toFixed(1)}%"></b></i><em>${r.note ?? fmtPct(r.p)}</em></li>`).join('')}</ul>`;
+  return `<ul class="bars ${cls}">${rows.map((r) => `<li><span>${esc(r.label)}</span><i><b style="width:${((r.p / top) * 100).toFixed(1)}%"></b></i><em>${r.note ?? fmtPct(r.p)}</em>${r.sub?.length ? `<small class="sub">${r.sub.map(esc).join(L('・', '; '))}</small>` : ''}</li>`).join('')}</ul>`;
 }
 
 export const fmtPct = (p: number): string => (p >= 0.1 ? `${Math.round(p * 100)}%` : p >= 0.001 ? `${(p * 100).toFixed(1)}%` : p > 0 ? '<0.1%' : '0%');

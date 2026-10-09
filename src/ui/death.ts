@@ -3,6 +3,7 @@ import type { Hero } from '../engine/types';
 import { randomSeed } from '../engine';
 import { keep, recordHTML, toRecord } from './records';
 import { paintAll } from './pixel';
+import { Stage } from './stage';
 import { memorialAvailable, postMemorial } from '../net/memorial';
 import { memorialOffHTML } from './memorial';
 import { aiEpitaph } from './aipanel';
@@ -37,6 +38,9 @@ export function showDeath(h: Hero, nav: Nav): void {
   });
   const app = document.getElementById('app')!;
   paintAll(app);
+  // 墓の場面: 最後にそばにいた人が静かに立つ
+  const grave = app.querySelector<HTMLCanvasElement>('.record > canvas.scene');
+  if (grave) new Stage(grave).showSpec(r.scene);
   const leave = document.getElementById('leave')!;
   const alive = () => document.getElementById('leave') === leave;
 
