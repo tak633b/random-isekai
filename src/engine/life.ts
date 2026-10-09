@@ -10,7 +10,7 @@ import { CHEATS } from './cheats';
 import { jobOf, jobsFor, jobWeight, JOBS, type JobDef } from './jobs';
 import { statusRank } from './status';
 import { demonKingWorld, hasTag } from './worlds';
-import { deathRecord, drawEvents, eventByRef, eventDecision, newTie, type Die } from './events';
+import { deathRecord, foeFor, isClash, drawEvents, eventByRef, eventDecision, newTie, type Die } from './events';
 import { deathWhy, reviveWhy } from './why';
 import { styleOf, worldNames } from './names';
 import { L, T } from '../i18n';
@@ -35,6 +35,8 @@ export const die: Die = (h, hz) => {
   h.death = deathRecord(h, hz);
   const e = log(h, h.death.text, 'death', true, closest(h).map((t) => t.id), deathWhy(h, hz));
   e.hazard = hz;
+  // 戦いで倒れたなら、その記録にも戦いを付ける (暴力は刃を交えた死だけ。毒や断罪は付けない)
+  if (hz === 'monster' || hz === 'war' || (hz === 'violence' && isClash(h.death.text))) e.fight = { foe: foeFor(h, hz, h.death.text), result: 'lose' };
   h.kinds[h.age] = 'death';
   h.pending = [];
 };
@@ -73,11 +75,11 @@ function draft(h: Hero): void {
   const e = heqOf(h);
   const j = jobOf(h.job);
   if (e < ADULT_HEQ || h.flags.retired !== undefined) return;
-  if (j?.war) { log(h, L(`${T({ ja: j.ja, en: j.en })}として戦に出た。`, `Went to war as a ${j.en.toLowerCase()}.`), 'battle', true); return; }
+  if (j?.war) { log(h, L(`${T({ ja: j.ja, en: j.en })}として戦に出た。`, `Went to war as a ${j.en.toLowerCase()}.`), 'battle', true).fight = { foe: foeFor(h, 'war', ''), result: 'win' }; return; }
   // 徴兵は前近代の軍で多く、近代以降 (tech 7 以上) は職業軍人が主になる
   if (h.sex === 'M' && e < 45 && statusRank(h.status) <= statusRank('commoner') && h.rng() < (h.world.tech >= 7 ? 0.05 : 0.25)) {
     h.flags.drafted = h.age;
-    log(h, L('徴兵され、戦に出ることになった。', 'Was conscripted and sent to war.'), 'battle', true);
+    log(h, L('徴兵され、戦に出ることになった。', 'Was conscripted and sent to war.'), 'battle', true).fight = { foe: foeFor(h, 'war', ''), result: 'win' };
   }
 }
 
@@ -116,7 +118,7 @@ function demonKing(h: Hero): void {
   }
   if (h.flags.hero !== undefined && h.alive && h.rng() < 0.12) {
     s.demonKing = false; h.flags.demonKingSlain = h.age; bump(h, { fame: 40, happy: 15 });
-    log(h, L(...dkLines(h)[2]), 'fame', true);
+    log(h, L(...dkLines(h)[2]), 'fame', true).fight = { foe: 'demon', result: 'win' };
   } else if (h.rng() < 0.05) {
     s.demonKing = false;
     log(h, L(...dkLines(h)[3]), 'family');
@@ -224,7 +226,8 @@ function adultLife(h: Hero, e: number): void {
     const t = lover ?? newTie(h, 'spouse');
     t.role = 'spouse';
     h.flags.married = h.age; delete h.flags.engaged; delete h.flags.widowed; bump(h, { happy: 10 });
-    shared(h, [t], L(`${t.name}と結婚した。`, `Married ${t.name}.`), 'love', 8, true);
+    const e = shared(h, [t], L(`${t.name}と結婚した。`, `Married ${t.name}.`), 'love', 8, true);
+    if (!lover) e.join = [t.id];
   }
   // 子 (結婚していて、人間換算 16〜45歳)。女性の主人公は翌年に産む (その年の出産の危険を受ける)
   const sp = byRole(h, 'spouse');
@@ -239,12 +242,12 @@ function adultLife(h: Hero, e: number): void {
 function born(h: Hero, mother?: Tie): void {
   const c = newTie(h, 'child');
   const sp = byRole(h, 'spouse');
-  shared(h, sp && sp !== c ? [c, sp] : [c], L(`子の${c.name}が生まれた。`, `A child, ${c.name}, was born.`), 'family', 0, true);
+  shared(h, sp && sp !== c ? [c, sp] : [c], L(`子の${c.name}が生まれた。`, `A child, ${c.name}, was born.`), 'family', 0, true).join = [c.id];
   bump(h, { happy: 8 });
   if (mother && h.rng() < maternalRisk(h.world)) {
     mourn(h, mother, -25);
     delete h.flags.married; h.flags.widowed = h.age;
-    log(h, L(`${mother.name}は出産で亡くなった。`, `${mother.name} died in childbirth.`), 'loss', true, [mother.id]);
+    log(h, L(`${mother.name}は出産で亡くなった。`, `${mother.name} died in childbirth.`), 'loss', true, [mother.id]).leave = [mother.id];
   }
 }
 
@@ -359,7 +362,7 @@ function siblings(h: Hero): void {
   if (!m || heqOf(h) >= 14 || heq(m.age, raceOf(m.race)) >= 42) return;
   if (h.rng() < Math.min(0.25, raceOf(m.race).fertility * 0.5)) {
     const s = newTie(h, 'sibling');
-    shared(h, [s], L(`下のきょうだいの${s.name}が生まれた。`, `A younger sibling, ${s.name}, was born.`), 'family');
+    shared(h, [s], L(`下のきょうだいの${s.name}が生まれた。`, `A younger sibling, ${s.name}, was born.`), 'family').join = [s.id];
   }
 }
 

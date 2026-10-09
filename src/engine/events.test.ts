@@ -193,6 +193,39 @@ describe('職業の変化を語る出来事', () => {
   }, 60_000);
 });
 
+// 実測 (2026-10-09, おまかせの人生 500人): 1つの人生あたりの戦いの記録は 0.98 (wa) 〜 2.34 (modern)、10年あたり 0.15 (宇宙) 〜 0.46 (dark)。
+// 相手はダークで屍 (undead) が約3割、宇宙は機械 (machine) が7割・サイバーパンクは6割、現代は魔物 (ダンジョン) が8割
+describe('戦いと仲間の出入りの記録', () => {
+  const lives = Array.from({ length: 200 }, (_, i) => liveOut(createHero({ seed: i + 1, world: { preset: 'dark' }, hero: {}, auto: true })));
+  it('魔物の多い世界では戦いの記録が出て、相手と結果が決まっている', () => {
+    const fights = lives.flatMap((h) => h.log.filter((e) => e.fight));
+    expect(fights.length).toBeGreaterThan(100);
+    expect(new Set(fights.map((e) => e.fight!.foe)).has('undead')).toBe(true);
+    expect(new Set(fights.map((e) => e.fight!.result))).toEqual(new Set(['win', 'hurt', 'flee', 'lose']));
+  });
+  it('lose の記録の年に主人公が亡くなっている', () => {
+    let n = 0;
+    for (const h of lives) for (const e of h.log) if (e.fight?.result === 'lose') { n++; expect(h.alive).toBe(false); expect(e.age).toBe(h.age); }
+    expect(n).toBeGreaterThan(0);
+  });
+  it('join と leave の id は people に実在し、leave の人は亡くなっているか離れている', () => {
+    let joins = 0, leaves = 0;
+    for (const h of lives) {
+      const ids = new Map(h.people.map((t) => [t.id, t]));
+      for (const e of h.log) {
+        for (const id of e.join ?? []) { joins++; expect(ids.has(id)).toBe(true); }
+        for (const id of e.leave ?? []) { leaves++; const t = ids.get(id)!; expect(t).toBeTruthy(); expect(!t.alive || t.until !== undefined).toBe(true); }
+      }
+    }
+    expect(joins).toBeGreaterThan(0);
+    expect(leaves).toBeGreaterThan(0);
+  });
+  it('同じ seed なら戦いと出入りの記録も一致する', () => {
+    const again = liveOut(createHero({ seed: 7, world: { preset: 'dark' }, hero: {}, auto: true }));
+    expect(again.log).toEqual(lives[6].log);
+  });
+});
+
 describe('選択肢', () => {
   const choice = ev({
     id: 't.choice', ja: '分かれ道', en: 'a fork',

@@ -254,7 +254,17 @@ export interface LogEntry {
   why?: string;         // なぜそうなったかの一行
   who?: number[];       // 関わった人 (Tie.id)
   hazard?: Hazard;      // 死亡の記録なら死因の分類
+  fight?: Fight;        // 戦いの出来事なら、相手と結果 (場面の演出用。結果はエンジンが決めたもの)
+  join?: number[];      // この出来事で輪に加わった人 (Tie.id)
+  leave?: number[];     // この出来事で離れた・亡くなった人 (Tie.id)
 }
+
+// 戦いの相手の大分類。絵は世界ごとに描き分ける (ui/enemy.ts)
+export type Foe = 'monster' | 'beast' | 'bandit' | 'soldier' | 'undead' | 'dragon' | 'demon' | 'machine';
+export interface Fight { foe: Foe; result: 'win' | 'hurt' | 'flee' | 'lose' } // lose はその戦いで亡くなった
+
+// 立ち絵の姿勢 (ui/sprite.ts)。コマ数は sprite.ts の POSE_FRAMES
+export type Pose = 'idle' | 'walk' | 'attack' | 'hurt' | 'down' | 'cheer'
 
 export interface Option {
   label: string;
@@ -360,6 +370,7 @@ export interface EventDef {
   eff?: Partial<Record<StatKey | 'level', number>>; // 能力の増減
   set?: string;               // 立てるしるし (hero / saint / knighted / lord は職業も 勇者 / 聖女 / 騎士 / 領主 に変わる)
   job?: JobId;                // この出来事で就く職業 (弟子入り・入門・任官など、文が職業の変化を語るとき)
+  foe?: Foe;                  // 戦いの相手 (省略なら文と世界から決める。risk が魔物・戦・暴力か kind が battle の出来事が戦いになる)
   tie?: { role: Role; new?: boolean; d?: number; dies?: boolean }; // 輪の人と共有する (new: その役の人を新しく作る。d: 近さの変化。dies: この出来事でその人が亡くなる)
   risk?: { hazard: Hazard; p: number };              // この出来事でその年に亡くなりうる追加の確率
   why?: Text;                 // なぜの一行 (省略可)

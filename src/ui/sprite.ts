@@ -1,6 +1,6 @@
 // 立ち絵 32×48 の全身。2〜3頭身の RPG 風。背景は透明のままで、足元が下端。
 // 体の寸法・色・服・持ち物は look.ts が決める。最後に 1px の暗い輪郭を付けて、どんな背景からも浮くようにする。
-import type { Figure } from '../engine/types';
+import type { Figure, Pose } from '../engine/types';
 import { lookOf, type Item, type Look } from './look';
 import { mixc, Pix, tones } from './raster';
 
@@ -8,13 +8,53 @@ export const SW = 32, SH = 48;
 const DARK = '#1a1018';
 const WOOD = tones('#7a5232'), STEEL = tones('#9aa2b0'), GOLD = tones('#d8b050'), PAPER = '#f0ece0';
 
-export function paintSprite(f: Figure): Pix {
+// 姿勢ごとのコマ数。frame はこの数で割った余りを使う
+export const POSE_FRAMES: Record<Pose, number> = { idle: 4, walk: 4, attack: 3, hurt: 2, down: 1, cheer: 2 };
+
+type Arm = 'down' | 'up' | 'out';
+type Fx = 'slash' | 'punch' | 'magic' | 'shot' | 'arrow';
+interface Motion {
+  dx: number; dy: number; jump: number;      // 上半身のずれ・全身の跳び
+  lift: [number, number]; arm: [Arm, Arm]; swing: [number, number];
+  eyes: 'open' | 'shut' | 'hurt'; mouth: boolean; sway: number; fx?: Fx; items: boolean;
+}
+const MAGIC: Item[] = ['staff', 'skull', 'holy', 'cross', 'ofuda', 'book', 'whisk', 'tablet', 'flask'];
+
+function motionOf(o: Look, pose: Pose, fr: number): Motion {
+  const m: Motion = { dx: 0, dy: 0, jump: 0, lift: [0, 0], arm: ['down', 'down'], swing: [0, 0], eyes: 'open', mouth: false, sway: 0, items: true };
+  const it = o.item;
+  switch (pose) {
+    case 'idle': m.dy = fr >= 2 ? 1 : 0; m.sway = m.dy; if (fr === 3) m.eyes = 'shut'; break;
+    case 'walk': m.dy = fr & 1 ? -1 : 0; m.lift = fr === 0 ? [2, 0] : fr === 2 ? [0, 2] : [0, 0]; m.swing = fr === 0 ? [1, -1] : fr === 2 ? [-1, 1] : [0, 0]; m.sway = fr & 1; break;
+    case 'attack':
+      if (it === 'bow' || it === 'gun') { m.arm = fr < 2 ? ['out', 'out'] : ['down', 'down']; m.dx = fr === 1 ? 1 : 0; if (fr === 1) m.fx = it === 'bow' ? 'arrow' : 'shot'; }
+      else if (it && MAGIC.includes(it)) { m.arm = fr === 0 ? ['out', 'down'] : ['up', 'down']; m.dy = fr === 2 ? 1 : 0; if (fr === 1) m.fx = 'magic'; }
+      else { m.arm = fr === 0 ? ['up', 'down'] : fr === 1 ? ['out', 'down'] : ['down', 'down']; m.dx = fr === 0 ? 1 : -1; m.swing = fr === 2 ? [1, 0] : [0, 0]; if (fr === 1) m.fx = it ? 'slash' : 'punch'; }
+      m.mouth = fr === 1; break;
+    case 'hurt': m.dx = 1 + fr; m.dy = fr; m.swing = [-1, -1]; m.eyes = 'hurt'; m.mouth = true; m.sway = -1; break;
+    case 'cheer': m.arm = ['up', 'up']; m.jump = fr ? -2 : 0; m.mouth = true; if (fr) m.eyes = 'shut'; break;
+    case 'down': m.eyes = 'shut'; m.items = false; break;
+  }
+  return m;
+}
+
+// pose を省くと今までどおりの立ち姿
+export function paintSprite(f: Figure, pose: Pose = 'idle', frame = 0): Pix {
+  const P = draw(f, pose, ((frame % POSE_FRAMES[pose]) + POSE_FRAMES[pose]) % POSE_FRAMES[pose]);
+  return pose === 'down' ? layDown(P) : P;
+}
+
+function draw(f: Figure, pose: Pose, frame: number): Pix {
   const o = lookOf(f);
+  const m = motionOf(o, pose, frame);
   const P = new Pix(SW, SH);
   // 半透明 (スライム・妖精の羽・光) は最後に alpha を下げる。上から別の色を塗れば消える
   const glass = new Uint8Array(SW * SH);
+  // 描く位置のずれ。上半身・脚で切り替える
+  let ox = m.dx, oy = m.dy + m.jump;
+  const upper = () => { ox = m.dx; oy = m.dy + m.jump; };
   const px = (x: number, y: number, c: string, g = 0, raw = false) => {
-    x = Math.floor(x); y = Math.floor(y);
+    x = Math.floor(x + ox); y = Math.floor(y + oy);
     if (x < 0 || y < 0 || x >= SW || y >= SH) return;
     P.px(x, y, c, 1, raw); glass[y * SW + x] = g;
   };
@@ -39,11 +79,11 @@ export function paintSprite(f: Figure): Pix {
   const hcy = ht + hh / 2;
   const inHead = (x: number, y: number, g = 0) => ((x + 0.5 - 16) / (hw / 2 + g)) ** 2 + ((y + 0.5 - hcy) / (hh / 2 + g)) ** 2 <= 1;
   const eyeY = ht + Math.round(hh * 0.55), e = Math.round(hw * 0.25);
-  const armLen = Math.max(3, o.body - 1), handY = top + armLen;
-  const LH: [number, number] = [x0 - 2, handY - 1], RH: [number, number] = [x1 + 1, handY - 1];
+  const armLen = Math.max(3, o.body - 1);
+  let LH: [number, number] = [x0 - 2, top + armLen - 1], RH: [number, number] = [x1 + 1, top + armLen - 1];
 
   // ---- 背中 ----
-  if (o.cape) { const c = tones(o.cape); for (let y = top + 1; y < Math.min(47, legTop + o.leg - 2); y++) { const g = Math.min(3, (y - top) >> 2); box(x0 - 1 - g, y, w + 2 + g * 2, 1, (y & 1) ? c[0] : c[1]); } }
+  if (o.cape) { const c = tones(o.cape); for (let y = top + 1; y < Math.min(47, legTop + o.leg - 2); y++) { const g = Math.min(3, (y - top) >> 2); box(x0 - 1 - g + (y > legTop - 4 ? m.sway : 0), y, w + 2 + g * 2, 1, (y & 1) ? c[0] : c[1]); } }
   if (o.back === 'pack') { box(x0 - 1, top - 1, w + 2, o.body - 1, WOOD[1]); box(x0, top - 3, w, 2, '#8a7a5a'); }
   if (o.back === 'quiver') { box(x1 - 2, top - 4, 3, o.body, '#6a4a2a'); for (const dx of [-2, -1, 0]) { px(x1 + dx, top - 6, '#e8e0d0'); px(x1 + dx, top - 5, '#c03a2a'); } }
   if (o.back === 'greatsword') { line([[x1 + 2, top - 6], [x0 - 2, legTop + 3]], 1.2, STEEL); box(x1, top - 7, 3, 2, WOOD[1]); box(x1 - 1, top - 5, 5, 1, GOLD[1]); }
@@ -80,7 +120,8 @@ export function paintSprite(f: Figure): Pix {
     if (H === 'twin') for (const s of [-1, 1]) line([[s < 0 ? hx0 : hx1, ht + 3], [s < 0 ? hx0 - 2 : hx1 + 2, eyeY + 1], [s < 0 ? hx0 - 2 : hx1 + 2, hb + 4]], 1.6, hr, J);
   }
 
-  // ---- 脚 ----
+  // ---- 脚 ---- (上半身が上へずれても隙間が出ないよう、腰の2行上から描く)
+  ox = 0; oy = m.jump;
   const lw = Math.max(2, w / 2 - 1);
   const legC = o.kind === 'suit' ? tones(mixc(o.cloth, '#140c10', 0.2)) : tones(o.pants);
   if (o.fish) {
@@ -89,12 +130,15 @@ export function paintSprite(f: Figure): Pix {
   } else if (o.jelly) {
     for (let y = legTop - 1; y < 48; y++) { const hwid = w / 2 + (y - legTop) * 0.7; for (let x = Math.floor(16 - hwid); x < 16 + hwid; x++) px(x, y, y === 47 || x < 16 - hwid + 1 ? sk[0] : (x + y) % 7 === 0 ? sk[3] : sk[1], 1); }
   } else for (const lx of [15 - lw, 17]) {
-    box(lx, legTop, lw, o.leg, lx < 16 ? legC[0] : legC[1]);
+    oy = m.jump - m.lift[lx < 16 ? 0 : 1];
+    box(lx, legTop - 2, lw, o.leg + 2, lx < 16 ? legC[0] : legC[1]);
     const bh = Math.min(2, o.leg - 1), fx = lx < 16 ? lx - 1 : lx;
     if (o.leg > 2) box(fx, 48 - bh, lw + 1, bh, o.barefoot ? sk[1] : o.boots);
     if (o.leg > 4 && !o.barefoot) box(lx, 48 - bh - 1, lw, 1, mixc(o.boots, '#140c10', 0.3));
   }
+  oy = m.jump;
   if (o.kind === 'kimono' && o.item === 'katana') box(x0 - 1, legTop, w + 2, o.leg - 1, tr[1]);
+  upper();
 
   // ---- 胴 ----
   const robeTo = o.kind === 'robe' ? 47 : o.kind === 'dress' ? legTop + Math.round(o.leg * 0.7) : o.kind === 'coat' ? legTop + Math.round(o.leg * 0.55) : legTop + (o.kind === 'rags' ? 1 : 0);
@@ -121,11 +165,21 @@ export function paintSprite(f: Figure): Pix {
 
   // ---- 腕 ----
   const sleeve = o.kind === 'rags' || o.item === 'hammer' ? sk : body;
-  for (const [ax, c] of [[x0 - 2, sleeve[0]], [x1 + 1, sleeve[1]]] as [number, string][]) {
-    box(ax, top + 1, 2, armLen - 1, c, o.kind === 'rags' ? J : 0);
-    if (o.kind !== 'rags' && o.item !== 'hammer') box(ax, top + 1, 2, Math.ceil(armLen / 2), ax < 16 ? body[0] : body[1]);
+  for (const i of [0, 1]) {
+    const s = i ? 1 : -1, ax = i ? x1 + 1 : x0 - 2, mode = m.arm[i];
+    const c = o.mech && i ? s2[1] : sleeve[i], upperC = o.mech && i ? s2[1] : body[i];
+    const bare = o.kind === 'rags' || o.item === 'hammer';
+    let hand: [number, number];
+    if (mode === 'up') { box(ax + s, top - 3, 2, 5, c); if (!bare) box(ax + s, top - 1, 2, 3, upperC); hand = [ax + s, top - 5]; }
+    else if (mode === 'out') { const L = 4, hx = ax + s * L; box(Math.min(ax, hx + 2), top + 1, L, 2, bare ? c : upperC); hand = [hx, top + 1]; }
+    else {
+      const len = armLen - 1 + m.swing[i];
+      box(ax, top + 1, 2, len, c, o.kind === 'rags' ? J : 0);
+      if (!bare) box(ax, top + 1, 2, Math.ceil(armLen / 2), upperC);
+      hand = [ax, top + len];
+    }
+    if (i) RH = hand; else LH = hand;
   }
-  if (o.mech) box(x1 + 1, top + 1, 2, armLen + 1, s2[1]);
   if (metal) for (const ax of [x0 - 2, x1]) { box(ax, top, 3, 2, body[2]); px(ax + 1, top, body[3]); }
 
   // ---- 頭 ----
@@ -150,6 +204,8 @@ export function paintSprite(f: Figure): Pix {
   const eL = 16 - e - 2, eR = 15 + e;
   if (o.alien) for (const ex of [eL, eR]) { box(ex, eyeY - 1, 2, 2, DARK); px(ex + (ex < 16 ? -1 : 2), eyeY - 2, DARK); px(ex + (ex < 16 ? 0 : 1), eyeY - 2, DARK); }
   else for (const ex of [eL, eR]) {
+    if (m.eyes === 'shut') { box(ex, eyeY, 2, 1, DARK); continue; }
+    if (m.eyes === 'hurt') { const l = ex < 16; px(ex + (l ? 0 : 1), eyeY - 1, DARK); px(ex + (l ? 1 : 0), eyeY, DARK); px(ex + (l ? 0 : 1), eyeY + 1, DARK); continue; }
     if (o.mech && ex === eR) { box(ex, eyeY - 1, 2, 2, s2[1]); px(ex, eyeY, '#ff4040', 0, true); continue; }
     if (o.pupil === 'black') { box(ex, eyeY - 1, 2, 2, DARK); px(ex + (ex < 16 ? 1 : 0), eyeY, o.eye); continue; }
     if (o.pupil === 'glow') { box(ex, eyeY - 1, 2, 2, o.eye, 0); px(ex, eyeY - 1, '#ffffff', 0, true); continue; }
@@ -158,7 +214,7 @@ export function paintSprite(f: Figure): Pix {
   }
   if (o.snout) { px(15, eyeY + 3, DARK); px(16, eyeY + 3, DARK); }
   else if (!o.alien) {
-    box(15, eyeY + 2 + (hh > 12 ? 1 : 0), 2, 1, mixc(o.skin, '#7a2a2a', 0.4));
+    box(15, eyeY + 2 + (hh > 12 ? 1 : 0), 2, m.mouth ? 2 : 1, m.mouth ? '#6a1a24' : mixc(o.skin, '#7a2a2a', 0.4));
     if (o.blush) { px(eL - 1, eyeY + 1, '#e88a8a'); px(eR + 2, eyeY + 1, '#e88a8a'); }
     if (o.fangs) px(16, eyeY + 4, '#ffffff');
     if (o.tusks) { px(13, eyeY + 2, '#ece4c8'); px(18, eyeY + 2, '#ece4c8'); }
@@ -223,12 +279,13 @@ export function paintSprite(f: Figure): Pix {
   if (o.collar) { box(x0 + 2, top, w - 4, 1, '#6a6a72'); px(16, top + 1, '#8a8a94'); }
 
   // ---- 持ち物 ----
-  if (o.item) item(o.item, LH, -1, { px, box, line }, o, top, legTop);
-  if (o.off) item(o.off, RH, 1, { px, box, line }, o, top, legTop);
+  if (o.item && m.items) item(o.item, LH, -1, { px, box, line }, o, top, legTop);
+  if (o.off && m.items) item(o.off, RH, 1, { px, box, line }, o, top, legTop);
   for (const [hx, hy] of [LH, RH]) box(hx, hy, 2, 2, o.mech && hx > 16 ? s2[2] : sk[1], J);
-  if (o.off === 'shield') shield(RH, { px, box, line }, o);
+  if (o.off === 'shield' && m.items) shield(RH, { px, box, line }, o);
 
   outline(P);
+  if (m.fx) effect(m.fx, LH, o, px);
   for (let i = 0; i < glass.length; i++) if (glass[i]) P.d[i * 4 + 3] = glass[i] === 1 ? 190 : 140;
   if (f.dead) P.grey();
   return P;
@@ -335,7 +392,7 @@ function item(it: Item, [hx, hy]: [number, number], s: number, { px, box, line }
 }
 
 // 1px の輪郭: 描いていない画素で、隣に描いた画素があれば、その色を暗くして塗る
-function outline(P: Pix): void {
+export function outline(P: Pix): void {
   const d = P.d, src = new Uint8ClampedArray(d);
   for (let y = 0; y < P.h; y++) for (let x = 0; x < P.w; x++) {
     const i = (y * P.w + x) * 4;
@@ -350,4 +407,36 @@ function outline(P: Pix): void {
       break;
     }
   }
+}
+
+// 攻撃の光 (輪郭の後に描く。半透明)
+function effect(fx: Fx, [hx, hy]: [number, number], o: Look, px: Pen['px']): void {
+  if (fx === 'slash') for (let a = -1.6; a <= 1.6; a += 0.12) for (const [r, c] of [[8, '#ffffff'], [7, '#fff0b0']] as [number, string][]) px(hx + 1 - Math.cos(a) * r * 0.8, hy + 2 + Math.sin(a) * r, c, 2, true);
+  if (fx === 'punch') for (const [dx, dy] of [[0, 0], [-1, 0], [1, 0], [0, -1], [0, 1], [-2, -2], [2, 2], [-2, 2], [2, -2]]) px(hx - 3 + dx, hy + 1 + dy, dx || dy ? '#fff0a0' : '#ffffff', 2, true);
+  if (fx === 'magic') {
+    const c = o.item === 'skull' ? '#c080ff' : o.item === 'holy' || o.item === 'cross' ? '#fff0a0' : o.item === 'ofuda' ? '#ff9080' : '#a0e8ff';
+    for (let a = 0; a < 6.28; a += 0.785) px(hx + 0.5 + Math.cos(a) * 4, hy - 15 + Math.sin(a) * 4, c, 2, true);
+    for (const [dx, dy] of [[0, 0], [-1, 0], [1, 0], [0, -1], [0, 1]]) px(hx + dx, hy - 15 + dy, '#ffffff', 2, true);
+  }
+  if (fx === 'shot') { for (const [dx, dy] of [[0, 0], [-1, 0], [0, -1], [0, 1], [-2, 0]]) px(hx - 7 + dx, hy + dy, '#fff0a0', 2, true); for (let x = 0; x < hx - 9; x += 2) px(x, hy, '#ffe080', 2, true); }
+  if (fx === 'arrow') { for (let x = 0; x < hx - 2; x++) px(x, hy + 1, x < 2 ? '#e8e8f0' : '#8a5a2a'); px(hx - 3, hy, '#ffffff'); px(hx - 3, hy + 2, '#ffffff'); }
+}
+
+// 倒れた姿: 描いた絵を左へ 90° 倒して (頭が左)、足元に寝かせる。背丈が枠の幅を越えるときは縮める
+export function layDown(P: Pix): Pix {
+  let t = P.h, b = -1, l = P.w, r = -1;
+  for (let y = 0; y < P.h; y++) for (let x = 0; x < P.w; x++) if (P.d[(y * P.w + x) * 4 + 3]) { t = Math.min(t, y); b = Math.max(b, y); l = Math.min(l, x); r = Math.max(r, x); }
+  const Q = new Pix(P.w, P.h);
+  if (b < 0) return Q;
+  const h = b - t + 1, k = Math.max(1, h / P.w), n = Math.floor(h / k), x0 = Math.floor((P.w - n) / 2);
+  for (let dx = 0; dx < n; dx++) {
+    const sy = t + Math.floor(dx * k);
+    for (let sx = l; sx <= r; sx++) {
+      const dy = P.h - 1 - (sx - l);
+      if (dy < 0) continue;
+      const i = (sy * P.w + sx) * 4, j = (dy * P.w + x0 + dx) * 4;
+      for (let c = 0; c < 4; c++) Q.d[j + c] = P.d[i + c];
+    }
+  }
+  return Q;
 }

@@ -18,6 +18,7 @@ const errors = [];
 const overflow = [];
 const notes = [];
 const OFF = process.env.MEMORIAL === 'off';
+let current = null; // 失敗したときに画面を残す
 
 async function widths(page, name) {
   const size = page.viewportSize();
@@ -33,11 +34,75 @@ async function widths(page, name) {
 
 const shot = (page, file, full = true) => page.screenshot({ path: join(OUT, file), fullPage: full });
 
-// 選択が出ていれば最初の選択肢を選ぶ。選んだら true
+// 選択のモーダルが出ていれば最初の選択肢を選ぶ。選んだら true
 async function chooseIfAny(page) {
-  const opt = page.locator('#decision [data-act=opt]').first();
+  const opt = page.locator('#modal:not([hidden]) [data-act=opt]').first();
   if (await opt.count()) { await opt.click(); return true; }
   return false;
+}
+const ageOf = async (page) => Number((await page.locator('#age').innerText()).replace(/\D/g, ''));
+const pressed = (page, sel) => page.locator(sel).getAttribute('aria-pressed');
+// 人生の画面に入って、手で進める流れのために一時停止する (自動再生は別に確かめる)
+async function enterLife(page) {
+  await page.click('[data-go=live]');
+  await page.waitForSelector('#scenecv');
+  await pause(page);
+}
+// 最後まで進めて死亡記録を待つ (選択のモーダルが出ていれば先に選ぶ。亡くなった直後の間にも対応)
+async function finish(page) {
+  for (let i = 0; i < 5 && await chooseIfAny(page); i++);
+  if (!(await page.locator('.page.death').count())) await page.click('[data-act=end]', { timeout: 3000 }).catch(() => {});
+  await page.waitForSelector('.page.death', { timeout: 60000 });
+}
+async function pause(page) {
+  for (let i = 0; i < 5 && await chooseIfAny(page); i++);
+  if (await page.locator('.death').count() || !(await page.locator('#pausebtn').count())) return;
+  if ((await pressed(page, '#pausebtn')) !== 'true') await page.click('#pausebtn');
+}
+
+// 自動再生: 放置で年が進む・一時停止で止まる・速さの切り替え・選択で止まる・続きからで状態が戻る
+async function autoplay(page, lang) {
+  const alive = async () => !(await page.locator('.death').count()) && await page.locator('#scenecv').count() > 0;
+  if (!(await page.locator('#autobtn.on').count())) await page.click('#autobtn'); // 選択で止まらないように
+  await page.click('[data-act=speed][data-v="4"]');
+  const a0 = await ageOf(page);
+  await page.waitForTimeout(3500);
+  if (!(await alive())) { notes.push(`[${lang}] autoplay: died during the wait (still counts as moving)`); return; }
+  const a1 = await ageOf(page);
+  if (a1 <= a0) errors.push(`[${lang}] autoplay: age did not move (${a0} -> ${a1})`); else notes.push(`[${lang}] autoplay: ${a0} -> ${a1} in 3.5s at 4x`);
+  await page.click('#pausebtn').catch(() => {});
+  if (!(await alive())) { notes.push(`[${lang}] autoplay: died before pausing`); return; }
+  const p0 = await ageOf(page);
+  await page.waitForTimeout(2000);
+  if (await ageOf(page) !== p0) errors.push(`[${lang}] pause: age moved while paused`);
+  await page.click('[data-act=speed][data-v="8"]');
+  if ((await pressed(page, '[data-act=speed][data-v="8"]')) !== 'true') errors.push(`[${lang}] speed: 8x not selected`);
+  // 選択で止まる: 自動で決めるを切り、16×で選択が来るまで流す
+  await page.click('#autobtn');
+  await page.click('[data-act=speed][data-v="16"]');
+  await page.click('#pausebtn');
+  const got = await page.waitForSelector('#modal:not([hidden]) [data-act=opt]', { timeout: 40000 }).then(() => true).catch(() => false);
+  if (!(await alive())) { notes.push(`[${lang}] choice: died before a choice came`); return; }
+  if (got) {
+    const c0 = await ageOf(page);
+    await page.waitForTimeout(1500);
+    if (await ageOf(page) !== c0) errors.push(`[${lang}] choice: year moved while the modal was open`);
+    await page.keyboard.press('Escape');
+    if (await page.locator('#modal[hidden]').count()) errors.push(`[${lang}] choice: Esc closed the modal`);
+    await page.keyboard.press('1');
+    notes.push(`[${lang}] choice: stopped at ${c0}, chose with key 1`);
+  } else notes.push(`[${lang}] choice: none came within 40s`);
+  await pause(page);
+  if (!(await alive())) return;
+  // 続きから: 速さ 8×・一時停止の状態で中断して戻る
+  await page.click('[data-act=speed][data-v="8"]');
+  const before = await ageOf(page);
+  await page.click('[data-act=exit]');
+  await page.click('[data-go=resume]');
+  await page.waitForSelector('#scenecv');
+  const ok = (await pressed(page, '[data-act=speed][data-v="8"]')) === 'true' && (await pressed(page, '#pausebtn')) === 'true' && await ageOf(page) === before;
+  if (!ok) errors.push(`[${lang}] resume: speed/pause/age not restored`); else notes.push(`[${lang}] resume: 8x, paused, age ${before} restored`);
+  notes.push(`[${lang}] render ms: last ${await page.locator('#app').getAttribute('data-render-ms')}, max ${await page.locator('#app').getAttribute('data-render-max')}`);
 }
 
 async function run(lang) {
@@ -45,6 +110,7 @@ async function run(lang) {
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
   await ctx.addInitScript((l) => { try { localStorage.setItem('lang', l); } catch {} }, lang);
   const page = await ctx.newPage();
+  current = page;
   page.on('console', (m) => {
     if (m.type() !== 'error') return;
     // サーバ無しのときの /api の失敗は、ブラウザが通信エラーとして出すもの (画面のエラーではない)
@@ -65,8 +131,8 @@ async function run(lang) {
     await page.waitForSelector('.pastlist');
     await page.click('[data-go=title]');
     await page.click('[data-go=random]');
-    await page.click('[data-go=live]');
-    await page.click('[data-act=end]');
+    await enterLife(page);
+    await finish(page);
     await page.waitForSelector('#leave .memorial-off');
     notes.push(`[${lang}] memorial off: notice shown on memorial and death screens`);
     await browser.close();
@@ -83,21 +149,12 @@ async function run(lang) {
   if (lang === 'ja') await shot(page, 'arrival.png');
   await page.click('[data-go=live]');
   await page.waitForSelector('#scenecv');
-  // 続きから: 2年進めて中断 → タイトルに「続きから」→ 同じ年齢で再開
-  for (let i = 0; i < 2; i++) { if (!(await chooseIfAny(page)) && await page.locator('#b1').isEnabled()) await page.click('#b1'); }
-  if (!(await page.locator('.death').count())) {
-    const before = await page.locator('#age').innerText();
-    await page.click('[data-act=exit]');
-    await page.waitForSelector('[data-go=resume]');
-    await page.click('[data-go=resume]');
-    await page.waitForSelector('#scenecv');
-    const after = await page.locator('#age').innerText();
-    if (before !== after) errors.push(`[${lang}] resume: age ${before} -> ${after}`);
-    else notes.push(`[${lang}] resume ok at ${after}`);
+  await autoplay(page, lang);
+  for (let i = 0; i < 3; i++) {
+    if (!(await page.locator('#b1').count())) break; // 亡くなって死亡記録へ移るところ
+    if (!(await chooseIfAny(page)) && await page.locator('#b1').isEnabled()) await page.click('#b1').catch(() => {});
   }
-  for (let i = 0; i < 3; i++) { if (!(await chooseIfAny(page)) && await page.locator('#b1').isEnabled()) await page.click('#b1'); if (await page.locator('.death').count()) break; }
-  if (!(await page.locator('.death').count())) await page.click('[data-act=end]');
-  await page.waitForSelector('.death');
+  await finish(page);
   await widths(page, `${lang} death`);
   await shot(page, `death${sfx}.png`);
   // 追悼館に残す → 館で見る → ろうそく → 一覧
@@ -184,12 +241,12 @@ async function run(lang) {
     await page.waitForSelector('[data-go=live]');
     const decided = await page.locator('.decided em').count();
     if (decided > 3) notes.push(`[${lang}] setup: ${decided} items still random (expected 0-3)`);
-    await page.click('[data-go=live]');
-    await page.waitForSelector('#scenecv');
+    await enterLife(page);
     for (let i = 0; i < 300 && chosen < 2; i++) {
       if (await page.locator('.death').count()) break;
       if (await chooseIfAny(page)) { chosen++; continue; }
-      await page.click('#b1');
+      if (!(await page.locator('#b1').count())) break;
+      await page.click('#b1').catch(() => {});
     }
     if (chosen >= 2 || lives >= 6) break;
     if (!(await page.locator('.death').count())) break;
@@ -199,10 +256,8 @@ async function run(lang) {
   notes.push(`[${lang}] choices made: ${chosen} over ${lives} lives`);
   if (!(await page.locator('.death').count())) {
     await page.click('[data-act=y10]').catch(() => {});
-    await chooseIfAny(page);
-    if (!(await page.locator('.death').count())) await page.click('[data-act=end]');
   }
-  await page.waitForSelector('.death');
+  await finish(page);
 
   // C: README 用の life.png。剣と魔法の中世の人間で、30年ほど生きた年表
   for (let tries = 0; tries < 8; tries++) {
@@ -213,28 +268,30 @@ async function run(lang) {
     await page.click('[data-k=race][data-v=human]');
     await page.click('[data-k=arrival][data-v=reborn]');
     await page.click('[data-go=start]');
-    await page.click('[data-go=live]');
-    await page.waitForSelector('#scenecv');
+    await enterLife(page);
     for (let i = 0; i < 80; i++) {
       if (await page.locator('.death').count()) break;
       if (await chooseIfAny(page)) continue;
+      if (!(await page.locator('#b1').count())) break;
       if (Number((await page.locator('#age').innerText()).replace(/\D/g, '')) >= 30) break;
-      await page.click('#b1');
+      await page.click('#b1').catch(() => {});
     }
-    if (await page.locator('.death').count()) continue;
+    if (await page.locator('.death').count()) { await page.waitForSelector('.page.death'); continue; }
     const people = await page.locator('.ring [data-act=tie]').count();
     const years = await page.locator('.timeline li.yr').count();
     if ((people < 3 || years < 15) && tries < 7) continue;
     await page.locator('.ring [data-act=tie]').first().click();
+    await page.click('[data-act=speed][data-v="2"]');
+    await page.click('#pausebtn'); // 再生中の操作が見えるように (撮るあいだだけ流す)
     await widths(page, `${lang} life`);
     await shot(page, `life${sfx}.png`, false);
     await page.setViewportSize({ width: 375, height: 812 });
     await page.waitForTimeout(80);
     await shot(page, `mobile-life${sfx}.png`, false);
     await page.setViewportSize({ width: 1280, height: 900 });
+    await pause(page);
     notes.push(`[${lang}] life.png after ${tries + 1} tries, ${await page.locator('.timeline li.yr').count()} years in timeline`);
-    await page.click('[data-act=end]');
-    await page.waitForSelector('.death');
+    await finish(page);
     break;
   }
 
@@ -248,7 +305,8 @@ async function run(lang) {
 }
 
 for (const lang of ['ja', 'en']) {
-  try { await run(lang); } catch (e) { errors.push(`[${lang}] script: ${e.message.split('\n').slice(0, 3).join(' | ')}`); }
+  try { await run(lang); } catch (e) {
+    await current?.screenshot({ path: join(OUT, '..', '..', 'dev', `e2e-fail-${lang}.png`) }).catch(() => {}); errors.push(`[${lang}] script: ${e.message.split('\n').slice(0, 3).join(' | ')}`); }
 }
 console.log(notes.join('\n'));
 console.log(`errors: ${errors.length}`);

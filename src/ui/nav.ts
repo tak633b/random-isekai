@@ -5,7 +5,7 @@ export interface Nav {
   title(): void;
   setup(): void;
   start(setup: Setup): void;      // 主人公を作って転生の場面へ
-  life(h: Hero): void;
+  life(h: Hero, resumed?: boolean): void;
   death(h: Hero): void;
   trials(setup: Setup): void;
   past(): void;

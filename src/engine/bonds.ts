@@ -124,7 +124,7 @@ export function agePeople(h: Hero): Tie[] {
     const near = t.until === undefined && t.role !== 'nemesis' && t.role !== 'rival';
     mourn(h, t, near ? -18 : -2);
     if (t.role === 'spouse') { delete h.flags.married; h.flags.widowed = h.age; }
-    if (near || t.bond >= 40) log(h, L(`${callName(t)}が亡くなった。${t.age}歳だった。`, `${callName(t)} died at ${t.age}.`), 'loss', t.bond >= 50, [t.id]);
+    if (near || t.bond >= 40) log(h, L(`${callName(t)}が亡くなった。${t.age}歳だった。`, `${callName(t)} died at ${t.age}.`), 'loss', t.bond >= 50, [t.id]).leave = [t.id];
   }
   return died;
 }

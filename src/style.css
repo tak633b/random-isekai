@@ -232,7 +232,7 @@ li.k-death { font-weight: 700; }
 @media (max-width: 860px) {
   .colmain, .colside { display: contents; }
   .lifegrid { gap: 0; }
-  .scenebox { order: 1; } #decision { order: 2; } #me { order: 3; } .logpanel { order: 4; }
+  .scenebox { order: 1; } .manual { order: 2; margin-top: 0; } #me { order: 3; } .logpanel { order: 4; }
   .colside > .panel:nth-child(2) { order: 5; } .colside > .panel:nth-child(3) { order: 6; }
   .logbox { max-height: 55vh; }
   .yr { grid-template-columns: 3.6em 1fr; }
@@ -290,3 +290,26 @@ textarea { font: inherit; color: var(--text); background: var(--bg2); border: 1p
 .memlist canvas.scene { width: 100% !important; height: auto; }
 .memlist span { display: grid; padding: 8px 10px; line-height: 1.45; }
 .candles { color: var(--accent) !important; }
+
+/* 第4弾: 自動再生 */
+.speeds { display: inline-flex; gap: 2px; }
+.speeds button { padding: 5px 8px; min-width: 38px; }
+.controls button.on { background: var(--accent); color: var(--accent-ink); }
+.lifetrack { flex-basis: 100%; position: relative; height: 6px; background: var(--bg2); border-radius: 3px; overflow: hidden; margin: 2px 0 0; }
+.lifetrack i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--good); opacity: 0.55; transition: width 0.4s ease; }
+.lifetrack b { position: absolute; left: 0; bottom: 0; height: 2px; background: var(--accent); }
+.manual { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: -6px 0 14px; font-size: 12.5px; color: var(--faint); }
+.manual button { font-size: 12.5px; padding: 2px 10px; min-height: 28px; background: none; color: var(--sub); }
+.modal-back { position: fixed; inset: 0; background: rgb(8 6 14 / 0.72); display: grid; place-items: center; z-index: 10; padding: 16px; }
+.modal-back[hidden] { display: none; }
+.modal { background: var(--surface); border: 1px solid var(--accent); border-radius: 12px; padding: 20px; width: min(560px, 100%); max-height: 90vh; overflow: auto; box-shadow: 0 0 40px var(--glow); }
+@media (max-width: 520px) {
+  .controls { gap: 4px; }
+  .controls button { padding: 4px 8px; font-size: 13px; }
+  .speeds button { min-width: 32px; padding: 4px 4px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lifetrack i { transition: none; }
+  .lifetrack b { display: none; }
+  * { scroll-behavior: auto !important; }
+}

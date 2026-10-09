@@ -151,7 +151,8 @@ export function createHero(setup: Setup): Hero {
     }
     sibAges.forEach((a, i) => addTie(h, { name: sibNames[i], role: 'sibling', race, sex: sibSex[i], age: a }));
   }
-  log(h, birthStory(h), 'arrival', true, h.people.filter((t) => t.role === 'mother' || t.role === 'father').map((t) => t.id));
+  const first = log(h, birthStory(h), 'arrival', true, h.people.filter((t) => t.role === 'mother' || t.role === 'father').map((t) => t.id));
+  if (h.people.length) first.join = h.people.map((t) => t.id); // 最初の家族
   return h;
 }
 

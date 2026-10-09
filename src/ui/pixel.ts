@@ -106,9 +106,16 @@ export function fitAll(root: ParentNode = document): void {
 window.addEventListener('resize', () => fitAll());
 
 // data-face (Figure の JSON) や data-scene (SceneSpec の JSON) を持つキャンバスをまとめて描く
+const faces = new Map<string, Pix>();
 export function paintAll(root: ParentNode = document): void {
   root.querySelectorAll<HTMLCanvasElement>('canvas[data-face]').forEach((cv) => {
-    try { drawFace(cv, JSON.parse(cv.dataset.face!) as Figure); } catch { /* 形が古ければ描かない */ }
+    const key = cv.dataset.face!;
+    try {
+      // 顔は同じ人なら同じ絵なので描いたものを使い回す (人生の画面は毎年人の輪を描き直すため)
+      let p = faces.get(key);
+      if (!p) { if (faces.size > 500) faces.clear(); p = paintPortrait(JSON.parse(key) as Figure); faces.set(key, p); }
+      p.put(cv);
+    } catch { /* 形が古ければ描かない */ }
   });
   root.querySelectorAll<HTMLCanvasElement>('canvas[data-scene]').forEach((cv) => {
     try { drawScene(cv, JSON.parse(cv.dataset.scene!) as SceneSpec); } catch { /* 同上 */ }

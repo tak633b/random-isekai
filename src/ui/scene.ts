@@ -58,7 +58,7 @@ const TINT: Record<Tod, number[]> = { morning: [1, 0.95, 0.9], day: [1, 1, 1], d
 const LIT = '#f6c35c', LIT2 = '#fff1b0';
 const NEON = ['#ff4ab8', '#4af0e8', '#f8e85a', '#a85aff'];
 
-interface Ctx { P: Pix; s: SceneSpec; st: Style; r: Rng; tod: Tod; dir: number; lit: boolean; night: boolean; snow: boolean; place: Place; sky: string[] }
+interface Ctx { k: number; P: Pix; s: SceneSpec; st: Style; r: Rng; tod: Tod; dir: number; lit: boolean; night: boolean; snow: boolean; place: Place; sky: string[] }
 
 const todOf = (s: SceneSpec): Tod => (s.dead || s.place === 'grave' ? 'night' : s.tod);
 const indoor = (s: SceneSpec) => s.place === 'dungeon' || (s.place === 'ship' && STYLE[s.world].sci);
@@ -73,6 +73,11 @@ export function tintOf(s: SceneSpec): number[] {
 export const groundY = (_s: SceneSpec): number => GY;
 
 // ---- 共通の道具 -------------------------------------------------------------
+
+// 横へ流す (雲・飛行船・鳥)。画面の外 40px まで出たら反対側から戻る
+const drift = (c: Ctx, x: number, speed: number) => (c.k ? ((((x + c.k * speed + 40) % (W + 80)) + W + 80) % (W + 80)) - 40 : x);
+// ネオンがときどき消える (0.8秒ずつ、6回に1回くらい)
+const blink = (c: Ctx, x: number) => c.k > 0 && hash(x, c.k >> 3) % 6 === 0;
 
 function grad(P: Pix, y0: number, h: number, stops: string[]): void {
   for (let y = 0; y < h; y++) {
@@ -224,7 +229,8 @@ function house(c: Ctx, x: number, w: number, h: number, o: { tex?: Tex; roof?: R
 function sky(c: Ctx): void {
   const { P, tod, r, s } = c, space = s.world === 'space';
   grad(P, 0, HZ + 4, c.sky);
-  if (c.night || space) for (let i = 0; i < (space ? 90 : 50); i++) P.px(r() * W, r() * (space ? 56 : 38), r() < 0.3 ? '#e0e4ff' : '#5a6290', 1, true);
+  // 星: 9つに1つずつ、0.8秒ごとに明るさを入れ替えて瞬かせる
+  if (c.night || space) for (let i = 0; i < (space ? 90 : 50); i++) { const sx = r() * W, sy = r() * (space ? 56 : 38), hi = r() < 0.3, tw = c.k > 0 && hash(i, c.k >> 3) % 9 === 0; P.px(sx, sy, hi !== tw ? '#e0e4ff' : '#5a6290', 1, true); }
   if (space) {
     // 惑星と輪
     const px = 60 + (s.seed % 180), py = 18 + (s.seed % 9), rad = 11 + (s.seed % 6), pc = ['#c87a5a', '#5a8ac8', '#8ac87a', '#c8a85a'][s.seed % 4], pt = tones(pc);
@@ -246,15 +252,15 @@ function sky(c: Ctx): void {
   const cloud = c.night ? ['#1a1e38', '#2a2e4a'] : storm ? ['#3a3e50', '#5a6074'] : heavy ? ['#6a6870', '#8a8890'] : tod === 'dusk' ? ['#6a4a6a', '#e8a07a'] : tod === 'morning' ? ['#e8d8d8', '#fff4ec'] : ['#dce8f2', '#ffffff'];
   const n = s.world === 'cyberpunk' ? 0 : c.night ? 2 : heavy ? 6 : 4;
   for (let i = 0; i < n; i++) {
-    const cx = 20 + i * (300 / n) + r() * 40, cy = 6 + r() * (heavy ? 14 : 22), w = (heavy ? 34 : 18) + Math.floor(r() * 22), hh = heavy ? 5 : s.world === 'game' ? 4.5 : 3.2;
+    const cx = drift(c, 20 + i * (300 / n) + r() * 40, heavy ? 0.15 : 0.1), cy = 6 + r() * (heavy ? 14 : 22), w = (heavy ? 34 : 18) + Math.floor(r() * 22), hh = heavy ? 5 : s.world === 'game' ? 4.5 : 3.2;
     for (let y = -6; y <= 6; y++) for (let x = -w / 2; x <= w / 2; x++) {
       const e = (x / (w / 2)) ** 2 + (y / hh) ** 2 + Math.sin(x * 0.7 + i) * 0.15;
       if (e < 1) P.px(cx + x, cy + y, s.world === 'game' && !c.night && e > 0.82 ? '#9ab8e8' : y > 0 && !dith(cx + x, cy + y, 0.5 - y * 0.1) ? cloud[0] : cloud[1], 1, true);
     }
   }
-  if (storm) { let x = 90 + (s.seed % 140), y = 14; while (y < 54) { const nx = x + ((hash(x, y) & 3) - 1.5) * 2; for (let k = 0; k < 4; k++) P.px(x + (nx - x) * k / 4, y + k, '#fff8c0', 1, true); x = nx; y += 4; } }
-  if (s.world === 'steampunk') airship(c, 40 + (s.seed % 200), 16 + (s.seed % 10));
-  if (!c.night && tod !== 'dusk' && !c.st.sci && s.world !== 'cyberpunk') for (let i = 0; i < 3; i++) { const bx = 90 + r() * 120, by = 14 + r() * 16; for (const [dx, dy] of [[0, 0], [1, -1], [2, 0], [-1, -1], [-2, 0]]) P.px(bx + dx, by + dy, '#3a3a48', 1, true); }
+  if (storm && (!c.k || c.k % 60 < 3)) { let x = 90 + (s.seed % 140), y = 14; while (y < 54) { const nx = x + ((hash(x, y) & 3) - 1.5) * 2; for (let k = 0; k < 4; k++) P.px(x + (nx - x) * k / 4, y + k, '#fff8c0', 1, true); x = nx; y += 4; } }
+  if (s.world === 'steampunk') airship(c, drift(c, 40 + (s.seed % 200), 0.15), 16 + (s.seed % 10));
+  if (!c.night && tod !== 'dusk' && !c.st.sci && s.world !== 'cyberpunk') for (let i = 0; i < 3; i++) { const bx = drift(c, 90 + r() * 120, 0.4), by = 14 + r() * 16; for (const [dx, dy] of [[0, 0], [1, -1], [2, 0], [-1, -1], [-2, 0]]) P.px(bx + dx, by + dy, '#3a3a48', 1, true); }
 }
 function airship(c: Ctx, x: number, y: number): void {
   const { P } = c, t = tones('#a8806a');
@@ -318,7 +324,7 @@ function backdrop(c: Ctx): void {
         else silhouetteBox(c, x, top, w, col);
         if (st.far === 'factory' && (hash(x) & 3) === 0) { silhouetteBox(c, x + 2, top - 16, 3, col); for (let i = 0; i < 9; i++) for (let k = 0; k < 3 + i * 0.5; k++) { const sx = x + 3 + i * 1.6 + Math.sin(i + k) * 2, sy = top - 18 - i * 2 + k * 0.6; if (dith(Math.round(sx), Math.round(sy), 0.6 - i * 0.04)) P.px(sx, sy, night ? '#3a3a50' : '#a8a4a0'); } }
         if (c.lit || neon) for (let yy = top + 3; yy < HZ; yy += 3) for (let xx = x + 1; xx < x + w - 1; xx += 2) if (r() < (neon ? 0.25 : 0.12)) P.px(xx, yy, neon ? NEON[(xx + yy) % 4] : '#8a7a5a', neon ? 0.8 : 1, true);
-        if (neon && (hash(x, 3) % 4) === 0) { const nc = NEON[hash(x) % 4]; P.box(x + 1, top + 4, 2, 10, nc, true); glow(P, x + 2, top + 9, 6, nc, 0.2); }
+        if (neon && (hash(x, 3) % 4) === 0) { const nc = NEON[hash(x) % 4]; if (blink(c, x)) P.box(x + 1, top + 4, 2, 10, '#3a2a4a', true); else { P.box(x + 1, top + 4, 2, 10, nc, true); glow(P, x + 2, top + 9, 6, nc, 0.2); } }
         x += w + (ruin ? 3 : 1);
       }
       if (st.far === 'skyline') { const tx = 40 + (sd % 220), tc = night ? '#3a4470' : farC('#c8603a', 0.35); for (let y = 16; y < HZ; y++) { const half = Math.round(1 + ((y - 16) / 46) ** 2 * 9); P.px(tx - half, y, tc); P.px(tx + half, y, tc); if (y % 6 === 0 || y === 34) P.box(tx - half, y, half * 2 + 1, 1, tc); } P.box(tx, 10, 1, 6, tc); if (c.lit) P.px(tx, 10, '#f84a4a', 1, true); }
@@ -337,8 +343,8 @@ function backdrop(c: Ctx): void {
     case 'sea': case 'cape': {
       const sea = night ? ['#1a2a4a', '#24365a'] : c.tod === 'dusk' ? ['#4a4a7a', '#8a6a7a'] : ['#2a7aa8', '#4a9ac0'];
       for (let y = 50; y < HZ + 4; y++) for (let x = 0; x < W; x++) P.px(x, y, dith(x, y, (y - 50) / 14) ? sea[0] : sea[1]);
-      for (let i = 0; i < 40; i++) P.box(r() * W, 52 + r() * 12, 2 + r() * 3, 1, night ? '#3a4a6a' : '#cfe8f0');
-      if (c.tod === 'dusk') for (let y = 50; y < HZ + 4; y++) for (let k = -6; k <= 6; k++) if (dith(246 + k, y, 0.5 - Math.abs(k) / 14)) P.px(246 + k + Math.sin(y) * 2, y, '#f8d08a', 1, true);
+      for (let i = 0; i < 40; i++) { const wx = r() * W, wy = 52 + r() * 12, ww = 2 + r() * 3; if (!c.k || hash(i, c.k >> 2) & 3) P.box(wx, wy, ww, 1, night ? '#3a4a6a' : '#cfe8f0'); }
+      if (c.tod === 'dusk') for (let y = 50; y < HZ + 4; y++) for (let k = -6; k <= 6; k++) if (dith(246 + k, y, 0.5 - Math.abs(k) / 14)) P.px(246 + k + Math.sin(y + c.k * 0.3) * 2, y, '#f8d08a', 1, true);
       if (st.far === 'cape') {
         const cl = (sd & 1) ? 0 : 1;
         for (let x = 0; x < 110; x++) { const xx = cl ? W - 1 - x : x, top = 34 + x * x / 300; for (let y = top; y < HZ + 4; y++) P.px(xx, y, farC(y - top < 3 ? '#7a8a4a' : '#c8b898', 0.3)); }
@@ -495,15 +501,15 @@ function chest(c: Ctx, x: number, y = BY + 4): void { const t = tones('#a8642a')
 function banner(c: Ctx, x: number, col: string, h = 30, y = BY + 4): void {
   const { P } = c, t = tones(col);
   P.box(x, y - h, 1, h, '#4a3a2a'); P.px(x, y - h - 1, '#d8c060');
-  for (let j = 0; j < 12; j++) for (let k = 0; k < 9; k++) { const wv = Math.round(Math.sin(k * 0.6 + j * 0.2) * 1); if (j < 11 || k % 3 !== 1) P.px(x + 1 + k, y - h + 1 + j + wv, k < 2 ? t[2] : (j === 4 || j === 5) && k > 2 && k < 7 ? t[3] : t[1]); }
+  for (let j = 0; j < 12; j++) for (let k = 0; k < 9; k++) { const wv = Math.round(Math.sin(k * 0.6 + j * 0.2 - c.k * 0.35) * 1); if (j < 11 || k % 3 !== 1) P.px(x + 1 + k, y - h + 1 + j + wv, k < 2 ? t[2] : (j === 4 || j === 5) && k > 2 && k < 7 ? t[3] : t[1]); }
 }
 function smoke(c: Ctx, x: number, y: number, n = 14, col = '#8a8480'): void {
-  for (let i = 0; i < n; i++) for (let k = 0; k < 4 + i * 0.5; k++) { const sx = x + i * 1.4 + Math.sin(i * 0.8 + k) * (2 + i * 0.2), sy = y - i * 2.4 + k * 0.6; if (dith(Math.round(sx), Math.round(sy), 0.7 - i * 0.035)) c.P.px(sx, sy, c.night ? '#3a3a48' : col); }
+  for (let i = 0; i < n; i++) for (let k = 0; k < 4 + i * 0.5; k++) { const sx = x + i * 1.4 + Math.sin(i * 0.8 + k + c.k * 0.15) * (2 + i * 0.2), sy = y - i * 2.4 + k * 0.6; if (dith(Math.round(sx), Math.round(sy), 0.7 - i * 0.035)) c.P.px(sx, sy, c.night ? '#3a3a48' : col); }
 }
 function fire(c: Ctx, x: number, y: number, s = 1): void {
   const { P } = c;
-  for (let j = 0; j < 8 * s; j++) for (let k = -4 * s; k <= 4 * s; k++) { const w2 = (4 * s) * (1 - j / (8 * s)); if (Math.abs(k) < w2 && dith(x + k, y - j, 1 - j / (9 * s))) P.px(x + k, y - j, j < 3 * s ? '#f8e070' : j < 5 * s ? '#f8a030' : '#d84a20', 1, true); }
-  glow(P, x, y - 3 * s, 12 * s, '#f8a030', 0.2);
+  for (let j = 0; j < 8 * s; j++) for (let k = -4 * s; k <= 4 * s; k++) { const w2 = (4 * s) * (1 - j / (8 * s)), fl = c.k ? Math.sin(c.k * 1.3 + j * 0.9 + x) * 0.15 : 0; if (Math.abs(k) < w2 && dith(x + k, y - j, 1 - j / (9 * s) + fl)) P.px(x + k, y - j, j < 3 * s ? '#f8e070' : j < 5 * s ? '#f8a030' : '#d84a20', 1, true); }
+  glow(P, x, y - 3 * s, 12 * s, '#f8a030', c.k ? 0.2 + Math.sin(c.k * 0.7 + x) * 0.04 : 0.2);
 }
 function torch(c: Ctx, x: number, y: number): void { c.P.box(x, y, 2, 6, '#4a3424'); c.P.box(x - 1, y - 1, 4, 2, '#5a4a3a'); fire(c, x + 1, y - 1, 0.6); }
 function fence(c: Ctx, x0: number, x1: number, y = BY + 2): void {
@@ -528,7 +534,7 @@ function torii(c: Ctx, x: number, w: number, h: number, by = BY): void {
 }
 function signboard(c: Ctx, x: number, y: number, w: number, h: number, icon: 'guild' | 'shop' | 'forge'): void {
   const { P, st } = c;
-  if (st.sci || c.s.world === 'modern') { const nc = NEON[(c.s.seed + x) % 4]; P.box(x, y, w, h, '#1a1a28'); P.box(x + 1, y + 1, w - 2, h - 2, nc, c.lit || st.sci); if (c.lit) glow(P, x + w / 2, y + h / 2, w, nc, 0.2); for (let k = 3; k < w - 3; k += 3) P.box(x + k, y + 2, 2, h - 4, '#1a1a28', true); return; }
+  if (st.sci || c.s.world === 'modern') { const nc = NEON[(c.s.seed + x) % 4]; P.box(x, y, w, h, '#1a1a28'); P.box(x + 1, y + 1, w - 2, h - 2, blink(c, x) ? '#3a2a4a' : nc, c.lit || st.sci); if (c.lit) glow(P, x + w / 2, y + h / 2, w, nc, 0.2); for (let k = 3; k < w - 3; k += 3) P.box(x + k, y + 2, 2, h - 4, '#1a1a28', true); return; }
   const t = tones('#8a6038');
   P.box(x + 2, y - 3, 1, 3, '#3a3030'); P.box(x + w - 3, y - 3, 1, 3, '#3a3030');
   P.box(x, y, w, h, t[1]); P.box(x, y, w, 1, t[2]); P.box(x, y + h - 1, w, 1, t[0]);
@@ -698,7 +704,7 @@ function shipDeck(c: Ctx): void {
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (y < 12 || y >= 68 || x < 20 || x >= 300 || (x - 20) % 70 < 3) P.px(x, y, y < 12 ? (x % 20 === 0 ? t[0] : t[1]) : y >= 68 ? ((x + y) % 16 === 0 || y === 68 ? t[0] : dith(x, y, (y - 68) / 32) ? t[0] : t[1]) : t[2]);
     for (let x = 0; x < W; x += 40) P.box(x + 10, 13, 20, 1, '#9ae8ff', true);
     // 操作卓
-    for (const cx of [40, 240]) { P.box(cx, 70, 40, 10, '#3a3e4a'); P.box(cx, 70, 40, 1, '#5a5e6a'); for (let k = 0; k < 8; k++) P.px(cx + 3 + k * 4, 73, NEON[(k + s.seed) % 4], 1, true); P.box(cx + 14, 62, 12, 7, '#4af0e8', true); }
+    for (const cx of [40, 240]) { P.box(cx, 70, 40, 10, '#3a3e4a'); P.box(cx, 70, 40, 1, '#5a5e6a'); for (let k = 0; k < 8; k++) P.px(cx + 3 + k * 4, 73, NEON[(k + s.seed + (c.k >> 3)) % 4], 1, true); P.box(cx + 14, 62, 12, 7, '#4af0e8', true); }
     return;
   }
   // 甲板: 板張り + 舷側 + 帆柱。蒸気の世界は空を行く飛空艇
@@ -923,7 +929,7 @@ function place(c: Ctx): void {
       for (let i = 0; i < 6; i++) stone(150 + i * 30 + (hash(s.seed, i) % 10) - 120 * (i % 2), BY - 2, 0.55);
       const gx = sideX(c, 20, 40); stone(gx, BY + 6, 1.2);
       for (const [fx, fc] of [[gx - 3, '#c84a5a'], [gx - 1, '#f2e6a0'], [gx + 15, '#e8e8f0']] as [number, string][]) { P.box(fx, BY + 3, 1, 3, '#3a6a3a'); P.px(fx, BY + 2, fc); }
-      P.box(gx + 18, BY + 2, 2, 4, '#f2efd8'); P.px(gx + 18, BY + 1, '#f8c060', 1, true); glow(P, gx + 19, BY + 1, 6, '#f8c060', 0.3);
+      P.box(gx + 18, BY + 2, 2, 4, '#f2efd8'); P.px(gx + 18, BY + 1, c.k && (c.k >> 1) % 3 === 0 ? '#fff0b0' : '#f8c060', 1, true); glow(P, gx + 19, BY + 1, 6, '#f8c060', c.k ? 0.3 + Math.sin(c.k * 0.9) * 0.06 : 0.3);
       if (s.world === 'dark' || s.world === 'medieval') tree(c, other(c, gx), BY, 1, 'dead');
       // 地を這う霧
       for (let y = BY - 6; y < BY + 8; y++) for (let x = 0; x < W; x++) if (dith(x, y, 0.35 * (Math.sin(x * 0.04 + y * 0.3) * 0.5 + 0.5))) P.px(x, y, '#8a92b0', 0.35);
@@ -937,18 +943,27 @@ function weather(c: Ctx): void {
   const { P, s } = c;
   if (indoor(s)) return;
   const r = makeRng(hash(s.seed, 77));
-  if (s.world === 'cyberpunk' && (hash(s.seed, 3) % 5) < 3) for (let i = 0; i < 160; i++) { const x = r() * W, y = r() * H; for (let k = 0; k < 4; k++) P.px(x - k * 0.4, y + k, '#a8b8e0', 0.35); }
-  else if (c.snow) for (let i = 0; i < 70; i++) P.px(r() * W, r() * H, '#ffffff', 0.85);
-  else if (s.world === 'wa' && s.season === 0) for (let i = 0; i < 30; i++) P.px(r() * W, r() * H, '#f8c8d4');
-  else if (s.world === 'postapoc') for (let i = 0; i < 60; i++) { const x = r() * W, y = r() * H; P.px(x, y, '#d8b080', 0.4); P.px(x + 1, y, '#d8b080', 0.4); }
+  // 降るもの: tick で下 (と横) へずらして画面の端で折り返す
+  const fall = (v: number, d: number, m: number) => (c.k ? (((v + d) % m) + m) % m : v);
+  if (s.world === 'cyberpunk' && (hash(s.seed, 3) % 5) < 3) for (let i = 0; i < 160; i++) { const x = fall(r() * W, -c.k * 2, W), y = fall(r() * H, c.k * 5, H); for (let k = 0; k < 4; k++) P.px(x - k * 0.4, y + k, '#a8b8e0', 0.35); }
+  else if (c.snow) for (let i = 0; i < 70; i++) P.px(fall(r() * W, Math.sin(c.k * 0.1 + i) * 1.5, W), fall(r() * H, c.k * 0.6, H), '#ffffff', 0.85);
+  else if (s.world === 'wa' && s.season === 0) for (let i = 0; i < 30; i++) P.px(fall(r() * W, c.k * 0.8 + Math.sin(c.k * 0.15 + i) * 2, W), fall(r() * H, c.k * 0.4, H), '#f8c8d4');
+  else if (s.world === 'postapoc') for (let i = 0; i < 60; i++) { const x = fall(r() * W, c.k * 1.5, W), y = fall(r() * H, Math.sin(c.k * 0.05 + i) * 2, H); P.px(x, y, '#d8b080', 0.4); P.px(x + 1, y, '#d8b080', 0.4); }
 }
 
-export function paintScene(s: SceneSpec): Pix {
+// 動きがある場面か。false なら tick を変えても同じ絵なので、呼び出し側は描き直しを省ける
+export function ambientOf(s: SceneSpec): boolean {
+  return !(s.place === 'dungeon' && !s.dead && STYLE[s.world]?.dun === 'metal');
+}
+
+// tick は 10fps で1ずつ増える整数。tick=0 は動きを入れる前と同じ画素になる。
+// 全体を毎回描き直す (平均 2–3ms)。動かない部分だけをキャッシュする形は、描く順序が絡み合うので取らない
+export function paintScene(s: SceneSpec, tick = 0): Pix {
   const P = new Pix(W, H), st = STYLE[s.world] ?? STYLE.medieval, tod = todOf(s);
   const pl: Place = s.dead ? 'grave' : s.place;
   const sk = s.world === 'space' ? SPACE_SKY[tod] : SKY_OVER[s.world] ? SKY[tod].map((v) => mixc(v, SKY_OVER[s.world]![0], SKY_OVER[s.world]![1] * (tod === 'night' ? 0.4 : 1))) : SKY[tod];
   const c: Ctx = {
-    P, s: { ...s, place: pl }, st, r: makeRng(hash(s.seed, 0x5c)), tod, dir: tod === 'morning' ? -1 : 1,
+    k: tick, P, s: { ...s, place: pl }, st, r: makeRng(hash(s.seed, 0x5c)), tod, dir: tod === 'morning' ? -1 : 1,
     lit: tod === 'dusk' || tod === 'night' || pl === 'dungeon' || s.world === 'cyberpunk', night: tod === 'night',
     snow: !!st.snowy && s.season === 3 && !st.sci, place: pl, sky: sk,
   };

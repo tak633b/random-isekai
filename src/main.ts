@@ -24,7 +24,7 @@ const nav: Nav = {
   title,
   setup: () => showSetup(nav),
   start(setup: Setup) { showArrival(createHero(setup), setup, nav); },
-  life: (h) => showLife(h, nav),
+  life: (h, resumed) => showLife(h, nav, resumed),
   death: (h) => showDeath(h, nav),
   trials: (setup) => showTrials(setup, nav),
   past: () => showPast(nav),
@@ -57,7 +57,7 @@ function title(): void {
     const lg = t.closest<HTMLElement>('[data-lang]')?.dataset.lang;
     if ((lg === 'ja' || lg === 'en') && lg !== lang) return setLang(lg);
     const go = t.closest<HTMLElement>('[data-go]')?.dataset.go;
-    if (go === 'resume') { const h = resumeLife(); return h ? nav.life(h) : title(); }
+    if (go === 'resume') { const h = resumeLife(); return h ? nav.life(h, true) : title(); }
     if (go === 'random') nav.start({ seed: randomSeed(), world: { preset: 'random' }, hero: {} });
     if (go === 'setup') nav.setup();
     if (go === 'past') nav.past();

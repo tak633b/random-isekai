@@ -1,7 +1,7 @@
 // 出来事のデータ (src/data/events/*.ts の EVENTS) と死因の文 (src/data/deaths.ts の DEATHS) を読み込み、
 // 条件の判定・重み付きの抽選・置き換え ({name} など)・効果の適用・選択肢 (Decision) 化・その年の追加の危険を受け持つ。
 // データが1件も無くても動く (他の担当がデータを書き終える前でも、テストと画面が壊れないように)
-import type { DeathDef, DeathRecord, Decision, EventDef, Hazard, Hero, JobId, Option, Role, Stage, Tie } from './types';
+import type { DeathDef, DeathRecord, Decision, EventDef, Foe, Hazard, Hero, JobId, LogEntry, Option, Role, Stage, Tie } from './types';
 import { makeRng, pickWeighted } from './rng';
 import { addTie, byRole, bump, callName, log, shared } from './bonds';
 import { beastName, personName, worldNames } from './names';
@@ -244,9 +244,71 @@ export function eventDecision(h: Hero, def: EventDef, die: Die): Decision {
       mark(x, o.set, o.job);
       if (o.log) log(x, fill(T(o.log), x), def.kind, false);
       roll(x, o.risk, die);
+      // 戦いの出来事なら、選んだ道で結果が変わる (逃げた・傷ついた・倒れた)
+      const f = lastFight(x);
+      if (f?.fight && f.fight.result !== 'lose') {
+        if (FLEE.test(o.ja + o.en)) f.fight.result = 'flee';
+        settleFight(x, f, o.risk?.hazard, (o.eff?.hp ?? 0) < 0);
+      }
     },
   }));
   return { title: fill(isEn ? c.en : c.ja, h), text: fill(isEn ? def.en : def.ja, h), options, auto: (x) => autoPick(x, def), ref: `ev:${def.id}` };
+}
+
+// ---- 戦いの演出 (LogEntry.fight) -------------------------------------------------
+// 相手と結果は、文とエンジンが決めた結果から読むだけで、乱数は引かない (同じ seed の人生を変えないため)
+
+const FIGHT_HZ: Hazard[] = ['monster', 'war', 'violence'];
+// 文に出てくる言葉から相手を決める (上から順に見る)
+const FOE_WORDS: [RegExp, Foe][] = [
+  [/竜|ドラゴン|ワイバーン|蛟|dragon|wyvern|drake/i, 'dragon'],
+  [/魔王|魔族|魔尊|悪魔|鬼の王|demon/i, 'demon'],
+  [/屍|骸骨|亡者|アンデッド|死霊|僵屍|ゾンビ|undead|skeleton|ghoul|zombie|jiangshi|husk/i, 'undead'],
+  [/ドローン|機械|ロボ|アンドロイド|戦車|砲台|drone|robot|android|mech|turret/i, 'machine'],
+  [/盗賊|山賊|野盗|強盗|追い剥ぎ|ギャング|海賊|略奪|bandit|robber|thug|gang|pirate|raider/i, 'bandit'],
+  [/兵|軍|合戦|戦場|侍|騎士|soldier|army|troops|knight|samurai/i, 'soldier'],
+  [/狼|熊|猪|獣|大蛇|蟒|虎|鮫|蠍|beast|wolf|bear|boar|serpent|tiger|shark|scorpion/i, 'beast'],
+];
+
+export function foeFor(h: Hero, hz: Hazard | undefined, text: string): Foe {
+  for (const [re, f] of FOE_WORDS) if (re.test(text)) return f;
+  const t = h.world.tags;
+  if (hz === 'war') return t.includes('scifi') ? 'machine' : 'soldier';
+  if (hz === 'violence') return 'bandit';
+  if (t.includes('scifi')) return 'machine';
+  if (t.includes('ruin')) return 'beast';
+  // ダークファンタジーは屍が多い。半々にするのに乱数は使わず、seed と年齢で決める
+  if (t.includes('dark') && ((h.seed + h.age) & 1) === 1) return 'undead';
+  return 'monster';
+}
+
+// 暴力の危険でも、毒・陰謀・断罪・口論は戦いではない。刃や拳を交える文 (か、種類が battle / adventure) だけを戦いにする
+const CLASH = /刺|斬|殴|襲|斬り|剣|刃|槍|弓|矢|拳|決闘|果たし|待ち伏せ|奇襲|乱闘|喧嘩|撃|銃|stab|slash|strike|attack|ambush|duel|sword|blade|spear|arrow|fist|brawl|fight|shoot|gun/i;
+export const isClash = (text: string) => CLASH.test(text) || FOE_WORDS.some(([re, f]) => (f === 'bandit' || f === 'soldier') && re.test(text));
+
+// 戦いの出来事か: その年の危険が魔物・戦 (暴力は刃を交えるものだけ)、種類が battle、データに foe がある
+function fightHazard(def: EventDef, text: string): Hazard | undefined | false {
+  if (def.foe || def.kind === 'battle') return def.risk?.hazard;
+  const hzs = [def.risk?.hazard, ...(def.choice?.options.map((o) => o.risk?.hazard) ?? [])].filter((x): x is Hazard => !!x && FIGHT_HZ.includes(x));
+  const hz = hzs[0];
+  if (!hz) return false;
+  if (hz === 'violence' && def.kind !== 'adventure' && !isClash(text + (def.choice ? def.choice.ja + def.choice.en : ''))) return false;
+  return hz;
+}
+
+const FLEE = /逃げ|退く|退いた|引き返|身を隠|隠れ|見送る|やり過ご|走って|flee|run|retreat|hide|back off|slip away/i;
+
+// その年の、いちばん新しい戦いの記録
+function lastFight(h: Hero): LogEntry | undefined {
+  for (let i = h.log.length - 1; i >= 0 && h.log[i].age === h.age; i--) if (h.log[i].fight) return h.log[i];
+  return undefined;
+}
+
+// 出来事の後で結果を付ける。死んだ (lose) > 取り消された死・傷 (hurt) > 勝った (win)
+function settleFight(h: Hero, e: LogEntry, hz: Hazard | undefined, hpLoss: boolean): void {
+  if (!e.fight) return;
+  if (!h.alive && (!hz || h.death?.hazard === hz)) e.fight.result = 'lose';
+  else if (h.flags.revived === h.age || hpLoss) e.fight.result = 'hurt';
 }
 
 // 出来事を1件起こす。選択肢があれば Decision を返す (呼ぶ側が pending に積むか、自動で選ぶ)
@@ -264,14 +326,19 @@ export function applyEvent(h: Hero, def: EventDef, die: Die): Decision | null {
   const who = Object.values(ties);
   const e = who.length ? shared(h, who, text, def.kind, def.tie?.d ?? 0, !!def.big) : log(h, text, def.kind, !!def.big);
   if (def.why) e.why = fill(T(def.why), h, ties);
+  if (def.tie?.new && ties[def.tie.role]) e.join = [ties[def.tie.role]!.id];
   // tie.dies: この出来事で、その人が亡くなる (伴侶を看取る・親の葬儀)。悲しみの大きさは eff に書く
   const gone = def.tie?.dies ? ties[def.tie.role] : undefined;
   if (gone) {
     gone.alive = false;
     gone.diedAt = h.age;
+    e.leave = [gone.id];
     if (gone.role === 'spouse') { delete h.flags.married; h.flags.widowed ??= h.age; }
   }
+  const fh = fightHazard(def, text);
+  if (fh !== false) e.fight = { foe: def.foe ?? foeFor(h, fh, text), result: 'win' };
   roll(h, def.risk, die);
+  settleFight(h, e, def.risk?.hazard, (def.eff?.hp ?? 0) < 0);
   return def.choice && h.alive ? eventDecision(h, def, die) : null;
 }
 

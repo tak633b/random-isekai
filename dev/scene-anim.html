@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>場面の動き (開発用)</title>
+<style>
+  body { margin: 0; padding: 12px; background: #16141a; color: #d8d4cc; font: 12px/1.4 system-ui, sans-serif; }
+  .row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+  figure { margin: 0; }
+  figcaption { font-size: 10px; color: #9a96a0; }
+  canvas { display: block; image-rendering: pixelated; width: calc(320px * var(--k, 2)); height: calc(100px * var(--k, 2)); }
+  #info { color: #f6c35c; }
+</style>
+</head>
+<body>
+<div>再生: そのまま開く。連続コマ: ?frames=0,3,6,9 。?scenes=wa/temple/night,ocean/ship/dusk ?scale=1 。<span id="info"></span></div>
+<div id="out"></div>
+<script type="module" src="./scene-anim.ts"></script>
+</body>
+</html>
