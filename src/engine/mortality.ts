@@ -18,9 +18,17 @@ export type Hazards = Record<Hazard, number>;
 const zero = (): Hazards => ({ infant: 0, disease: 0, monster: 0, violence: 0, war: 0, accident: 0, childbirth: 0, magic: 0, execution: 0, famine: 0, plague: 0, age: 0, return: 0 });
 
 export const ADULT_HEQ = 16;
-// 子どもの能力の上限 (強さ・知恵と魔力・人望)。人間換算で 0歳 45 から育つにつれて上がり、18歳で 100。才能や特典は、この上限の中での差になる
+// 子どもの能力 (強さ・知恵と魔力・人望) は育つ。生まれ持った値 (Hero.grown.pot) の何割が出ているかが、人間換算の年齢で
+// 0歳の割合 (強さ 8%・知恵と魔力 15%・人望 15%) から 18歳の 100% へ上がる。前世の記憶がある子の知恵は 40% から (赤子の体に大人の頭)。
+// 上限も同じ線 (100 × その割合)。才能・特典・ポイントは生まれ持った値に乗るので、どの年齢でも差は残る
 export const AGE_CAPPED = ['power', 'mind', 'charm'] as const;
-export const ageCap = (e: number): number => 45 + 55 * Math.min(1, e / 18);
+export type AgeCapped = (typeof AGE_CAPPED)[number];
+const GROW_BASE: Record<AgeCapped, number> = { power: 0.08, mind: 0.15, charm: 0.15 };
+const REBORN_MIND = 0.6;
+export const GROWN_AT = 18;
+export const growBase = (h: Hero, k: AgeCapped): number => (k === 'mind' && h.memoryAwake ? REBORN_MIND : GROW_BASE[k]);
+export const growFrac = (b: number, e: number): number => b + (1 - b) * Math.min(1, Math.max(0, e) / GROWN_AT) ** 0.9;
+export const ageCap = (h: Hero, k: AgeCapped, e = heqOf(h)): number => 100 * growFrac(growBase(h, k), e);
 const hz = (q: number) => -Math.log(1 - q);
 
 // ---- 年齢 -----------------------------------------------------------------

@@ -285,7 +285,9 @@ function climbYear(h: Hero, t: NonNullable<Hero['train']>, die: (h: Hero, hz: Ha
   if (prog >= 100) {
     h.train = { ...h.train, done: true };
     if (r.set) h.flags[r.set] = h.age;
-    return setStanding(h, r.to, fill(T(r.done), h));
+    // 落ちてまた上がる人生では同じ道を二度たどる。同じ文を繰り返さないよう、何度目かを添える
+    const n = (h.climb ?? []).filter((c) => c.to === r.to).length;
+    return setStanding(h, r.to, fill(T(r.done), h) + (n ? L(`${n + 1}度目だった。`, ` Time number ${n + 1}.`) : ''));
   }
   for (const [at, line] of [[34, r.steps[0]], [67, r.steps[1]]] as const) if (before < at && prog >= at) log(h, fill(T(line), h), 'school');
 }

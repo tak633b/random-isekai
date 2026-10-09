@@ -8,7 +8,7 @@ import { raceOf } from './races';
 import { STATUS_WEALTH, statusBirth, statusName, statusRank, statusWeights } from './status';
 import { availableCheats, CHEATS, cheatWeight } from './cheats';
 import { personName, styleOf, withFamily, worldNames } from './names';
-import { ageCap, AGE_CAPPED, ageOfHeq, heq } from './mortality';
+import { AGE_CAPPED, ageOfHeq, growBase, growFrac, heq } from './mortality';
 import { anchorFamily, anchorYear } from './anchor';
 import { ALLOT_KEYS, POINT_STEP, randomBuild, traitOf } from './traits';
 import { addTie, COIN, grow, log } from './bonds';
@@ -40,6 +40,8 @@ function drawCheat(rng: Rng, w: World): CheatId | null {
   return none ? null : c;
 }
 
+const POT_SCALE = { power: 0.75, mind: 0.45, charm: 0.77 };
+
 function initialStats(rng: Rng, status: Status, talent: Talent, memory: MemoryLevel): Stats {
   const s: Stats = {
     hp: clamp(normal(rng, 70, 10), 25, 95), power: clamp(normal(rng, 30, 8), 5, 60), mind: clamp(normal(rng, 35, 10), 5, 70),
@@ -50,6 +52,8 @@ function initialStats(rng: Rng, status: Status, talent: Talent, memory: MemoryLe
   for (const [k, v] of Object.entries(TALENT_STAT[talent])) s[k as keyof Stats] = clamp(grow(s[k as keyof Stats], v), 0, 100);
   if (memory === 'full') s.mind = clamp(grow(s.mind, 15), 0, 100);
   if (memory === 'faint') s.mind = clamp(grow(s.mind, 6), 0, 100);
+  // 大人になるまでに出来事・職で伸びる分があるので、生まれ持った値は控えめに (30歳の中央値 強さ 60台前半・知力 70前後・人望 60前後になるように)
+  for (const k of AGE_CAPPED) s[k] *= POT_SCALE[k];
   for (const k of Object.keys(s) as (keyof Stats)[]) s[k] = Math.round(s[k]);
   return s;
 }
@@ -136,7 +140,12 @@ export function createHero(setup: Setup): Hero {
     flags: {}, revives: cheat ? CHEATS[cheat].revive ?? 0 : 0, people: [], nextId: 1, log: [], pending: [], kinds: [],
     state: { war: 0, plague: 0, famine: 0, demonKing }, auto: setup.auto ?? false, policy: setup.policy ?? 'normal', used: [],
   };
-  { const cap = ageCap(heq(start, r)); for (const k of AGE_CAPPED) stats[k] = Math.min(stats[k], cap); } // 幼いうちは能力の上限が低い
+  { // 幼いうちは生まれ持った値の一部だけが出ている (mortality.ts の growFrac)。毎年 life.ts の drift で育つ
+    const e0 = heq(start, r);
+    const pot = { power: stats.power, mind: stats.mind, charm: stats.charm }, g = { ...pot };
+    for (const k of AGE_CAPPED) { g[k] = growFrac(growBase(h, k), e0); stats[k] = Math.round(pot[k] * g[k] * 10) / 10; }
+    h.grown = { pot, g };
+  }
   h.gold = Math.round(stats.wealth * COIN); // お金 (暮らし向きの目安から。engine/econ.ts)
   if (past) h.past = arr === 'summoned' ? { ...past, age: start, job: tr && startAge === 'adult' ? tr.job : summonedJob(start, past.job) } : past;
   if (tr) {

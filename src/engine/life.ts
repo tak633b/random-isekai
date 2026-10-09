@@ -4,7 +4,7 @@ import type { Decision, Hazard, Hero, JobId, LogEntry, Policy, Tie } from './typ
 import { makeRng, pickWeighted } from './rng';
 import { agePeople, byRole, bump, closest, grow, log, mourn, shared } from './bonds';
 import { traitFertility } from './traits';
-import { ageCap, AGE_CAPPED, attentionOf, deathChance, hazards, heq, HAZARDS, maternalRisk, mustDie, agingOf, heqOf, warStartP, WAR_MEAN_YEARS, plagueP, famineP, FAMINE_MEAN_YEARS, ADULT_HEQ } from './mortality';
+import { growBase, growFrac, AGE_CAPPED, attentionOf, deathChance, hazards, heq, HAZARDS, maternalRisk, mustDie, agingOf, heqOf, warStartP, WAR_MEAN_YEARS, plagueP, famineP, FAMINE_MEAN_YEARS, ADULT_HEQ } from './mortality';
 import { raceOf } from './races';
 import { CHEATS } from './cheats';
 import { FIGHT_JOBS, jobOf, jobsFor, jobWeight, JOBS, type JobDef } from './jobs';
@@ -18,6 +18,7 @@ import { fortuneYear } from './climb';
 import { maybeClose } from './closecall';
 import { cheatYear } from './cheatuse';
 import { econByRef, econDecisions, econYear } from './econ';
+import { moneyDue, moneyEvent, moneyEventByRef } from './moneyevents';
 import { alliesFor, peopleYear } from './people';
 import { onArc } from './events';
 import { endLovers } from './events';
@@ -205,7 +206,7 @@ function milestones(h: Hero, out: Decision[]): void {
   }
   // 学院 (人間換算12歳)。貴族社会の世界か、騎士の家以上か、魔力の高い子
   if (h.flags.academy === undefined && crossed(h, 12)) {
-    const gifted = h.stats.mind >= 50 && w.magic >= 2; // 12歳の上限は 81 (mortality.ts の ageCap)。50 で入学の数が上限を入れる前と近い
+    const gifted = h.stats.mind >= 40 && w.magic >= 2; // 12歳の知力の中央値は 40 台 (mortality.ts の growFrac)。40 で入学の割合が育ちの線を入れる前 (約24%) と近い
     if (hasTag(w, 'nobility') || (statusRank(h.status) >= statusRank('gentry') && !hasTag(w, 'ruin')) || (gifted && h.rng() < 0.4)) {
       h.flags.academy = h.age; bump(h, { mind: 8 });
       const [ja, en] = SCHOOL[styleOf(w)];
@@ -340,10 +341,15 @@ function drift(h: Hero): void {
   for (let i = h.log.length - 1; i >= 0 && h.log[i].age === h.age; i--) if (h.log[i].big && !h.log[i].fight) big++;
   xp += Math.min(0.6, big * 0.2); // 大きな出来事 (身につけた・身分が変わった・結婚…) ほど経験になる
   h.xp = Math.round(((h.xp ?? 0) + xp) * 100) / 100;
+  moneyDue(h); // 闇金の返済・貸した金・儲け話の結末
   econYear(h); // お金の1年 (職の稼ぎ・依頼・懸賞金・領地・利息・取り立て・遺産)。暮らし向きはお金から決まる
   s.happy += (55 - s.happy) * 0.05;
-  const cap = ageCap(e); // 幼いうちは上限が低い (mortality.ts)
-  for (const k of AGE_CAPPED) s[k] = Math.min(s[k], cap);
+  // 子どもの能力が育つ: 生まれ持った値のうち、今年ぶん新たに出た割合を足す。出来事で伸びた分はそのまま残し、上限で抑える (mortality.ts)
+  for (const k of AGE_CAPPED) {
+    const g = growFrac(growBase(h, k), e);
+    if (h.grown && g > h.grown.g[k]) { s[k] += h.grown.pot[k] * (g - h.grown.g[k]); h.grown.g[k] = g; }
+    s[k] = Math.min(s[k], 100 * g);
+  }
   for (const k of Object.keys(s) as (keyof typeof s)[]) s[k] = Math.round(Math.min(100, Math.max(0, s[k])) * 10) / 10;
   h.level = Math.round(h.level * 10) / 10;
 }
@@ -423,6 +429,8 @@ export function advanceYear(h: Hero): void {
   if (!h.alive) return;
   // お金: 病の治療と、市の立つ日
   const ed = econDecisions(h);
+  const me = moneyEvent(h); // 闇金・借金の頼み・身代金・持参金・儲け話・徴税官
+  if (me) ed.push(me);
   if (ed.length) settlePending(h, ed);
   if (!h.alive) return;
   // 6. 能力
@@ -467,6 +475,7 @@ export function fromSaved(s: SavedHero): Hero {
     const ev = eventByRef(ref);
     if (ev?.choice) h.pending.push(eventDecision(h, ev, die));
     else if (ref.startsWith('sick:') || ref.startsWith('shop:')) { const d = econByRef(h, ref); if (d) h.pending.push(d); }
+    else if (ref.startsWith('mev:')) { const d = moneyEventByRef(h, ref); if (d) h.pending.push(d); }
     else if (ref.startsWith('train:')) { const d = trainingByRef(h, ref); if (d) h.pending.push(d); }
     else if (ref.startsWith('job:')) { const d = jobDecision(h, ref.slice(4).split(',') as JobId[]); if (d) h.pending.push(d); }
   }

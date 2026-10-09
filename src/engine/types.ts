@@ -380,6 +380,15 @@ export interface Hero {
   ledger?: { age: number; inc: number; exp: number }; // その年の出入り
   gear?: number;        // 武具の段 (0〜3)。戦いの死が少し減る
   sick?: { until: number; k: number }; // 病の治療の効き目 (その年齢まで、病の死の倍率)
+  grown?: { pot: Record<'power' | 'mind' | 'charm', number>; g: Record<'power' | 'mind' | 'charm', number> }; // 子どもの能力の育ち: 生まれ持った値と、いま出ている割合 (engine/mortality.ts の growFrac)
+  money?: MoneyDue;     // 何年か後に結末が出るお金の約束 (engine/moneyevents.ts)
+}
+
+// 闇金の返済・貸した金・儲け話。結末 (out・mult) は選んだ年に決めておく
+export interface MoneyDue {
+  shady?: { amt: number; due: number };
+  lent?: { tie: number; amt: number; due: number; out: 'repay' | 'part' | 'gone' };
+  invest?: { amt: number; due: number; mult: number };
 }
 
 // ---- 鍛える (engine/training.ts、データは src/data/training/*.ts) ----------------

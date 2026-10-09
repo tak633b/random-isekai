@@ -54,7 +54,7 @@ describe('暮らしの経験と、年齢の上限', () => {
       const h = createHero({ seed: s, world: { preset: 'random' }, hero: { arrival: 'reborn', cheat: 'skill_steal', talent: 'magic' }, auto: true });
       while (h.alive && h.age < 8) advanceYear(h);
       if (!h.alive) continue;
-      for (const k of AGE_CAPPED) expect(h.stats[k], `${s} ${k}`).toBeLessThanOrEqual(ageCap(heqOf(h)) + 1e-9);
+      for (const k of AGE_CAPPED) expect(h.stats[k], `${s} ${k}`).toBeLessThanOrEqual(ageCap(h, k, heqOf(h)) + 1e-9);
     }
   });
 });

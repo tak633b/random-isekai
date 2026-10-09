@@ -141,7 +141,7 @@ function hintsOf(c: Cond): { worlds: WorldId[]; hero: HeroChoice; policy?: Polic
 interface Hint { world: WorldId; hero: HeroChoice; seed: number; policy?: Policy }
 const HINTS: Record<string, Hint> = {
   'a.feat.age1000': { world: 'medieval', hero: { race: 'elf', cheat: 'immortal_body' }, seed: 119 },
-  'a.feat.guildmaster': { world: 'medieval', hero: { cheat: 'sword_saint' }, seed: 1465 }, // 鍛える選択を入れた後に測り直した (前は 631)
+  'a.feat.guildmaster': { world: 'medieval', hero: { cheat: 'sword_saint' }, seed: 958, policy: 'bold' }, // 子どもの能力の育ち方を変えた後に測り直した (前は 1465・631)。B ランクの冒険者の中年に w 0.5 なのでまれ
   'a.death.alien': { world: 'space', hero: {}, seed: 194 },
   'a.feat.freed': { world: 'medieval', hero: { status: 'slave' }, seed: 8 },
   'a.feat.slaveToNoble': { world: 'medieval', hero: { status: 'slave' }, seed: 448, policy: 'bold' },

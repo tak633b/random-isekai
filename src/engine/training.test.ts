@@ -15,7 +15,7 @@ function play(seed: number): { h: Hero; refs: string[] } {
   for (let y = 0; y < 4000 && h.alive; y++) {
     advanceYear(h);
     // お金の選択 (病・市の日、econ.ts) は鍛えるとは別に数える
-    while (h.pending.length && h.alive) { const r = h.pending[0].ref ?? ''; if (!/^(sick|shop):/.test(r)) refs.push(r); choose(h, h.pending[0].auto(h)); }
+    while (h.pending.length && h.alive) { const r = h.pending[0].ref ?? ''; if (!/^(sick|shop|mev):/.test(r)) refs.push(r); choose(h, h.pending[0].auto(h)); }
   }
   return { h, refs };
 }
@@ -88,6 +88,7 @@ describe('鍛える', () => {
     const h = createHero({ seed: 5, world: { preset: 'medieval' }, hero: { race: 'human' }, auto: true });
     h.age = 20;
     h.stats.wealth = 100;
+    h.gold = 100 * 100; // 師匠への謝礼が尽きないように (暮らし向きはお金から決まる)
     h.train = { kind: 'goal', id: 'sk.cook', method: 'm.master', since: 19, step: 3, prog: 0 };
     const n = h.log.length;
     for (let y = 0; y < 30 && h.alive && !h.traits.includes('sk.cook'); y++) advanceYear(h);
