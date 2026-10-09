@@ -34,6 +34,7 @@ const check = (ok, what) => { if (!ok) errors.push(what); };
 
 async function run(browser, lang) {
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  await ctx.addInitScript(() => setInterval(() => { document.querySelector('[data-fn=skip]')?.click(); document.querySelector('.suspense')?.click(); }, 300)); // 最期の場面と死にかけた演出は飛ばす
   await ctx.addInitScript((l) => { try { localStorage.setItem('lang', l); } catch {} }, lang);
   const page = await ctx.newPage();
   page.on('console', (m) => { if (m.type() === 'error') errors.push(`[${lang}] console: ${m.text()}`); });

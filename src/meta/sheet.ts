@@ -1,5 +1,6 @@
 // ステータス画面に出す値 (ui/sheet.ts)。主人公 (Hero) から読むだけで、何も変えず、乱数も引かない。
 // エンジンに無いもの (経験値・素早さ・装備) は作らない。HP と MP だけは、今ある能力・レベル・特典・trait から決まった式で出す (表示用)
+import { levelOf } from '../engine/bonds';
 import type { Hero, TraitDef } from '../engine/types';
 import { CHEATS } from '../engine/cheats';
 import { raceOf } from '../engine/races';
@@ -10,6 +11,8 @@ import { TACTIC_NAME } from '../engine/tactic';
 import { itemName } from '../engine/transfer';
 import { routeOf } from '../engine/climb';
 import { allPaths } from '../engine/training';
+import { formatGold } from '../engine/econ';
+import { MONEY } from '../data/money';
 import { foeKindOf, bestiaryEntry } from './bestiary';
 import { climbText, jobName, titlesOf } from '../ui/labels';
 import { L, T } from '../i18n';
@@ -34,12 +37,13 @@ export interface Sheet {
   items: string[];                          // 異世界転移で持ってきた物
   companions: { name: string; role: string }[];
   training?: { label: string; prog?: number };
+  money: { now: string; debt: boolean; inc?: string; exp?: string; gear?: string };
 }
 
 // HP: 健康 (0〜100) を今の割合として、最大はレベルと強さから。超再生・不死の体は多め
 export function hpOf(h: Hero): { now: number; max: number } {
   const k = h.cheat === 'regeneration' || h.cheat === 'immortal_body' ? 1.5 : 1;
-  const max = Math.round((30 + h.level * 6 + h.stats.power * 0.8 + h.stats.hp * 0.4) * k);
+  const max = Math.round((30 + levelOf(h) * 6 + h.stats.power * 0.8 + h.stats.hp * 0.4) * k);
   return { now: h.alive ? Math.max(1, Math.round((max * h.stats.hp) / 100)) : 0, max };
 }
 
@@ -48,7 +52,7 @@ export function mpOf(h: Hero): { max: number | null } | null {
   if (h.world.magic < 1) return null;
   if (h.cheat === 'infinite_mana') return { max: null };
   const k = (h.traits.includes('sk.bigmana') ? 1.5 : 1) * (h.talent === 'magic' ? 1.2 : 1);
-  return { max: Math.round((10 + h.level * 4 + h.stats.mind * 1.2) * k) };
+  return { max: Math.round((10 + levelOf(h) * 4 + h.stats.mind * 1.2) * k) };
 }
 
 /** 倒した相手 (勝った・傷を負って勝った戦い) を姿ごとに数える */
@@ -91,7 +95,7 @@ export function sheetOf(h: Hero): Sheet {
   return {
     name: h.name, race: T(raceOf(h.race).name), sex: h.sex, age: h.age, heq: Math.round(heqOf(h)),
     born: statusName(h.status, h.world), standing: statusName(h.standing ?? h.status, h.world), climb: climbText(h),
-    job: jobName(h.job), ...(h.rank ? { rank: h.rank } : {}), level: Math.round(h.level),
+    job: jobName(h.job), ...(h.rank ? { rank: h.rank } : {}), level: levelOf(h),
     hp: hpOf(h), mp: mpOf(h),
     // 健康は HP の今の割合として出しているので、亡くなった人には出さない (HP 0 と食い違わないように)
     attrs: (['power', 'mind', 'hp', 'charm', 'luck', 'fame', 'wealth'] as const).filter((k) => h.alive || k !== 'hp').map((k) => ({ key: k, label: L(...SHORT[k]), v: Math.round(h.stats[k]) })),
@@ -105,5 +109,10 @@ export function sheetOf(h: Hero): Sheet {
     items: h.transfer?.items.map(itemName) ?? [],
     companions: h.people.filter((p) => p.alive && p.until === undefined && WITH.has(p.role)).map((p) => ({ name: p.name, role: L(...ROLE[p.role]) })),
     ...(training ? { training } : {}),
+    money: {
+      now: formatGold(h.world.id, h.gold ?? h.stats.wealth * 100), debt: (h.gold ?? 0) < 0,
+      ...(h.ledger && h.ledger.age >= h.age - 1 ? { inc: formatGold(h.world.id, h.ledger.inc), exp: formatGold(h.world.id, h.ledger.exp) } : {}),
+      ...(h.gear ? { gear: T({ ja: MONEY[h.world.id].gear[h.gear - 1][0], en: MONEY[h.world.id].gear[h.gear - 1][1] }) } : {}),
+    },
   };
 }

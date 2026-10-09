@@ -38,11 +38,27 @@ export function grow(cur: number, v: number): number {
   return x;
 }
 
+/** 表示のレベル: 戦いの強さ (level) と暮らしの経験 (xp) の和 */
+export const levelOf = (h: Pick<Hero, 'level' | 'xp'>): number => Math.round(h.level + (h.xp ?? 0));
+
+// お金 (engine/econ.ts)。暮らし向き 1 = COIN コイン。暮らし向きはお金から決まる (0〜100 に収める)
+export const COIN = 100;
+const wealthOf = (gold: number) => Math.round(Math.min(100, Math.max(0, gold / COIN)) * 10) / 10;
+/** お金を足す (引く)。暮らし向きもそれに合わせ、この年の出入り (ledger) に数える */
+export function addGold(h: Hero, v: number, ledger = true): void {
+  h.gold = (h.gold ?? h.stats.wealth * COIN) + v;
+  h.stats.wealth = wealthOf(h.gold);
+  if (!ledger) return;
+  const l = h.ledger?.age === h.age ? h.ledger : { age: h.age, inc: 0, exp: 0 };
+  h.ledger = v >= 0 ? { ...l, inc: l.inc + v } : { ...l, exp: l.exp - v };
+}
+
 export function bump(h: Hero, eff: Partial<Record<StatKey | 'level', number>>): void {
   for (const k in eff) {
     const v = eff[k as StatKey | 'level']!;
     if (k === 'level') h.level = Math.max(1, Math.round(h.level + v));
-    else h.stats[k as StatKey] = Math.round(clamp(k === 'wealth' ? h.stats[k] + v : grow(h.stats[k as StatKey], v), 0, 100) * 10) / 10;
+    else if (k === 'wealth') addGold(h, v * COIN); // 暮らし向きの増減はお金の増減
+    else h.stats[k as StatKey] = Math.round(clamp(grow(h.stats[k as StatKey], v), 0, 100) * 10) / 10;
   }
 }
 

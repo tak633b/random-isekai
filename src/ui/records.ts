@@ -1,4 +1,5 @@
 // 死亡記録: 人生の終わりを1枚にまとめる。この端末の localStorage に残し、「過去の人生」で読み返せる
+import { levelOf } from '../engine/bonds';
 import type { Figure, Hazard, Hero, LogEntry, Role, SceneSpec, Setup, Tie } from '../engine/types';
 import { fateLine } from '../engine/people';
 import { CHEATS, heqOf, raceOf, randomSeed, statusName, summary } from '../engine';
@@ -60,7 +61,7 @@ export function toRecord(h: Hero): LifeRecord {
     [L('転生特典', 'Cheat skill'), h.cheat ? T(CHEATS[h.cheat].name) : L('なし', 'None')],
     [L('最後の仕事', 'Last job'), jobName(h.job)],
     [L('子', 'Children'), kids ? L(`${kids}人`, `${kids}`) : L('なし', 'None')],
-    ...(gamey ? [[L('レベル', 'Level'), `${Math.round(h.level)}${h.rank ? L(`・ランク${h.rank}`, `, rank ${h.rank}`) : ''}`] as [string, string]] : []),
+    ...(gamey ? [[L('レベル', 'Level'), `${levelOf(h)}${h.rank ? L(`・ランク${h.rank}`, `, rank ${h.rank}`) : ''}`] as [string, string]] : []),
   ];
   return {
     v: 1, date: new Date().toISOString(), setup: h.setup, name: h.name, worldName: T(h.world.name),

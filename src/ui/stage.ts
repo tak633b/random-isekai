@@ -6,7 +6,7 @@ import { summary } from '../engine';
 import { ambientOf, groundY, paintScene, tintOf, W, H } from './scene';
 import { paintSprite, POSE_FRAMES, SW, SH } from './sprite';
 import { ENEMY_H, enemyFor, paintEnemy, type EnemyPose, type EnemySpec } from './enemy';
-import { castOf, fit } from './pixel';
+import { castOf, fit, heroFigure } from './pixel';
 import { hash, Pix } from './raster';
 import { L } from '../i18n';
 
@@ -123,6 +123,10 @@ export class Stage {
 
   setPaused(p: boolean): void { this.paused = p; this.wake(); }
 
+  // 亡くなった年: 主人公が倒れ、半透明の姿 (光の輪と小さな翼) が立ちのぼって消える。元の世界へ帰った人は光の柱の中へ
+  private passing: { fig: Figure; home: boolean; inCast: boolean } | null = null;
+  private static PASS_MS = 3200;
+
   // 人生の画面から: その年の場面を出す。同じ年なら作り直さない (速さのボタンを押しても演出は続く)
   show(h: Hero, o: ShowOpts): void {
     const year = h.log.filter((e) => e.age === h.age);
@@ -133,6 +137,7 @@ export class Stage {
     // 戦いで倒れた年は、墓ではなく戦いの場面を出す (死亡記録へ移るまで)
     const lostFight = !h.alive && fight?.result === 'lose';
     const cast = lostFight ? castOf({ ...h, alive: true } as Hero) : castOf(h, h.alive ? [] : summary(h).lastWith);
+    this.passing = h.alive ? null : { fig: heroFigure({ ...h, alive: true } as Hero), home: h.death?.hazard === 'return', inCast: lostFight };
     const prev = new Map(this.actors.map((a) => [a.id, a]));
     const leave = new Set(year.flatMap((e) => e.leave ?? []));
     this.leaving = [...prev.values()].filter((a) => typeof a.id === 'number' && leave.has(a.id) && !cast.ids.includes(a.id)).map((a) => ({ actor: a, x: this.xOf(a) }));
@@ -152,9 +157,10 @@ export class Stage {
   }
 
   // 死亡記録などから: 決まった場面を静かに動かす (入退場も戦いも無し)
-  showSpec(spec: SceneSpec): void {
+  showSpec(spec: SceneSpec, passing?: { fig: Figure; home: boolean }): void {
     this.key = JSON.stringify(spec).length + '|' + spec.seed;
     this.fight = null; this.foe = null; this.leaving = []; this.joining.clear();
+    this.passing = passing ? { ...passing, fig: { ...passing.fig, dead: false }, inCast: false } : null;
     this.cap.hidden = true;
     this.setCast(spec, spec.figures.map((_, i) => -1 - i));
   }
@@ -172,7 +178,7 @@ export class Stage {
   // 動かすか: 止まっていない・見えている・タブが前・reduced-motion でない・動くものがある
   private live(): boolean {
     if (!this.spec || this.paused || !this.visible || document.hidden || this.reduced || !this.cv.isConnected) return false;
-    return ambientOf(this.spec) || this.actors.length > 0 || !!this.foe;
+    return ambientOf(this.spec) || this.actors.length > 0 || !!this.foe || !!this.passing;
   }
 
   private wake(): void {
@@ -204,6 +210,28 @@ export class Stage {
     }
     const gap = n > 4 ? GAP : 36;
     return W / 2 + (a.slot - (n - 1) / 2) * gap - SW / 2;
+  }
+
+  // 倒れた体と、立ちのぼる姿。t は倒れてからの時間 (動きを減らす設定では途中の一コマで止める)
+  private drawPassing(P: Pix, y0: number, tint: number[], t: number): void {
+    const ps = this.passing!;
+    const k = this.reduced || this.paused ? 0.45 : Math.min(1, t / Stage.PASS_MS); // 止めているときと動きを減らす設定では、途中の一コマ
+    if (k <= 0 && !this.reduced) return;
+    const me = this.actors.find((a) => a.id === 'me');
+    const x = me ? this.xOf(me) : W / 2 + 40 - SW / 2;
+    const cx = x + SW / 2;
+    if (ps.home) {
+      // 帰還: 足もとから光の柱が立ち、姿が薄れて上へ
+      for (let y = 0; y < y0 + SH; y++) for (let dx = -6; dx <= 6; dx++) P.px(cx + dx, y, '#fff6c8', (0.5 - Math.abs(dx) / 14) * Math.min(1, k * 2), true);
+      if (!ps.inCast) blit(P, sprite(ps.fig, 'idle', 0), x, y0 - k * 10, tint, undefined, Math.max(0, 1 - k * 1.1));
+      return;
+    }
+    if (!ps.inCast) blit(P, sprite({ ...ps.fig, dead: true }, 'down', 0), x, y0, tint);
+    // 半透明の白い姿が上へ。光の輪と小さな翼
+    const gy = y0 - 6 - k * 40, a = 0.6 * (1 - k * 0.9);
+    blit(P, sprite(ps.fig, 'idle', 0), x, gy, tint, 'white', a);
+    for (let dx = -3; dx <= 3; dx++) P.px(cx + dx, gy + 1, '#fff2a0', a + 0.2, true);
+    for (let dy = 0; dy < 5; dy++) { P.px(cx - 8 - (dy >> 1), gy + 14 + dy, '#ffffff', a, true); P.px(cx + 8 + (dy >> 1), gy + 14 + dy, '#ffffff', a, true); }
   }
 
   private draw(): void {
@@ -272,6 +300,7 @@ export class Stage {
       if (alpha > 0) { blit(P, enemy(this.foe, epose, this.tick), ex, groundY(s) - ENEMY_H + 2, tint, eflash, alpha); drewEnemy = true; }
     }
     if (f && mode === 'skip') swordMark(P, f);
+    if (this.passing) this.drawPassing(P, y0, tint, f ? Math.max(0, this.clock - this.fightMs * 0.85) : this.clock);
     P.put(this.cv);
     this.cv.dataset.enemy = drewEnemy ? '1' : '0';
     // 測定

@@ -146,6 +146,10 @@ const FEAT: AchievementDef[] = [
   a('feat', 'gekokujo', ['下剋上', 'The Usurper'], ['王族でない生まれから、王族の身分になる', 'Be born below royalty and end up royal.'], all({ fact: 'standing', eq: 'royal' }, { not: { fact: 'status', eq: 'royal' } }), 3),
   a('feat', 'restored', ['再興', 'Restoration'], ['没落したあと、郷士以上の身分に返り咲く', 'Fall from your standing, then climb back to the gentry or higher.'], all({ fact: 'fell', eq: true }, { any: [{ fact: 'standing', eq: 'gentry' }, { fact: 'standing', eq: 'noble' }, { fact: 'standing', eq: 'royal' }] }), 2),
   a('feat', 'closeCall', ['九死に一生', 'Close Call'], ['死ぬ寸前から生き延びる', 'Survive something that should have killed you.'], flag('closeCall'), 1),
+  // お金 (engine/econ.ts)
+  a('feat', 'debtFree', ['借金完済', 'Debt-Free'], ['借金をして、それを返し終える', 'Fall into debt and pay it all back.'], flag('debtFree'), 1),
+  a('feat', 'tycoon', ['大富豪', 'Tycoon'], ['ひと財産 (中流の暮らし向きの4倍ほど) を築く', 'Build a fortune about four times a comfortable household\'s savings.'], flag('tycoon'), 2),
+  a('feat', 'ragsToRiches', ['一文無しから', 'Rags to Riches'], ['奴隷・孤児・貧民に生まれ、大富豪になる', 'Be born a slave, orphan or pauper and become a tycoon.'], all({ any: [{ fact: 'status', eq: 'slave' }, { fact: 'status', eq: 'orphan' }, { fact: 'status', eq: 'poor' }] }, flag('tycoon')), 3),
   // 異世界転移
   a('feat', 'wentHome', ['ただいま', "I'm Home"], ['異世界転移したあと、元の世界へ帰る', 'Be transported to another world, then find your way home.'], { fact: 'hazard', eq: 'return' }, 3),
   a('feat', 'stayed', ['ここが居場所', 'This Is Home Now'], ['帰る道が開いたのに、異世界に残る', 'Stay in the other world when the way home opens.'], flag('stayed'), 1),

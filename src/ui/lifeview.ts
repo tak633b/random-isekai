@@ -1,5 +1,6 @@
 // ほかの人の一生 (輪の人・ほかの転生者) と、年代記 (世界の歴史) と、この世界の転生者の一覧。
 // 一生はその場でエンジンに作らせる (lifeOfTie / reincarnatorLife)。文は esc してから入れ、〈〉は markGifts で目立たせる
+import { formatGold } from '../engine/econ';
 import type { ChronicleEntry, ChronicleKind, Hero, OtherLife, Reincarnator, YearKind } from '../engine/types';
 import { CHEATS, RACES, lifeOfTie, statusName } from '../engine';
 import { reincarnatorLife, reincarnatorsOf } from '../engine/reincarnators';
@@ -134,6 +135,8 @@ function lifeHTML(h: Hero, o: OtherLife): string {
     [L('生まれ', 'Born'), `${statusName(o.status, h.world)}${L('・', ', ')}${T(RACES[o.race].name)}${L('・', ', ')}${SEX_NAME[o.sex]}${L(`(${whenText(h, o.bornAt)})`, ` (${whenText(h, o.bornAt)})`)}`],
     [L('職業', 'Job'), jobName(o.job)],
     [L('強さ', 'Strength'), `Lv ${Math.round(o.level)}${o.rank ? L(`・ランク${o.rank}`, `, Rank ${o.rank}`) : ''}`],
+    // お金は亡くなった時点のもの (先の年は伏せる)
+    ...(o.gold !== undefined && o.diedAt !== undefined && !future ? [[L('遺したお金', 'Left behind'), formatGold(h.world.id, o.gold)] as [string, string]] : []),
     ...(o.cheat ? [[L('特典', 'Cheat skill'), L(`〈${T(CHEATS[o.cheat].name)}〉`, `"${T(CHEATS[o.cheat].name)}"`)] as [string, string]] : []),
     ...(o.past ? [[L('前世', 'Past life'), L(`${o.past.age}歳の${T(o.past.job)}。${pastText}`, `A ${o.past.age}-year-old ${T(o.past.job)}. ${pastText}`)] as [string, string]] : []),
     // 元の世界へ帰った人は享年と言わない (labels.ts の endAge と同じ言い方)

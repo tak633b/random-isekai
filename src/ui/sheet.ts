@@ -34,7 +34,10 @@ export function sheetHTML(s: Sheet, h: Hero): string {
     s.items.length ? `<p>${L('元の世界から持ってきた物', 'Brought from the old world')}: ${esc(s.items.join(L('・', ', ')))}</p>` : '',
     s.companions.length ? `<p>${L('そばにいる人', 'At your side')}: ${s.companions.map((c) => `${esc(c.name)} <small>(${esc(c.role)})</small>`).join(L('、', ', '))}</p>` : '',
   ].join('');
-  return `${head}${vit}${sec(L('能力', 'Attributes'), attrs)}${sec(L('スキル・特典', 'Skills and gifts'), skills)}${sec(L('戦いの記録', 'Battle record'), fights, false)}${sec(L('歩み', 'Story so far'), story)}`;
+  const money = `<p class="${s.money.debt ? 'bad' : ''}">${L('お金', 'Money')}: <b>${esc(s.money.now)}</b></p>
+    ${s.money.inc ? `<p>${L(`去年の稼ぎ ${s.money.inc}・使った ${s.money.exp}`, `Last year: earned ${s.money.inc}, spent ${s.money.exp}`)}</p>` : ''}
+    ${s.money.gear ? `<p>${L('武具', 'Gear')}: ${esc(s.money.gear)}</p>` : ''}`;
+  return `${head}${vit}${sec(L('お金と持ち物', 'Money and gear'), money)}${sec(L('能力', 'Attributes'), attrs)}${sec(L('スキル・特典', 'Skills and gifts'), skills)}${sec(L('戦いの記録', 'Battle record'), fights, false)}${sec(L('歩み', 'Story so far'), story)}`;
 }
 
 export function openSheet(h: Hero): void {

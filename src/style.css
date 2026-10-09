@@ -550,3 +550,43 @@ h1 .tickets, h2 .tickets, .tickets { font-family: var(--dot); color: var(--accen
 .ssec { border-top: 1px solid var(--line); padding: 6px 0; }
 .ssec summary { cursor: pointer; color: var(--accent); font-family: var(--dot); }
 .climb { color: var(--accent); }
+
+/* 死にかけた年の演出 (ui/suspense.ts) */
+.suspense { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; background: radial-gradient(circle at 50% 45%, rgb(70 0 12 / .9), rgb(0 0 0 / .97)); animation: spfade 0.6s ease-out; color: var(--text); text-align: center; cursor: pointer; }
+.suspense.out { opacity: 0; transition: opacity .4s; }
+.sp-in { width: min(340px, 86vw); }
+.sp-heart { width: 54px; height: 54px; margin: 0 auto 18px; border-radius: 50%; background: var(--danger); box-shadow: 0 0 30px var(--danger); animation: beat var(--rate, .9s) ease-in-out infinite; }
+.suspense.saved .sp-heart { background: var(--good); box-shadow: 0 0 30px var(--good); animation-duration: 1.4s; }
+.suspense.fall .sp-heart { animation: none; opacity: .25; box-shadow: none; }
+.suspense.still .sp-heart { animation: none; }
+@keyframes beat { 0%, 100% { transform: scale(.85); } 15% { transform: scale(1.1); } 30% { transform: scale(.9); } 45% { transform: scale(1.05); } }
+@keyframes spfade { from { opacity: 0; } }
+.sp-beat { font-family: var(--dot); font-size: 20px; min-height: 1.6em; margin: 0 0 14px; }
+.sp-hp { display: grid; grid-template-columns: 2.5em 1fr 5.5em; gap: 8px; align-items: center; }
+.sp-hp span { font-family: var(--dot); color: var(--accent); }
+.sp-hp i { height: 10px; border-radius: 5px; background: var(--bg2); border: 1px solid var(--line); overflow: hidden; }
+.sp-hp b { display: block; height: 100%; background: var(--danger); transition: width .9s ease-in; }
+.suspense.saved .sp-hp b { background: var(--good); transition: width 1.2s ease-out; }
+.sp-hp em { font-style: normal; text-align: right; font-variant-numeric: tabular-nums; }
+.sp-end { min-height: 1.6em; margin: 16px 0 0; font-size: 17px; }
+.sp-skip { margin-top: 18px; font-size: 12px; background: none; color: var(--faint); border-color: var(--line); }
+@media (prefers-reduced-motion: reduce) { .suspense, .sp-hp b { animation: none; transition: none; } }
+
+/* 最期の場面 (ui/finale.ts) */
+.finale { max-width: 560px; position: relative; padding-top: 48px; }
+.fn-skip { position: absolute; top: 10px; right: 16px; font-size: 12px; min-height: 32px; padding: 4px 10px; background: var(--bg2); color: var(--sub); }
+.fn-step { opacity: 0; transform: translateY(8px); transition: opacity .8s, transform .8s; margin: 0 0 22px; }
+.fn-step.on { opacity: 1; transform: none; }
+.fn-name { display: flex; gap: 12px; align-items: center; margin-top: 12px; }
+.fn-name h1 { margin: 0; font-family: var(--dot); }
+.fn-cause { color: var(--sub); line-height: 1.9; }
+.fn-moment { border-left: 2px solid var(--line); padding-left: 12px; }
+.fn-moment p { margin: 4px 0 8px; line-height: 1.9; }
+.fn-age { font-family: var(--dot); color: var(--accent); font-size: 13px; }
+.fn-whos { display: flex; flex-wrap: wrap; gap: 10px; }
+.fn-who { display: grid; justify-items: center; gap: 2px; text-align: center; font-size: 12px; color: var(--sub); }
+.fn-who .face { width: 48px; }
+.fn-last p { font-size: 17px; line-height: 2; text-align: center; margin: 30px 0 18px; }
+.fn-last { text-align: center; }
+.finale.home .fn-last p { color: var(--accent); }
+@media (prefers-reduced-motion: reduce) { .fn-step { transition: none; transform: none; } }

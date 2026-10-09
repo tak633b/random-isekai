@@ -350,7 +350,8 @@ export interface Hero {
   alive: boolean;
   death?: DeathRecord;
   stats: Stats;
-  level: number;        // gamey の世界でだけ表に出す。どの世界でも内部では持つ
+  level: number;        // gamey の世界でだけ表に出す。どの世界でも内部では持つ (戦いの強さ。死の危険に効く)
+  xp?: number;          // 暮らしの経験 (働く・鍛える・大きな出来事)。表示のレベルに足す。死の危険には効かない (life.ts の drift)
   rank?: GuildRank;     // 冒険者ギルドに入っていれば
   job: JobId | null;
   jobYears: number;
@@ -375,6 +376,10 @@ export interface Hero {
   transfer?: TransferState; // 異世界転移で来た人の、元の世界の持ち物と来かた (arrival が summoned のとき)
   standing?: Status;    // 今の身分 (成り上がり・没落で変わる。無ければ生まれの身分 status のまま。engine/climb.ts)
   climb?: { age: number; from: Status; to: Status }[]; // 身分が変わった記録
+  gold?: number;        // お金 (コイン。借金ならマイナス。engine/econ.ts)。古いセーブには無い (暮らし向きから作る)
+  ledger?: { age: number; inc: number; exp: number }; // その年の出入り
+  gear?: number;        // 武具の段 (0〜3)。戦いの死が少し減る
+  sick?: { until: number; k: number }; // 病の治療の効き目 (その年齢まで、病の死の倍率)
 }
 
 // ---- 鍛える (engine/training.ts、データは src/data/training/*.ts) ----------------
@@ -589,6 +594,7 @@ export interface OtherLife {
   death?: DeathRecord;
   job: JobId | null;
   level: number;
+  gold?: number;          // その人のお金 (最期か、今の時点。engine/econ.ts)
   rank?: GuildRank;
   cheat?: CheatId;
   past?: PastLife;

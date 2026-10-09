@@ -18,6 +18,9 @@ export type Hazards = Record<Hazard, number>;
 const zero = (): Hazards => ({ infant: 0, disease: 0, monster: 0, violence: 0, war: 0, accident: 0, childbirth: 0, magic: 0, execution: 0, famine: 0, plague: 0, age: 0, return: 0 });
 
 export const ADULT_HEQ = 16;
+// 子どもの能力の上限 (強さ・知恵と魔力・人望)。人間換算で 0歳 45 から育つにつれて上がり、18歳で 100。才能や特典は、この上限の中での差になる
+export const AGE_CAPPED = ['power', 'mind', 'charm'] as const;
+export const ageCap = (e: number): number => 45 + 55 * Math.min(1, e / 18);
 const hz = (q: number) => -Math.log(1 - q);
 
 // ---- 年齢 -----------------------------------------------------------------
@@ -234,6 +237,9 @@ export function hazards(h: Hero): Hazards {
   }
   // スキル・体質・弱点の倍率。割り戻し (deflate) より後に掛けるので打ち消されない (trait を選んだ人生は表から外れてよい)
   if (h.traits.length) for (const k of HAZARDS) z[k] *= traitMult(h, k);
+  // 武具 (econ.ts の買い物) は戦いの死を、病の治療は2年ぶん病の死を変える
+  if (h.gear) { const g = 1 - 0.06 * h.gear; z.monster *= g; z.violence *= g; z.war *= g; }
+  if (h.sick && h.age <= h.sick.until) { z.disease *= h.sick.k; z.plague *= h.sick.k; z.infant *= h.sick.k; }
   // 作戦: 挑むほど魔物・暴力・戦の危険が上がる (バランスは 1 倍)
   z.monster *= tacticFight(h, 'monster'); z.violence *= tacticFight(h, 'violence'); z.war *= tacticFight(h, 'war');
   // 女神の加護: 主人公だけ、成人前の死を減らす

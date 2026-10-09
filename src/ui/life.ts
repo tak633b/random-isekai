@@ -1,5 +1,6 @@
 // 人生の画面: 転生したら1年ずつ自動で流れる (速さ・一時停止・次の選択まで・自動で決める)。
 // 場面・顔と能力・年表・人の輪・その年の危険の内訳が年ごとに変わる。選択が来たらモーダルで止まる。手で 1年 / 10年 / 最後まで も残す
+import { levelOf } from '../engine/bonds';
 import type { Hero, StatKey, Tie } from '../engine/types';
 import { advanceYear, choose, deathChance, fromSaved, heqOf, liveOut, raceOf, riskBreakdown, setTactic, statusName, toSaved, CHEATS, TACTICS, TACTIC_NAME, type SavedHero } from '../engine';
 import type { Policy } from '../engine/types';
@@ -16,6 +17,8 @@ import { aiYearButton } from './aipanel';
 import { aiReady } from '../ai/settings';
 import { ROLE_NAME, STAT_NAME, ageText, climbText, jobName, titlesOf } from './labels';
 import { openSheet } from './sheet';
+import { formatGold } from '../engine/econ';
+import { playSuspense } from './suspense';
 import { esc, load, save } from './dom';
 import { checkYear } from '../meta/tickets';
 import { isRandom, restoreMode, saveMode } from './mode';
@@ -121,6 +124,7 @@ export function showLife(h: Hero, nav: Nav, resumed = false): void {
     if (b.dataset.act === 'y1' || b.dataset.act === 'y10' || b.dataset.act === 'end') newYear();
     render();
     if (!h.alive) return died();
+    if (b.dataset.act === 'y1' || b.dataset.act === 'y10') closeCheck();
     if (b.dataset.act === 'tie') {
       document.querySelector<HTMLElement>(`.ring [data-act=tie][data-id="${b.dataset.id}"]`)?.focus({ preventScroll: jump });
       if (jump) document.getElementById('person')?.scrollIntoView({ block: 'nearest', behavior: reduced ? 'auto' : 'smooth' });
@@ -154,12 +158,23 @@ export function showLife(h: Hero, nav: Nav, resumed = false): void {
     yearMs = yearSec(h, span, FIGHT_MS / 1000) * 1000;
   }
 
+  // 九死に一生の年: 進行を止めて、死にかけた演出を流してから続ける (年表の一文 LogEntry.close)
+  let seen = h.log.length;
+  let suspended = false;
+  function closeCheck(): void {
+    const c = h.log.slice(seen).find((e) => e.close);
+    seen = h.log.length;
+    if (!c || !h.alive || suspended) return;
+    suspended = true;
+    void playSuspense(h, c.close!, true).then(() => { suspended = false; last = performance.now(); });
+  }
+
   function frame(t: number): void {
     if (!onScreen()) return;
     const dt = Math.min(250, t - last);
     last = t;
     const waiting = h.pending.length > 0 && !h.auto;
-    if (!play.paused && !waiting && h.alive && !document.hidden) {
+    if (!play.paused && !waiting && h.alive && !document.hidden && !suspended) {
       progress += dt / scaledMs(yearMs, play.speed, ff);
       let n = 0;
       // 速いときは1フレームに何年か進め、描くのは最後に1回
@@ -174,6 +189,7 @@ export function showLife(h: Hero, nav: Nav, resumed = false): void {
         render();
         if (t - saved > 1000 || h.pending.length || !h.alive) { persist(h); saved = t; }
         if (!h.alive) return died();
+        closeCheck();
         nextModal();
       }
     }
@@ -194,7 +210,14 @@ export function showLife(h: Hero, nav: Nav, resumed = false): void {
     persist(h);
     // 戦いで倒れた年は、演出を見届けてから
     const lost = h.log.at(-1)?.fight?.result === 'lose' || h.log.some((e) => e.age === h.age && e.fight?.result === 'lose');
-    setTimeout(() => { if (document.getElementById('scenecv') === cv) { stage.destroy(); nav.death(h); } }, reduced ? 300 : lost ? Math.min(FIGHT_MS, scaledMs(yearMs, play.speed, ff) * 0.85) + 800 : 1500);
+    // 老いと帰還のほかは、倒れるまでの演出を挟む (九死に一生と途中まで同じ流れ)
+    const hz = h.death?.hazard;
+    const acute = hz !== undefined && hz !== 'age' && hz !== 'return';
+    setTimeout(() => {
+      if (document.getElementById('scenecv') !== cv) return;
+      const go = () => { if (document.getElementById('scenecv') === cv) { stage.destroy(); nav.death(h); } };
+      if (acute) void playSuspense(h, hz!, false).then(go); else go();
+    }, reduced ? 1200 : lost ? Math.min(FIGHT_MS, scaledMs(yearMs, play.speed, ff) * 0.85) + 3400 : 3400); // 倒れて、姿が立ちのぼるのを見届けてから (stage.ts の PASS_MS)
   }
 
   // ---- 選択のモーダル: 選ぶまで年は進まない。Esc では閉じない。Tab はモーダルの中だけを回る
@@ -326,8 +349,8 @@ function meHTML(h: Hero, heq: number, gamey: boolean): string {
       <h2 class="pname">${esc(h.name)}</h2>
       <p>${esc(T(raceOf(h.race).name))}${L('・', ' · ')}${esc(statusName(h.standing ?? h.status, h.world))}${L('・', ' · ')}${esc(job)}</p>
       ${climbText(h) ? `<p class="note climb">${esc(climbText(h))}</p>` : ''}
-      <p class="note">${ageText(h.age)}${heq !== h.age ? L(`(人間でいえば${heq}歳)`, ` (about ${heq} in human years)`) : ''}${h.cheat ? `${L('・', ' · ')}${esc(T(CHEATS[h.cheat].name))}` : ''}${h.revives ? L(`・死の取り消し残り${h.revives}回`, ` · can undo death ${h.revives} more ${h.revives === 1 ? 'time' : 'times'}`) : ''}</p>
-      ${gamey ? `<p class="lv">Lv <b>${Math.round(h.level)}</b>${h.rank ? `<span>${L('ギルドランク', 'Guild rank')} <b>${h.rank}</b></span>` : ''}${titlesOf(h).map((t) => `<span class="title">${esc(t)}</span>`).join('')}</p>` : ''}
+      <p class="note">${ageText(h.age)}${heq !== h.age ? L(`(人間でいえば${heq}歳)`, ` (about ${heq} in human years)`) : ''}${`${L('・', ' · ')}${esc(formatGold(h.world.id, h.gold ?? 0))}`}${h.cheat ? `${L('・', ' · ')}${esc(T(CHEATS[h.cheat].name))}` : ''}${h.revives ? L(`・死の取り消し残り${h.revives}回`, ` · can undo death ${h.revives} more ${h.revives === 1 ? 'time' : 'times'}`) : ''}</p>
+      ${gamey ? `<p class="lv">Lv <b>${levelOf(h)}</b>${h.rank ? `<span>${L('ギルドランク', 'Guild rank')} <b>${h.rank}</b></span>` : ''}${titlesOf(h).map((t) => `<span class="title">${esc(t)}</span>`).join('')}</p>` : ''}
     </div></div>
     ${lineageHTML(recordLineage(h), h.name)}
     ${traitTags(h.traits, h.blessing)}

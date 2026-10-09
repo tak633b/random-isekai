@@ -230,6 +230,7 @@ async function stageChecks(page, lang, browser) {
   }
   // reduced-motion では止まる
   const ctx2 = await browser.newContext({ viewport: { width: 1280, height: 900 }, reducedMotion: 'reduce' });
+  await ctx2.addInitScript(() => setInterval(() => { document.querySelector('[data-fn=skip]')?.click(); document.querySelector('.suspense')?.click(); }, 300)); // 最期の場面と死にかけた演出は飛ばす
   await ctx2.addInitScript((l) => { try { localStorage.setItem('lang', l); } catch {} }, lang);
   await ctx2.addInitScript(IMP);
   const r = await ctx2.newPage();
@@ -529,6 +530,7 @@ async function metaChecks(page, lang, sfx, browser) {
   await page.click('[data-go=title]');
   // 8. ストレージが使えない状態でも遊べる
   const ctx3 = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  await ctx3.addInitScript(() => setInterval(() => { document.querySelector('[data-fn=skip]')?.click(); document.querySelector('.suspense')?.click(); }, 300)); // 最期の場面と死にかけた演出は飛ばす
   await ctx3.addInitScript(() => { Object.defineProperty(window, 'localStorage', { get() { throw new Error('storage blocked'); } }); });
   const q = await ctx3.newPage();
   const qerr = [];
@@ -550,6 +552,7 @@ async function metaChecks(page, lang, sfx, browser) {
 async function run(lang) {
   const browser = await chromium.launch();
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  await ctx.addInitScript(() => setInterval(() => { document.querySelector('[data-fn=skip]')?.click(); document.querySelector('.suspense')?.click(); }, 300)); // 最期の場面と死にかけた演出は飛ばす
   await ctx.addInitScript((l) => { try { localStorage.setItem('lang', l); } catch {} }, lang);
   await ctx.addInitScript(IMP);
   const page = await ctx.newPage();

@@ -14,7 +14,8 @@ function play(seed: number): { h: Hero; refs: string[] } {
   const refs: string[] = [];
   for (let y = 0; y < 4000 && h.alive; y++) {
     advanceYear(h);
-    while (h.pending.length && h.alive) { refs.push(h.pending[0].ref ?? ''); choose(h, h.pending[0].auto(h)); }
+    // お金の選択 (病・市の日、econ.ts) は鍛えるとは別に数える
+    while (h.pending.length && h.alive) { const r = h.pending[0].ref ?? ''; if (!/^(sick|shop):/.test(r)) refs.push(r); choose(h, h.pending[0].auto(h)); }
   }
   return { h, refs };
 }

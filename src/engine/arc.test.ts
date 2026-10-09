@@ -48,7 +48,7 @@ describe('登録した人の職業', () => {
       if (h.flags.guild === undefined && h.flags['arc.deed'] === undefined) continue;
       // 隠居してから登録した人・大人になる前に亡くなった人は対象外
       if (heqOf(h) < 16 || (h.flags.retired !== undefined && h.flags.retired <= (h.flags.guild ?? h.age))) continue;
-      if (!h.alive && h.flags.adult === h.age) continue; // 大人になったその年に、職業を選ぶ前の出来事で亡くなった人
+      if (!h.alive && (h.flags.adult === h.age || h.flags.guild === h.age)) continue; // 大人になった・登録したその年に、職業が変わる前の出来事で亡くなった人
       n++;
       expect(KEEP, `${h.world.id} ${h.job}`).toContain(h.job);
       if (h.log.some((e) => /を置いて、.+になった/.test(e.text))) moved++;

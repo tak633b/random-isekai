@@ -101,7 +101,7 @@ export function showDeath(h: Hero, nav: Nav): void {
   }
   // 墓の場面: 最後にそばにいた人が静かに立つ
   const grave = app.querySelector<HTMLCanvasElement>('.record > canvas.scene');
-  if (grave) new Stage(grave).showSpec(r.scene);
+  if (grave) new Stage(grave).showSpec(r.scene, { fig: r.face, home: r.hazard === 'return' });
   const leave = document.getElementById('leave')!;
   const alive = () => document.getElementById('leave') === leave;
 

@@ -7,6 +7,7 @@ import { showArrival, showSetup } from './ui/setup';
 import { showReveal } from './ui/reveal';
 import { resumeLife, savedLife, showLife } from './ui/life';
 import { showDeath } from './ui/death';
+import { showFinale } from './ui/finale';
 import { showTrials } from './ui/trials';
 import { showMemorial } from './ui/memorial';
 import { showHandover } from './ui/lineage';
@@ -41,7 +42,7 @@ const nav: Nav = {
     showReveal(h, a, () => showArrival(h, a, nav), random ? title : nav.setup);
   },
   life: (h, resumed) => showLife(h, nav, resumed),
-  death: (h) => showDeath(h, nav),
+  death: (h) => showFinale(h, () => showDeath(h, nav)), // 最期の場面のあとに死亡記録
   trials: (setup) => showTrials(setup, nav),
   past: (focus) => showPast(nav, focus),
   handover: (prev, h) => showHandover(prev, h, nav),

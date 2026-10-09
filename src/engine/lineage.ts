@@ -6,7 +6,10 @@ import type { Ancestor, Hero, Role, Tie } from './types';
 import { otherHero, tieSpec, worldTimeline, type LifeSpec } from './others';
 import { reincarnatorSpec, reincarnatorsOf } from './reincarnators';
 import { chronicleOf } from './chronicle';
-import { addTie } from './bonds';
+import { addGold, addTie, log } from './bonds';
+import { formatGold } from './econ';
+import { forgetHeroKey } from './events';
+import { L } from '../i18n';
 
 // 前の主人公から見た役 → 選んだ人から見た前の主人公の役
 function inverseRole(role: Role, prevSex: Hero['sex']): Role {
@@ -88,7 +91,15 @@ export function continueAs(prev: Hero, key: string): Hero {
   if (self !== undefined) h.lineage.self = self;
   // 職業・level・ランク・技は、輪の人のカード (人物像) から。職業と level は錨で既に合っている
   if (tie?.profile?.rank) h.rank = tie.profile.rank;
+  // 遺産: 子と連れ合いは、前の主人公のお金を受け継ぐ (子はきょうだいと分ける)。借金は受け継がない
+  if (tie && (tie.role === 'child' || tie.role === 'spouse') && (prev.gold ?? 0) > 0) {
+    const kids = tie.role === 'child' ? prev.people.filter((t) => t.role === 'child' && t.alive).length : 1;
+    const v = Math.round(prev.gold! / Math.max(1, kids));
+    addGold(h, v, false);
+    log(h, L(`${prev.given}の遺産から、${formatGold(h.world.id, v)}を受け継いだ。`, `Inherited ${formatGold(h.world.id, v)} from ${prev.given}'s estate.`), 'family');
+  }
   if (tie?.profile?.skill && !h.traits.includes(tie.profile.skill)) h.traits = [...h.traits, tie.profile.skill];
+  forgetHeroKey(h); // 錨の一生のあいだに覚えた条件の鍵を作り直す (技が増え、錨も外れたので)
 
   // 前の主人公を、選んだ人の輪に故人として正しい役で入れる (錨の一生で既に入っていれば、その人を故人にする)
   const role = tie ? inverseRole(tie.role, prev.sex) : 'friend';

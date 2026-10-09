@@ -150,6 +150,8 @@ const HINTS: Record<string, Hint> = {
   'a.feat.courtmage': { world: 'medieval', hero: { talent: 'magic' }, seed: 119 },
   'a.feat.streamer': { world: 'modern', hero: {}, seed: 194 },
   'a.death.radiation': { world: 'postapoc', hero: {}, seed: 69 },
+  'a.feat.ragsToRiches': { world: 'medieval', hero: { status: 'poor' }, seed: 42 },
+  'a.feat.tycoon': { world: 'medieval', hero: { status: 'noble' }, seed: 1 },
   'a.feat.wentHome': { world: 'medieval', hero: { arrival: 'summoned' }, seed: 29 },
   'a.feat.stayed': { world: 'medieval', hero: { arrival: 'summoned' }, seed: 13 },
   'a.death.scurvy': { world: 'ocean', hero: {}, seed: 326 },

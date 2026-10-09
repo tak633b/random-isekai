@@ -8,10 +8,10 @@ import { raceOf } from './races';
 import { STATUS_WEALTH, statusBirth, statusName, statusRank, statusWeights } from './status';
 import { availableCheats, CHEATS, cheatWeight } from './cheats';
 import { personName, styleOf, withFamily, worldNames } from './names';
-import { ageOfHeq, heq } from './mortality';
+import { ageCap, AGE_CAPPED, ageOfHeq, heq } from './mortality';
 import { anchorFamily, anchorYear } from './anchor';
 import { ALLOT_KEYS, POINT_STEP, randomBuild, traitOf } from './traits';
-import { addTie, grow, log } from './bonds';
+import { addTie, COIN, grow, log } from './bonds';
 import { earthName, howText, itemName, rollTransfer } from './transfer';
 import { L, T, cap, pron } from '../i18n';
 
@@ -136,6 +136,8 @@ export function createHero(setup: Setup): Hero {
     flags: {}, revives: cheat ? CHEATS[cheat].revive ?? 0 : 0, people: [], nextId: 1, log: [], pending: [], kinds: [],
     state: { war: 0, plague: 0, famine: 0, demonKing }, auto: setup.auto ?? false, policy: setup.policy ?? 'normal', used: [],
   };
+  { const cap = ageCap(heq(start, r)); for (const k of AGE_CAPPED) stats[k] = Math.min(stats[k], cap); } // 幼いうちは能力の上限が低い
+  h.gold = Math.round(stats.wealth * COIN); // お金 (暮らし向きの目安から。engine/econ.ts)
   if (past) h.past = arr === 'summoned' ? { ...past, age: start, job: tr && startAge === 'adult' ? tr.job : summonedJob(start, past.job) } : past;
   if (tr) {
     h.transfer = { how: tr.how, job: h.past!.job, items: tr.items };

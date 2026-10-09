@@ -92,8 +92,9 @@ describe('trait の効き目', () => {
   }, 30_000);
   it('始まりの能力に trait の stats とポイントが乗る', () => {
     useTraits(POOL);
-    const a = createHero({ seed: 3, world: { preset: 'medieval' }, hero: { ...base, traits: [] }, auto: true });
-    const b = createHero({ seed: 3, world: { preset: 'medieval' }, hero: { ...base, traits: ['t.sword'], points: { power: 2 } }, auto: true });
+    // 大人で始める (幼いと年齢の上限 ageCap で頭打ちになるため)
+    const a = createHero({ seed: 3, world: { preset: 'medieval' }, hero: { ...base, startAge: 'adult', traits: [] }, auto: true });
+    const b = createHero({ seed: 3, world: { preset: 'medieval' }, hero: { ...base, startAge: 'adult', traits: ['t.sword'], points: { power: 2 } }, auto: true });
     expect(b.stats.power - a.stats.power).toBe(Math.min(100, a.stats.power + 20) - a.stats.power);
   });
 });

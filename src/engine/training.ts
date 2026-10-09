@@ -43,7 +43,7 @@ function availIds(h: Hero): Set<string> {
 }
 const learnedCount = (h: Hero) => h.learned?.length ?? 0;
 // まだ持っていない、持っているものと両立する、その世界で身につけられるもの
-function learnable(h: Hero, ids: string[]): TraitDef[] {
+export function learnable(h: Hero, ids: string[]): TraitDef[] {
   if (learnedCount(h) >= LEARN_MAX || h.traits.length >= TRAIT_MAX) return [];
   const ok = availIds(h);
   const own = new Set(h.traits);
@@ -211,7 +211,7 @@ const climbOffer = (s: Status): number => (s === 'slave' || s === 'orphan' || s 
 
 const pickLine = (h: Hero, xs: { ja: string; en: string }[]) => fill(T(xs[Math.floor(h.rng() * xs.length)]), h);
 
-function learn(h: Hero, t: TraitDef, text: string): void {
+export function learn(h: Hero, t: TraitDef, text: string): void {
   h.traits = [...h.traits, t.id];
   h.learned = [...(h.learned ?? []), t.id];
   if (t.stats) bump(h, t.stats as Partial<Record<StatKey, number>>);

@@ -116,7 +116,7 @@ export function lifeOfSpec(h: Hero, spec: LifeSpec): OtherLife {
   return {
     key: spec.key, name: o.name, race: o.race, sex: o.sex, status: o.status, bornAt: spec.bornAt,
     ...(o.alive ? {} : { diedAt: spec.bornAt + o.age, ageAtDeath: o.age, death: o.death }),
-    job: o.job, level: o.level, ...(o.rank ? { rank: o.rank } : {}), ...(o.cheat ? { cheat: o.cheat } : {}), ...(o.past ? { past: o.past } : {}),
+    job: o.job, level: o.level, ...(o.gold !== undefined ? { gold: Math.round(o.gold) } : {}), ...(o.rank ? { rank: o.rank } : {}), ...(o.cheat ? { cheat: o.cheat } : {}), ...(o.past ? { past: o.past } : {}),
     log: o.log,
   };
 }

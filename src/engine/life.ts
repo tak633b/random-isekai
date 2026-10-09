@@ -4,7 +4,7 @@ import type { Decision, Hazard, Hero, JobId, LogEntry, Policy, Tie } from './typ
 import { makeRng, pickWeighted } from './rng';
 import { agePeople, byRole, bump, closest, grow, log, mourn, shared } from './bonds';
 import { traitFertility } from './traits';
-import { attentionOf, deathChance, hazards, heq, HAZARDS, maternalRisk, mustDie, agingOf, heqOf, warStartP, WAR_MEAN_YEARS, plagueP, famineP, FAMINE_MEAN_YEARS, ADULT_HEQ } from './mortality';
+import { ageCap, AGE_CAPPED, attentionOf, deathChance, hazards, heq, HAZARDS, maternalRisk, mustDie, agingOf, heqOf, warStartP, WAR_MEAN_YEARS, plagueP, famineP, FAMINE_MEAN_YEARS, ADULT_HEQ } from './mortality';
 import { raceOf } from './races';
 import { CHEATS } from './cheats';
 import { FIGHT_JOBS, jobOf, jobsFor, jobWeight, JOBS, type JobDef } from './jobs';
@@ -16,6 +16,8 @@ import { arcYear, ensureFightJob, fightJobFor, promote } from './arc';
 import { trainingByRef, trainingDecision, trainYear } from './training';
 import { fortuneYear } from './climb';
 import { maybeClose } from './closecall';
+import { cheatYear } from './cheatuse';
+import { econByRef, econDecisions, econYear } from './econ';
 import { alliesFor, peopleYear } from './people';
 import { onArc } from './events';
 import { endLovers } from './events';
@@ -203,7 +205,7 @@ function milestones(h: Hero, out: Decision[]): void {
   }
   // 学院 (人間換算12歳)。貴族社会の世界か、騎士の家以上か、魔力の高い子
   if (h.flags.academy === undefined && crossed(h, 12)) {
-    const gifted = h.stats.mind >= 60 && w.magic >= 2;
+    const gifted = h.stats.mind >= 50 && w.magic >= 2; // 12歳の上限は 81 (mortality.ts の ageCap)。50 で入学の数が上限を入れる前と近い
     if (hasTag(w, 'nobility') || (statusRank(h.status) >= statusRank('gentry') && !hasTag(w, 'ruin')) || (gifted && h.rng() < 0.4)) {
       h.flags.academy = h.age; bump(h, { mind: 8 });
       const [ja, en] = SCHOOL[styleOf(w)];
@@ -323,7 +325,6 @@ function drift(h: Hero): void {
   if (j && h.flags.retired === undefined) {
     h.jobYears++;
     for (const [k, v] of Object.entries(j.grow)) s[k as keyof typeof s] = Math.min(100, grow(s[k as keyof typeof s], v ?? 0)); // 上ほど伸びにくい (bonds.ts)
-    s.wealth += (j.wealth - s.wealth) * 0.1;
     if (FIGHTERS.includes(h.job!)) h.level += h.cheat === 'exp_boost' ? 2 : h.cheat === 'growth' ? 1.5 : 1;
   }
   // 勝った戦いでもレベルが上がる (どの職でも)。大物 (竜・魔族) は4倍。レベルが高いほど1勝の伸びは小さい
@@ -333,7 +334,16 @@ function drift(h: Hero): void {
     const big = x.fight.foe === 'dragon' || x.fight.foe === 'demon' ? 4 : 1;
     h.level += (big * 10) / (10 + h.level);
   }
+  // 暮らしの経験: 戦わない人もゆっくりレベルが上がる (表示のレベル = level + xp。戦いの強さ level と死の危険は変えない)
+  let xp = e >= ADULT_HEQ ? 0.2 : e >= 8 ? 0.1 : 0;
+  let big = 0;
+  for (let i = h.log.length - 1; i >= 0 && h.log[i].age === h.age; i--) if (h.log[i].big && !h.log[i].fight) big++;
+  xp += Math.min(0.6, big * 0.2); // 大きな出来事 (身につけた・身分が変わった・結婚…) ほど経験になる
+  h.xp = Math.round(((h.xp ?? 0) + xp) * 100) / 100;
+  econYear(h); // お金の1年 (職の稼ぎ・依頼・懸賞金・領地・利息・取り立て・遺産)。暮らし向きはお金から決まる
   s.happy += (55 - s.happy) * 0.05;
+  const cap = ageCap(e); // 幼いうちは上限が低い (mortality.ts)
+  for (const k of AGE_CAPPED) s[k] = Math.min(s[k], cap);
   for (const k of Object.keys(s) as (keyof typeof s)[]) s[k] = Math.round(Math.min(100, Math.max(0, s[k])) * 10) / 10;
   h.level = Math.round(h.level * 10) / 10;
 }
@@ -400,16 +410,21 @@ export function advanceYear(h: Hero): void {
   if (h.alive) decs.push(...drawEvents(h, die));
   settlePending(h, decs);
   if (!h.alive) return;
+  ensureFightJob(h); // 英雄の筋で登録した大人は、その年のうちに戦う職へ (登録が出来事でも節目でも。鍛える・特典・お金の前に)
   // 異世界転移した人が「帰る」を選んだ (出来事のしるし goHome)。死ではない終わり方
   if (h.flags.goHome !== undefined) { die(h, 'return'); return; }
   // 鍛える: 今の道を1年ぶん進めて (その年の選択を済ませた後で。職業が決まる前に亡くならないように)、見直しの年なら「何を鍛える？」
   trainYear(h, die);
   if (!h.alive) return;
+  cheatYear(h); // 転生特典を使う年 (cheatuse.ts。スキル強奪は勝った相手から技を奪う)
   fortuneYear(h); // 身分: 騎士・領主・解放のしるしで上がり、暮らしが尽きたら落ちる
   const td = trainingDecision(h);
   if (td) settlePending(h, [td]);
   if (!h.alive) return;
-  ensureFightJob(h); // 英雄の筋で登録した大人は、その年のうちに戦う職へ (登録が出来事でも節目でも)
+  // お金: 病の治療と、市の立つ日
+  const ed = econDecisions(h);
+  if (ed.length) settlePending(h, ed);
+  if (!h.alive) return;
   // 6. 能力
   drift(h);
   capLevel(h); // ほかの人の一生: 主人公の輪にいた間の level を人物像に合わせる
@@ -451,6 +466,7 @@ export function fromSaved(s: SavedHero): Hero {
   for (const ref of pendingRefs) {
     const ev = eventByRef(ref);
     if (ev?.choice) h.pending.push(eventDecision(h, ev, die));
+    else if (ref.startsWith('sick:') || ref.startsWith('shop:')) { const d = econByRef(h, ref); if (d) h.pending.push(d); }
     else if (ref.startsWith('train:')) { const d = trainingByRef(h, ref); if (d) h.pending.push(d); }
     else if (ref.startsWith('job:')) { const d = jobDecision(h, ref.slice(4).split(',') as JobId[]); if (d) h.pending.push(d); }
   }
