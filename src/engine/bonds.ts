@@ -22,11 +22,27 @@ export function log(h: Hero, text: string, kind: YearKind, big = false, who?: nu
   return e;
 }
 
+// 能力の伸び: 60 までは足したまま、そこから上は上に行くほど伸びにくい (伸びの倍率 (100 - 今) / 40。80 で 0.5、90 で 0.25)。
+// 実測 (2026-10-09, おまかせ3000人): 40歳で 95 以上の人は 知恵と魔力 6%・名声 3%・ほかは 0% (前は 知恵と魔力 55%・強さ 20%・健康 21%)、平均は 70〜82
+// 下がるときはそのまま。暮らし向き (wealth) は能力ではないので、そのまま足す
+export const SOFT_FROM = 60;
+const SOFT_K = 1;
+export function grow(cur: number, v: number): number {
+  if (v <= 0) return cur + v;
+  let x = cur, left = v;
+  while (left > 0 && x < 100) {
+    const step = Math.min(1, left);
+    x += step * (x < SOFT_FROM ? 1 : ((100 - x) / (100 - SOFT_FROM)) ** SOFT_K);
+    left -= step;
+  }
+  return x;
+}
+
 export function bump(h: Hero, eff: Partial<Record<StatKey | 'level', number>>): void {
   for (const k in eff) {
     const v = eff[k as StatKey | 'level']!;
     if (k === 'level') h.level = Math.max(1, Math.round(h.level + v));
-    else h.stats[k as StatKey] = Math.round(clamp(h.stats[k as StatKey] + v, 0, 100) * 10) / 10;
+    else h.stats[k as StatKey] = Math.round(clamp(k === 'wealth' ? h.stats[k] + v : grow(h.stats[k as StatKey], v), 0, 100) * 10) / 10;
   }
 }
 

@@ -9,7 +9,7 @@ import { meeting, pastLine } from './setup';
 import { itemName } from '../engine/transfer';
 import { screen } from './nav';
 import { esc } from './dom';
-import { L, T } from '../i18n';
+import { isEn, L, T } from '../i18n';
 
 type Rarity = 'common' | 'rare' | 'legend' | 'curse';
 const RARITY: Record<Rarity, string> = {
@@ -41,7 +41,8 @@ export function showReveal(h: Hero, asked: Setup, done: () => void, back: () => 
 
   screen(`
   <main class="page reveal" aria-live="polite">
-    <p class="rv-skip">${L('押す・Enter で飛ばす', 'Tap or press Enter to skip')}</p>
+    <button class="rv-skip" data-rv="skip">${L('スキップ ▸▸', 'Skip ▸▸')}</button>
+    <p class="rv-next" id="rv-next">${L('次へ ▸ (押す・Enter)', 'Next ▸ (tap or Enter)')}</p>
     <section class="rv-stage" id="rv-void">
       ${tf ? `<div class="rv-circle${tf.how === 'vanish' ? ' rv-corner' : ''}" aria-hidden="true"></div>` : ''}
       ${past ? `<p class="rv-past">${esc(past)}</p>` : ''}
@@ -73,53 +74,77 @@ export function showReveal(h: Hero, asked: Setup, done: () => void, back: () => 
       <p class="kicker">${L('この世界での名前', 'Your name in this world')}</p>
       <h1>${esc(h.name)}</h1>
     </section>
-  </main>`, () => finish(), { back: () => { stop(); back(); }, esc: false, bar: false });
+  </main>`, (t) => (t.closest('[data-rv=skip]') ? finish() : next()), { back: () => { stop(); back(); }, esc: false, bar: false });
   const root = document.querySelector<HTMLElement>('main.reveal')!;
   paintAll(root);
 
-  const timers: number[] = [];
+  // 読める速さで進める: 文は字数 (日本語 70ms/字・英語 250ms/語) + 1.2秒、短くても2秒は残す。
+  // 世界と授かったものの後は、押す (Enter) まで待つ。押すと今の待ちを終えて次へ。スキップ (Esc) で最後へ
   let over = false;
+  let wake: (() => void) | null = null;
   const $ = (id: string) => document.getElementById(id);
-  const stop = () => { over = true; timers.forEach(clearTimeout); document.removeEventListener('keydown', key); };
+  const stop = () => { over = true; wake?.(); document.removeEventListener('keydown', key); };
   function finish(): void { if (over) return; stop(); done(); }
+  function next(): void { wake?.(); }
   function key(e: KeyboardEvent): void {
-    if (e.key === 'Enter' || e.key === ' ' || e.key === 'Escape') { e.preventDefault(); finish(); }
+    if (e.key === 'Escape') { e.preventDefault(); finish(); }
+    else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); next(); }
   }
   document.addEventListener('keydown', key);
-
-  let t = 0;
-  const at = (ms: number, f: () => void) => { t += quick ? Math.min(ms, 120) : ms; const when = t; timers.push(window.setTimeout(() => { if (!over) f(); }, when)); };
-  const stage = (id: string) => { root.querySelectorAll('.rv-stage.on').forEach((s) => s.classList.remove('on')); $(id)?.classList.add('on'); };
+  // ms 待つ (押されたら早く終わる)。tap: true なら押されるまで待つ
+  const wait = (ms: number, tap = false) => new Promise<void>((ok) => {
+    if (over) return ok();
+    const hint = $('rv-next');
+    if (tap) hint?.classList.add('on');
+    const id = tap ? 0 : window.setTimeout(() => { wake = null; ok(); }, ms);
+    wake = () => { clearTimeout(id); wake = null; hint?.classList.remove('on'); ok(); };
+  });
+  const readMs = (text: string) => Math.max(2000, (isEn ? text.trim().split(/\s+/).length * 250 : [...text].length * 70) + 1200);
+  const stage = (id: string) => { root.querySelectorAll('.rv-stage.on').forEach((x) => x.classList.remove('on')); $(id)?.classList.add('on'); };
   const show = (id: string) => $(id)?.classList.add('on');
-  // 名札が速く回って、だんだん遅くなって止まる。選んだものと動きを減らす設定は回さない
-  const spin = (id: string, pool: string[], last: string, spinning: boolean, ms: number) => {
+  const textOf = (id: string) => $(id)?.textContent ?? '';
+  // 名札が速く回って、だんだん遅くなって止まる。選んだものと動きを減らす設定は回さない (待ちは押しても縮まない短い演出)
+  const spin = async (id: string, pool: string[], last: string, spinning: boolean, ms: number) => {
     const el = $(id)!;
-    if (!spinning || quick || pool.length < 2) { at(0, () => { el.textContent = last; el.classList.add('land'); }); return; }
-    const waits: number[] = [];
-    for (let w = 40, sum = 0; sum < ms; w *= 1.2) { waits.push(w); sum += w; }
-    waits.forEach((w, i) => {
-      const end = i === waits.length - 1;
-      at(w, () => { el.textContent = end ? last : pool[Math.floor(spinRng() * pool.length)]; if (end) el.classList.add('land'); });
-    });
+    if (spinning && !quick && pool.length >= 2) {
+      for (let w = 40, sum = 0; sum < ms && !over; w *= 1.2) {
+        el.textContent = pool[Math.floor(spinRng() * pool.length)];
+        await new Promise((ok) => setTimeout(ok, w));
+        sum += w;
+      }
+    }
+    el.textContent = last;
+    el.classList.add('land');
   };
 
-  // 合わせて 9〜10 秒ほど
-  at(80, () => { stage('rv-void'); root.querySelector('.rv-past')?.classList.add('on'); });
-  at(past ? 600 : 100, () => root.querySelector('.rv-voice')?.classList.add('on'));
-  at(1100, () => stage('rv-world'));
-  spin('rv-wn', WORLD_IDS.map((w) => T(WORLDS[w].name)), T(h.world.name), wa.preset === 'random', 1000);
-  at(100, () => { root.querySelector('#rv-world .rv-scene')?.classList.add('on'); root.querySelector('#rv-world .rv-sub')?.classList.add('on'); });
-  at(800, () => stage('rv-born'));
-  spin('rv-rn', RACE_IDS.map((r) => T(raceOf(r).name)), tf ? h.name : T(raceOf(h.race).name), !a.race && !tf, 700);
-  at(200, () => show('rv-st'));
-  at(250, () => show('rv-ta'));
-  at(700, () => stage('rv-gift'));
-  if (tf) at(200, () => show('rv-lang'));
-  spin('rv-cn', availableCheats(h.world).map((c) => T(c.name)), cheat ? T(cheat.name) : L('なし', 'None'), !a.cheat, 1000);
-  at(100, () => { show('rv-cd'); $('rv-cheat')?.classList.add('landed'); });
-  if (h.blessing) at(350, () => show('rv-bl'));
-  const gap = Math.min(220, 900 / (traits.length || 1)); // 多くても1秒ほどに収める
-  traits.forEach((_, i) => at(i ? gap : 350, () => show(`rv-t${i}`)));
-  at(900, () => stage('rv-name'));
-  at(1200, finish);
+  void (async () => {
+    stage('rv-void');
+    if (past) { root.querySelector('.rv-past')?.classList.add('on'); await wait(readMs(past)); }
+    root.querySelector('.rv-voice')?.classList.add('on');
+    await wait(readMs(voice));
+    if (over) return;
+    stage('rv-world');
+    await spin('rv-wn', WORLD_IDS.map((w) => T(WORLDS[w].name)), T(h.world.name), wa.preset === 'random', 1000);
+    root.querySelector('#rv-world .rv-scene')?.classList.add('on');
+    root.querySelector('#rv-world .rv-sub')?.classList.add('on');
+    await wait(0, true);
+    if (over) return;
+    stage('rv-born');
+    await spin('rv-rn', RACE_IDS.map((r) => T(raceOf(r).name)), tf ? h.name : T(raceOf(h.race).name), !a.race && !tf, 700);
+    show('rv-st'); show('rv-ta');
+    await wait(readMs(textOf('rv-st') + textOf('rv-ta')));
+    if (over) return;
+    stage('rv-gift');
+    if (tf) { show('rv-lang'); await wait(1500); }
+    await spin('rv-cn', availableCheats(h.world).map((c) => T(c.name)), cheat ? T(cheat.name) : L('なし', 'None'), !a.cheat, 1000);
+    show('rv-cd'); $('rv-cheat')?.classList.add('landed');
+    await wait(readMs(textOf('rv-cd')));
+    if (h.blessing) { show('rv-bl'); await wait(1500); }
+    for (let i = 0; i < traits.length && !over; i++) { show(`rv-t${i}`); await wait(900); }
+    await wait(0, true);
+    if (over) return;
+    stage('rv-name');
+    await wait(2500);
+    finish();
+  })();
 }

@@ -25,7 +25,7 @@ export const climbText = (h: Hero): string => (h.climb?.length ? [h.status, ...h
 // 称号 (立ったしるしから)
 const TITLES: [string, string, string][] = [['demonKingSlain', '魔王を討った者', "Demon Lord's Bane"], ['hero', '勇者', 'Hero'], ['saint', '聖女', 'Saint'],
   ['lord', '領主', 'Lord'], ['knighted', '騎士', 'Knight'], ['famous', '名の知れた者', 'Renowned'], ['dragonSlayer', '竜殺し', 'Dragonslayer'],
-  ['guildmaster', 'ギルドマスター', 'Guildmaster'], ['courtMage', '宮廷魔術師', 'Court Mage'], ['freed', '鎖を断った者', 'Unchained'], ['exiled', '追放された者', 'Exile']];
+  ['guildmaster', 'ギルドマスター', 'Guildmaster'], ['courtMage', '宮廷魔術師', 'Court Mage'], ['freed', '鎖を断った者', 'Unchained'], ['closeCall', '九死に一生を得た者', 'Survivor'], ['exiled', '追放された者', 'Exile']];
 export const titlesOf = (h: Hero): string[] => TITLES.filter(([f]) => h.flags[f] !== undefined).map(([, ja, en]) => L(ja, en));
 
 // 一生の終わりの年齢の書き方。元の世界へ帰った人 (hazard 'return') は享年と言わない。age は数字だけを <b> に入れた HTML

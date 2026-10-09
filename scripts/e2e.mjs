@@ -74,7 +74,7 @@ const pressed = (page, sel) => page.locator(sel).getAttribute('aria-pressed');
 // 転生の演出 (ui/reveal.ts) が出ていれば押して飛ばす
 async function skipReveal(page) {
   await page.locator('.reveal, [data-go=live]').first().waitFor();
-  if (await page.locator('.reveal').count()) await page.click('.reveal');
+  if (await page.locator('.reveal').count()) await page.click('[data-rv=skip]');
   await page.waitForSelector('[data-go=live]');
 }
 // 人生の画面に入って、手で進める流れのために一時停止する (自動再生は別に確かめる)

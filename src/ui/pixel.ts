@@ -69,6 +69,19 @@ export function castOf(h: Hero, mourners: Tie[] = []): Cast {
   const party = near.filter((t) => PARTY.includes(t.role) || allies.has(t.id))
     .sort((a, b) => +allies.has(b.id) - +allies.has(a.id) || b.bond - a.bond).slice(0, 4);
   const place = placeOf(h, h.kinds[h.age]);
+  // 家族の場面: 大人の主人公に、一緒に暮らす子 (子どもか、結婚していない子) がいれば、連れ合いと子を主人公の両側に (4人まで、幼い順)。
+  // 外 (ダンジョン・ギルド・野・船) の年は一年おき、戦いの年は仲間のまま
+  const kids = childhood ? [] : near.filter((t) => t.role === 'child' && atHome(t)).sort((a, b) => a.age - b.age);
+  // 冒険ばかりの人も、戦いの年でなければ一年おきに家の場面に (子が描かれないままにならないように)
+  if (kids.length && place !== 'battle' && (!AWAY.includes(place) || h.age % 2 === 0)) {
+    const sp = near.filter((t) => t.role === 'spouse').slice(0, 1);
+    const fam = [...sp, ...kids].slice(0, 4);
+    const left = fam.filter((_, i) => i % 2 === 0).reverse(), right = fam.filter((_, i) => i % 2 === 1);
+    return {
+      spec: { ...base, place: AWAY.includes(place) ? 'home' : place, figures: [...left.map((t) => tieFigure(h, t)), heroFigure(h), ...right.map((t) => tieFigure(h, t))] },
+      ids: [...left.map((t) => t.id), 'me' as const, ...right.map((t) => t.id)],
+    };
+  }
   // 大人になって仲間がいれば、仲間が主人公の後ろ (左) に並ぶ。主人公は右端で前を向く
   if (!childhood && party.length) {
     const back = [...party].reverse();
@@ -83,6 +96,9 @@ export function castOf(h: Hero, mourners: Tie[] = []): Cast {
   };
 }
 export const sceneOf = (h: Hero, mourners: Tie[] = []): SceneSpec => castOf(h, mourners).spec;
+// 家にいる子: 大人になる前か、まだ結婚していない子
+const atHome = (t: Tie) => heq(t.age, raceOf(t.race)) < 18 || !t.profile?.story.some((e) => e.kind === 'marry');
+const AWAY: Place[] = ['battle', 'dungeon', 'guild', 'wild', 'ship'];
 const isFamily = (t: Tie) => t.role === 'mother' || t.role === 'father' || t.role === 'sibling' || t.role === 'spouse' || t.role === 'child';
 
 // 背景に立ち絵を重ねる。立ち絵にも場面の時刻の色 (tint) を掛ける

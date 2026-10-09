@@ -51,7 +51,7 @@ async function run(browser, lang) {
 
   // 生きている途中・選択のモーダルには広告が無い
   await page.click('[data-go=random]');
-  await page.click('.reveal'); // 転生の演出を飛ばす
+  await page.click('[data-rv=skip]'); // 転生の演出を飛ばす
   await page.waitForSelector('[data-go=live]');
   check(await page.locator('[data-ad]').count() === 0, `[${lang}] arrival: ad slot shown`);
   await page.click('[data-go=live]');

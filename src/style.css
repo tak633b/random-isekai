@@ -484,7 +484,10 @@ h1 .tickets, h2 .tickets, .tickets { font-family: var(--dot); color: var(--accen
 
 /* 転生の演出 (ui/reveal.ts): 1場面ずつ出して、名札は回って止まる。珍しさで縁の色が変わる */
 .reveal { min-height: 80vh; display: grid; place-items: center; text-align: center; cursor: pointer; position: relative; }
-.rv-skip { position: absolute; top: 10px; right: 16px; margin: 0; font-size: 12px; color: var(--faint); }
+.rv-skip { position: absolute; top: 8px; right: 12px; margin: 0; font-size: 12px; min-height: 32px; padding: 4px 10px; background: var(--bg2); color: var(--sub); z-index: 2; }
+.rv-next { position: absolute; bottom: 12px; left: 0; right: 0; margin: 0; font-size: 13px; color: var(--accent); opacity: 0; transition: opacity .3s; pointer-events: none; }
+.rv-next.on { opacity: 1; animation: rvblink 1.4s ease-in-out infinite; }
+@keyframes rvblink { 50% { opacity: .45; } }
 .rv-stage { grid-area: 1 / 1; width: 100%; max-width: 560px; opacity: 0; visibility: hidden; transform: translateY(10px); transition: opacity .2s, transform .2s, visibility 0s .2s; }
 .rv-stage.on { opacity: 1; visibility: visible; transform: none; transition: opacity .45s, transform .45s; }
 .rv-past, .rv-voice, .rv-scene, .rv-sub, .rv-line, #rv-cd, #rv-lang, .rv-bless, .rv-traits li { opacity: 0; transition: opacity .5s, transform .5s; transform: translateY(6px); }
@@ -522,7 +525,7 @@ h1 .tickets, h2 .tickets, .tickets { font-family: var(--dot); color: var(--accen
 @keyframes rvspin { to { rotate: 360deg; } }
 @keyframes rvpulse { from { opacity: .55; } to { opacity: 1; } }
 @keyframes rvwarp { from { transform: skewX(0deg); } to { transform: skewX(14deg) scale(.92); } }
-@media (prefers-reduced-motion: reduce) { .rv-circle, .rv-circle.rv-corner { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .rv-circle, .rv-circle.rv-corner, .rv-next.on { animation: none; } }
 
 /* ステータス画面 (ui/sheet.ts) */
 .facebtn { padding: 0; border: 0; background: none; min-height: 0; cursor: pointer; border-radius: 8px; }

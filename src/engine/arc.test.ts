@@ -115,3 +115,16 @@ describe('同じ seed なら同じ英雄の人生', () => {
     expect(liveOut(createHero(s)).log).toEqual(liveOut(createHero(s)).log);
   });
 });
+
+// ランクは山の形: B から上は年数・レベルが要り、S にはさらに大きな手柄が要る。実測 (2026-10-09, おまかせ3000人): C 660・B 391・A 297 (9.9%)・S 154 (5.1%)
+describe('ランクの山', () => {
+  it('1500人で S は数%、S < A < B < C', () => {
+    const n: Record<string, number> = {};
+    for (let s = 1; s <= 1500; s++) { const h = liveOut(createHero({ seed: s, world: { preset: 'random' }, hero: {}, auto: true })); if (h.rank) n[h.rank] = (n[h.rank] ?? 0) + 1; }
+    expect((n.S ?? 0) / 1500).toBeGreaterThan(0.02);
+    expect((n.S ?? 0) / 1500).toBeLessThan(0.08);
+    expect(n.A).toBeGreaterThan(n.S);
+    expect(n.B).toBeGreaterThan(n.A);
+    expect(n.C).toBeGreaterThan(n.B);
+  }, 60_000);
+});

@@ -181,12 +181,22 @@ function riskOf(h: Hero, p: number): number {
 
 // ギルドの昇格 (research/02 の 10.6節: F→C に5〜10年、多くは C で引退、B 以上は1割)。
 // 冒険者の職の人と、筋に乗った人 (特典を持つ人は昇格が早い)。ここは乱数の並びを今までと変えないよう、職が冒険者の人は前と同じ式
+// まだそのしるしが立っていない
+const f = (h: Hero, k: string): boolean => h.flags[k] === undefined;
+
 export function promote(h: Hero): void {
   if (h.flags.guild === undefined || !h.rank || h.rank === 'S' || h.flags.retired !== undefined) return;
   if (h.job !== 'adventurer' && !heroActive(h)) return;
   const i = RANKS.indexOf(h.rank);
   const boost = (h.cheat === 'exp_boost' || h.cheat === 'growth' ? 2 : 1) * (onArc(h) ? 1.8 : 1);
-  const p = Math.max(0.02, (0.18 + (h.stats.power - 40) / 250) * boost * (i >= 3 ? 0.35 : 1) * (i >= 5 ? 0.3 : 1));
+  // B から上は年数とレベルが要り、S にはさらに大きな手柄が要る (多くの冒険者は C で止まる)。作戦で寄せる。
+  // 実測 (2026-10-09, おまかせ3000人): C 660・B 391・A 297 (9.9%)・S 154 (5.1%)
+  const years = h.age - (h.flags.guild ?? h.age);
+  if (i === 3 && (years < 4 || h.level < 15)) return;
+  if (i === 4 && (years < 6 || h.level < 25)) return;
+  if (i === 5 && (years < 10 || h.level < 40 || (f(h, 'arc.deed') && f(h, 'dragonSlayer') && f(h, 'demonKingSlain')))) return;
+  const top = i === 3 ? 0.28 : i === 4 ? 0.35 : i === 5 ? 0.65 : 1;
+  const p = Math.max(i >= 3 ? 0 : 0.02, (0.18 + (h.stats.power - 40) / 250) * boost * (i >= 3 ? 0.35 : 1) * (i >= 5 ? 0.3 : 1) * top * (i >= 3 ? tacticAdv(h) : 1));
   if (h.rng() < p) {
     h.rank = RANKS[i + 1]; bump(h, { fame: 4 + i * 3, wealth: 3 });
     h.level = Math.max(h.level, RANK_LV[h.rank]);

@@ -295,6 +295,7 @@ export interface LogEntry {
   who?: number[];       // 関わった人 (Tie.id)
   hazard?: Hazard;      // 死亡の記録なら死因の分類
   fight?: Fight;        // 戦いの出来事なら、相手と結果 (場面の演出用。結果はエンジンが決めたもの)
+  close?: Hazard;       // 九死に一生の一文なら、いちばん危なかった死因 (engine/closecall.ts)
   join?: number[];      // この出来事で輪に加わった人 (Tie.id)
   leave?: number[];     // この出来事で離れた・亡くなった人 (Tie.id)
   shared?: boolean;     // ほかの人の一生の年表で、主人公と共有した行 (共有の出来事・主人公との結婚と子・主人公の死を知る行・出会いや戦い)

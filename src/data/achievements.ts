@@ -145,6 +145,7 @@ const FEAT: AchievementDef[] = [
   a('feat', 'orphanRise', ['孤児院から', 'From the Orphanage'], ['孤児に生まれ、郷士以上の身分になる', 'Be born an orphan and rise to the gentry or higher.'], all({ fact: 'status', eq: 'orphan' }, { any: [{ fact: 'standing', eq: 'gentry' }, { fact: 'standing', eq: 'noble' }, { fact: 'standing', eq: 'royal' }] }), 2),
   a('feat', 'gekokujo', ['下剋上', 'The Usurper'], ['王族でない生まれから、王族の身分になる', 'Be born below royalty and end up royal.'], all({ fact: 'standing', eq: 'royal' }, { not: { fact: 'status', eq: 'royal' } }), 3),
   a('feat', 'restored', ['再興', 'Restoration'], ['没落したあと、郷士以上の身分に返り咲く', 'Fall from your standing, then climb back to the gentry or higher.'], all({ fact: 'fell', eq: true }, { any: [{ fact: 'standing', eq: 'gentry' }, { fact: 'standing', eq: 'noble' }, { fact: 'standing', eq: 'royal' }] }), 2),
+  a('feat', 'closeCall', ['九死に一生', 'Close Call'], ['死ぬ寸前から生き延びる', 'Survive something that should have killed you.'], flag('closeCall'), 1),
   // 異世界転移
   a('feat', 'wentHome', ['ただいま', "I'm Home"], ['異世界転移したあと、元の世界へ帰る', 'Be transported to another world, then find your way home.'], { fact: 'hazard', eq: 'return' }, 3),
   a('feat', 'stayed', ['ここが居場所', 'This Is Home Now'], ['帰る道が開いたのに、異世界に残る', 'Stay in the other world when the way home opens.'], flag('stayed'), 1),

@@ -2,7 +2,7 @@
 // 1. ハザードで生死を引く → 2. 年を取る (輪の人も) → 3. 世界の状態を進める → 4. 節目 → 5. 出来事 → 6. 能力の自然な変化
 import type { Decision, Hazard, Hero, JobId, LogEntry, Policy, Tie } from './types';
 import { makeRng, pickWeighted } from './rng';
-import { agePeople, byRole, bump, closest, log, mourn, shared } from './bonds';
+import { agePeople, byRole, bump, closest, grow, log, mourn, shared } from './bonds';
 import { traitFertility } from './traits';
 import { attentionOf, deathChance, hazards, heq, HAZARDS, maternalRisk, mustDie, agingOf, heqOf, warStartP, WAR_MEAN_YEARS, plagueP, famineP, FAMINE_MEAN_YEARS, ADULT_HEQ } from './mortality';
 import { raceOf } from './races';
@@ -15,6 +15,7 @@ import { capLevel, jobHeld, LIVE, anchoredDeath, anchoredWorld, anchorsOf, ancho
 import { arcYear, ensureFightJob, fightJobFor, promote } from './arc';
 import { trainingByRef, trainingDecision, trainYear } from './training';
 import { fortuneYear } from './climb';
+import { maybeClose } from './closecall';
 import { alliesFor, peopleYear } from './people';
 import { onArc } from './events';
 import { endLovers } from './events';
@@ -321,7 +322,7 @@ function drift(h: Hero): void {
   const j = jobOf(h.job);
   if (j && h.flags.retired === undefined) {
     h.jobYears++;
-    for (const [k, v] of Object.entries(j.grow)) s[k as keyof typeof s] = Math.min(100, s[k as keyof typeof s] + (v ?? 0));
+    for (const [k, v] of Object.entries(j.grow)) s[k as keyof typeof s] = Math.min(100, grow(s[k as keyof typeof s], v ?? 0)); // 上ほど伸びにくい (bonds.ts)
     s.wealth += (j.wealth - s.wealth) * 0.1;
     if (FIGHTERS.includes(h.job!)) h.level += h.cheat === 'exp_boost' ? 2 : h.cheat === 'growth' ? 1.5 : 1;
   }
@@ -377,7 +378,8 @@ export function advanceYear(h: Hero): void {
   // 1. 生死 (ほかの人の一生では、錨の死の年にその死因で亡くなる)
   const fixed = anchoredDeath(h);
   if (fixed) { forcing = true; die(h, fixed); forcing = false; dressDeath(h); return; }
-  if (h.rng() < deathChance(h)) { die(h, pickHazard(h)); if (!h.alive) return; }
+  const q = deathChance(h), roll = h.rng();
+  if (roll < q) { die(h, pickHazard(h)); if (!h.alive) return; } else maybeClose(h, roll, q); // 死ぬ線のすぐ上なら九死に一生 (乱数は引かない)
   // 2. 年を取る (先に輪の人が年を取る。生まれたばかりの子が、その年のうちに1歳の死亡率を受けないように)
   h.age++;
   agePeople(h);

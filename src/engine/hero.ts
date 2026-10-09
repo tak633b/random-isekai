@@ -11,7 +11,7 @@ import { personName, styleOf, withFamily, worldNames } from './names';
 import { ageOfHeq, heq } from './mortality';
 import { anchorFamily, anchorYear } from './anchor';
 import { ALLOT_KEYS, POINT_STEP, randomBuild, traitOf } from './traits';
-import { addTie, log } from './bonds';
+import { addTie, grow, log } from './bonds';
 import { earthName, howText, itemName, rollTransfer } from './transfer';
 import { L, T, cap, pron } from '../i18n';
 
@@ -46,9 +46,10 @@ function initialStats(rng: Rng, status: Status, talent: Talent, memory: MemoryLe
     charm: clamp(normal(rng, 40, 10), 5, 80), luck: clamp(normal(rng, 50, 12), 5, 95), happy: 60, wealth: STATUS_WEALTH[status],
     fame: statusRank(status) >= statusRank('noble') ? 20 : 2,
   };
-  for (const [k, v] of Object.entries(TALENT_STAT[talent])) s[k as keyof Stats] = clamp(s[k as keyof Stats] + v, 0, 100);
-  if (memory === 'full') s.mind = clamp(s.mind + 15, 0, 100);
-  if (memory === 'faint') s.mind = clamp(s.mind + 6, 0, 100);
+  // 才能・記憶・振ったポイント・trait の上乗せも、上ほど伸びにくい (bonds.ts の grow。生まれつき 95 を越える人をまれに)
+  for (const [k, v] of Object.entries(TALENT_STAT[talent])) s[k as keyof Stats] = clamp(grow(s[k as keyof Stats], v), 0, 100);
+  if (memory === 'full') s.mind = clamp(grow(s.mind, 15), 0, 100);
+  if (memory === 'faint') s.mind = clamp(grow(s.mind, 6), 0, 100);
   for (const k of Object.keys(s) as (keyof Stats)[]) s[k] = Math.round(s[k]);
   return s;
 }
@@ -116,8 +117,8 @@ export function createHero(setup: Setup): Hero {
   // ほかの人の一生で、来た年齢が決まっているとき (召喚・転移) はその年齢から
   const start = setup.anchors?.arriveAge ?? (tr && startAge === 'adult' ? tr.age : startAge === 'birth' ? 0 : heqToAge(startHeq, r));
   const build = randomBuild(side, world, race, { traits: c.traits, points: c.points });
-  for (const k of ALLOT_KEYS) stats[k] = clamp(stats[k] + (build.points[k] ?? 0) * POINT_STEP, 0, 100);
-  for (const id of build.traits) for (const [k, v] of Object.entries(traitOf(id)?.stats ?? {})) stats[k as keyof Stats] = clamp(stats[k as keyof Stats] + (v ?? 0), 0, 100);
+  for (const k of ALLOT_KEYS) stats[k] = clamp(grow(stats[k], (build.points[k] ?? 0) * POINT_STEP), 0, 100);
+  for (const id of build.traits) for (const [k, v] of Object.entries(traitOf(id)?.stats ?? {})) stats[k as keyof Stats] = clamp(grow(stats[k as keyof Stats], v ?? 0), 0, 100);
   const blessing = c.blessing ?? false;
 
   const filled: Setup = {
