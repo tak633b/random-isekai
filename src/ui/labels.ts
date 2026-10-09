@@ -51,3 +51,32 @@ export const jobName = (id: JobId | null | undefined): string => (id ? L(JOBS[id
 // 年齢の書き方
 export const ageText = (a: number): string => L(`${a}歳`, `age ${a}`);
 export const yearsText = (a: number): string => L(`${a}年`, `${a} ${a === 1 ? 'year' : 'years'}`);
+
+// 前世の終わりの一文。召喚・転移された人は死なずに来たので (エンジンは死に方を unknown にする)、来た時の様子を書く。
+// 文は人ごと (seed) に選び、avoid に入っている番号は避ける (同じ一覧で同じ文が並ばないように)。選んだ番号を返す
+const SUMMON_LINES: [string, string][] = [
+  ['死なずに、そのまま召喚された', 'Was summoned alive, just as they were'],
+  ['仕事の帰り道で光に包まれ、こちらへ来た', 'Was swallowed by light on the way home from work'],
+  ['眠りについた夜、目を開けると見知らぬ神殿にいた', 'Fell asleep one night and woke in a strange temple'],
+  ['駅のホームで足もとが光り、気づくとこの世界にいた', 'The platform floor lit up, and then this world'],
+  ['買い物の途中で名を呼ばれ、振り返ったらこちらだった', 'Heard their name called while shopping, turned, and was here'],
+  ['命は落とさず、ある日まるごと連れて来られた', 'Lost nothing, not even their life; was simply taken one day'],
+  ['授業中、教室ごと光に飲まれた', 'Was swallowed by light in the middle of a class'],
+  ['雨の交差点で白い光に呼ばれ、こちらへ渡った', 'A white light called from a rainy crosswalk, and they crossed over'],
+  ['夜勤明けのコンビニを出たところで、景色が入れ替わった', 'Stepped out of a convenience store after a night shift into another world'],
+  ['エレベーターの扉が開くと、石造りの広間だった', 'The elevator doors opened onto a stone hall'],
+  ['釣りの最中、水面に映った魔法陣に引き込まれた', 'Was pulled in by a magic circle reflected on the water while fishing'],
+  ['卒業式の朝、校門をくぐったところで呼ばれた', 'Was called away just as they walked through the school gate on graduation day'],
+  ['病院の待合室で名前を呼ばれ、立ち上がったらここにいた', 'Stood up when their name was called in a hospital waiting room, and was here'],
+  ['自転車で坂を下りきると、知らない草原だった', 'Coasted to the bottom of a hill on a bicycle and found an unknown meadow'],
+  ['古本屋で開いた本の頁が光り、そのまま連れて来られた', 'Opened a book in a secondhand shop; the page lit up and took them'],
+  ['家族旅行の車中でうたた寝し、起きたら召喚の祭壇だった', 'Dozed off on a family drive and woke on a summoning altar'],
+  ['残業中のオフィスの床に魔法陣が浮かんだ', 'A magic circle appeared on the office floor during overtime'],
+  ['神社の鈴を鳴らした瞬間、音ごとこちらへ運ばれた', 'Rang a shrine bell and was carried here along with the sound'],
+];
+export function pastEnd(cause: PastLife['cause'], summoned: boolean, seed: number, avoid: Set<number> = new Set()): { text: string; i: number } {
+  if (!summoned && cause !== 'unknown') return { text: PAST_CAUSE_NAME[cause], i: -1 };
+  let i = (seed >>> 0) % SUMMON_LINES.length;
+  for (let k = 0; k < SUMMON_LINES.length && avoid.has(i); k++) i = (i + 1) % SUMMON_LINES.length;
+  return { text: L(...SUMMON_LINES[i]), i };
+}

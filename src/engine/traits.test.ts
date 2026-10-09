@@ -68,6 +68,7 @@ describe('選べる trait と組み立ての確かめ', () => {
 
 // 実測 (2026-10-09, 中世欧州風・人間・平民・転生・3000人): 成人した人の死因のうち病 (病・疫病) の割合
 //   trait なし 0.204 / 頑健な体 (病 0.5倍) 0.115 / 病弱 (病 2倍) 0.271。平均享年: なし 31.9 / 長寿 (aging 0.5) 43.6
+// 重ねがけの上限 (老い 0.7倍まで) と、輪の人の年齢を人間換算で合わせた後の実測 (1500人): なし 32.5 / 長寿 37.4 (+5.0)。幅は +3年
 describe('trait の効き目', () => {
   const run = (traits: string[]) => {
     useTraits(POOL);
@@ -87,7 +88,7 @@ describe('trait の効き目', () => {
     expect(run(['t.frail']).dis).toBeGreaterThan(none.dis * 1.15);
   }, 30_000);
   it('老いの遅くなる trait で平均享年が伸びる', () => {
-    expect(run(['t.ageless']).mean).toBeGreaterThan(none.mean + 5);
+    expect(run(['t.ageless']).mean).toBeGreaterThan(none.mean + 3);
   }, 30_000);
   it('始まりの能力に trait の stats とポイントが乗る', () => {
     useTraits(POOL);

@@ -116,8 +116,10 @@ canvas.face.big { width: 96px; border-color: var(--accent); }
 .lastwith li { display: flex; align-items: center; gap: 8px; }
 .lastwith span { display: grid; line-height: 1.4; }
 .highlights { list-style: none; padding: 0; margin: 0; display: grid; gap: 4px; }
-.highlights li, .mem li { display: grid; grid-template-columns: 4.5em 1fr; gap: 8px; }
-.highlights span, .mem li span { color: var(--accent); font-family: var(--dot); font-size: 13px; }
+.highlights li, .mem li { display: grid; grid-template-columns: 4.5em minmax(0, 1fr); gap: 8px; }
+/* 本文は1つの要素で包む (〈強調〉が別のセルにならないように) */
+.highlights li > div { min-width: 0; }
+.highlights li > span, .mem li > span { color: var(--accent); font-family: var(--dot); font-size: 13px; }
 .fulllog { margin: 16px 0 12px; }
 .fulllog summary { cursor: pointer; color: var(--accent); }
 .fulllog .timeline { margin-top: 10px; }
@@ -328,3 +330,71 @@ textarea { font: inherit; color: var(--text); background: var(--bg2); border: 1p
 .yr .fight { display: block; font-size: 12px; color: var(--danger); margin-top: 2px; }
 .bars .sub { grid-column: 1 / -1; margin: -2px 0 2px; font-size: 11.5px; color: var(--magic); line-height: 1.4; }
 .lv .title { font-family: var(--sans); font-size: 12px; color: var(--accent); border: 1px solid currentColor; border-radius: 3px; padding: 0 6px; align-self: center; }
+
+/* 第6弾: 輪の人の欄・関わった人たち・〈特典〉 */
+.gift { font-weight: 700; color: var(--magic); }
+.ring button .pjob { font-size: 11px; color: var(--sub); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ring button.on .pjob { color: var(--accent-ink); }
+.person { margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--line); }
+.phead { display: flex; align-items: flex-end; gap: 10px; }
+.phead h3 { margin: 0; color: var(--text); font-size: 17px; }
+.phead p { margin: 0; }
+.phead .sprite { width: 64px; height: auto; flex: none; }
+.plines { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 3px 12px; margin: 12px 0; font-size: 13.5px; }
+.plines div { display: contents; }
+.plines dt { color: var(--sub); }
+.plines dd { margin: 0; }
+.person h4 { font-family: var(--dot); font-weight: 400; font-size: 14px; color: var(--sub); margin: 12px 0 6px; }
+.pstory { list-style: none; padding: 0; margin: 0; display: grid; gap: 4px; font-size: 13.5px; max-height: 360px; overflow: auto; }
+.pstory li { display: grid; grid-template-columns: 4.2em minmax(0, 1fr); gap: 6px; }
+.pstory li span { color: var(--accent); font-family: var(--dot); font-size: 13px; }
+.pstory li i { font-style: normal; font-size: 11px; color: var(--sub); border: 1px solid var(--line); border-radius: 3px; padding: 0 4px; margin-right: 6px; }
+.pstory li.own i { color: var(--magic); border-color: currentColor; }
+.whos { display: inline-flex; flex-wrap: wrap; gap: 4px; margin-left: 6px; vertical-align: 1px; }
+.whobtn { font-size: 11.5px; padding: 0 7px; min-height: 22px; border-radius: 10px; background: none; color: var(--love); border-color: currentColor; }
+.circle { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; }
+.circle li { display: flex; gap: 10px; align-items: flex-start; }
+.circle span { display: grid; line-height: 1.45; min-width: 0; }
+.circle .fate { color: var(--text); font-size: 12.5px; }
+
+/* 第7弾: ほかの人の一生・年代記・転生者 */
+.loghead .tabs { margin: 0 0 8px; }
+.loghead .tabs button { font-family: var(--dot); font-size: 15px; padding: 4px 12px; }
+.chronicle, .otherlog { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
+.chronicle li, .otherlog li { display: grid; grid-template-columns: 6.6em minmax(0, 1fr); gap: 8px; font-size: 14px; padding: 4px 0; border-top: 1px solid var(--line); }
+.otherlog li { grid-template-columns: 4.6em minmax(0, 1fr); }
+.chronicle li:first-child, .otherlog li:first-child { border-top: 0; }
+.chronicle .when { font-size: 12.5px; color: var(--sub); text-align: left; align-self: start; white-space: nowrap; justify-self: start; }
+.chronicle button.when { background: none; border: 1px solid var(--line); border-radius: 4px; padding: 1px 6px; min-height: 0; color: var(--accent); }
+.chronicle .chk { font-size: 11px; color: var(--sub); border: 1px solid var(--line); border-radius: 3px; padding: 0 4px; margin-right: 6px; }
+.chronicle li.lived > div { font-weight: 700; }
+.chronicle .kicon, .otherlog .kicon { margin-right: 4px; }
+.ch-war .kicon, .ch-demon .kicon { color: var(--danger); }
+.ch-reincarnator .kicon { color: var(--magic); }
+.ch-hero .kicon, .ch-realm .kicon { color: var(--accent); }
+.reinc { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 8px; }
+.reinc button { width: 100%; height: 100%; text-align: left; display: grid; gap: 2px; align-content: start; padding: 8px 10px; }
+.reinc small { line-height: 1.45; }
+.reinc .fate { color: var(--text); }
+.lifebtn { margin-top: 6px; font-size: 13px; padding: 3px 12px; min-height: 30px; color: var(--accent); }
+.lifemodal .modal { width: min(760px, 100%); }
+.modalhead { display: flex; justify-content: flex-end; margin: -8px -8px 0 0; }
+.close { font-size: 13px; padding: 3px 12px; min-height: 30px; }
+.otherlog li.sep { display: block; font-family: var(--dot); font-size: 13px; color: var(--accent); border-top: 2px dashed var(--accent); padding-top: 8px; margin-top: 4px; }
+.otherlog li.shared > div { border-left: 3px solid var(--love); padding-left: 8px; }
+.otherlog .oage { color: var(--accent); font-family: var(--dot); font-size: 13px; }
+.otherlog .heroage { margin-left: 8px; font-size: 11.5px; color: var(--sub); }
+.otherlog .whobtn, .sharedtag { margin-left: 6px; }
+.sharedtag { font-size: 11px; color: var(--love); border: 1px solid currentColor; border-radius: 10px; padding: 0 6px; }
+.yr.flash { background: var(--glow); outline: 2px solid var(--accent); border-radius: 4px; }
+.chronbox summary { cursor: pointer; color: var(--accent); font-family: var(--dot); }
+.chronbox[open] summary { margin-bottom: 10px; }
+.future { margin-top: 10px; border-top: 2px dashed var(--accent); padding-top: 8px; }
+.future summary { cursor: pointer; color: var(--accent); font-family: var(--dot); font-size: 13.5px; }
+.future[open] summary { margin-bottom: 8px; }
+.otherlog li { border-color: var(--line) !important; }
+.otherlog .why { display: block; font-size: 12px; margin-top: 2px; }
+.otherlog .heroage { white-space: nowrap; }
+/* 年代記の時の列: 全部の行で同じ幅 (いちばん長い言い方に合わせる)。行は subgrid で列を共有する */
+.chronicle { display: grid; grid-template-columns: max-content minmax(0, 1fr); column-gap: 10px; }
+.chronicle li { grid-column: 1 / -1; grid-template-columns: subgrid; }

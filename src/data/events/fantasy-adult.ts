@@ -807,7 +807,7 @@ export const EVENTS: EventDef[] = [
     eff: { happy: -4, fame: 2 },
   },
   {
-    id: 'fa.saint-recognized', stage: ['adult'], tags: F, magic: 2, jobs: ['priest', 'herbalist'], noFlag: 'saint', w: 0.08, kind: 'fame', big: true,
+    id: 'fa.saint-recognized', stage: ['adult'], tags: F, magic: 2, jobs: ['priest', 'herbalist'], sex: 'F', noFlag: 'saint', w: 0.08, kind: 'fame', big: true,
     ja: '{name}の手が触れた病人の傷が、目の前で塞がった。翌月、教会は{name}を聖女と認めた。',
     en: "A sick man's wound closed under {name}'s hand in front of witnesses. The next month, the church declared {name} a saint.",
     eff: { fame: 9, charm: 5 }, set: 'saint',
@@ -854,7 +854,7 @@ export const EVENTS: EventDef[] = [
     eff: { happy: 7, charm: -2 }, set: 'married', tie: { role: 'spouse', new: true, d: 35 },
   },
   {
-    id: 'fa.child-born', stage: ['adult', 'middle'], tags: F, flag: 'married', w: 0.5, repeat: true, kind: 'family', big: true,
+    id: 'fa.child-born', stage: ['adult', 'middle'], tags: F, flag: 'married', w: 0.5, repeat: true, birth: true, kind: 'family', big: true,
     ja: '{name}に子が生まれ、{child}と名付けた。夜泣きの声で、隣の家の犬まで起きた。',
     en: "{name} had a child and named them {child}. The crying at night woke even the neighbor's dog.",
     eff: { happy: 7, wealth: -2 }, tie: { role: 'child', new: true, d: 40 },

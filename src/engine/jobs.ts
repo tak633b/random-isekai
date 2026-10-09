@@ -104,10 +104,23 @@ export function jobsIn(world: World, status: Status): JobDef[] {
 
 export const jobsFor = (h: Hero): JobDef[] => jobsIn(h.world, h.status);
 
+// 戦う職 (英雄の筋に寄せる先)
+export const FIGHT_JOBS: JobId[] = ['adventurer', 'knight', 'hero', 'explorer', 'mercenary', 'cultivator', 'samurai', 'ninja', 'soldier', 'scavenger', 'mage', 'onmyoji', 'tamer', 'hunter'];
+const MAGIC_JOBS: JobId[] = ['mage', 'onmyoji', 'cultivator', 'necromancer', 'alchemist'];
+
+// 戦いに向いた trait を持つか (魔物・戦・暴力の死を下げるもの)
+const fighter = (h: Hero) => h.traits.some((id) => { const m = traitOf(id)?.mult; return !!m && ((m.monster ?? 1) < 1 || (m.war ?? 1) < 1 || (m.violence ?? 1) < 1); });
+
 // 自動で就くときの重み。才能が合えば3倍、身分の高い家は家の仕事 (領主・騎士・侍・商人) に寄る
 export function jobWeight(h: Hero, j: JobDef): number {
   let w = j.w * (j.talent && j.talent === h.talent ? 3 : 1);
   if (h.status === 'merchant' && j.id === 'merchant') w *= 8;
   for (const id of h.traits) w *= traitOf(id)?.jobs?.[j.id] ?? 1; // trait の jobs: その職業に就きやすくなる
+  // 英雄の筋: 特典を持つ人は戦う職に 3倍、戦いに向いた trait なら 1.5倍、強さ・知恵が高ければ 1.5倍 (魔法の職は知恵)
+  if (FIGHT_JOBS.includes(j.id)) {
+    if (h.cheat) w *= 3;
+    if (fighter(h)) w *= 1.5;
+    if (MAGIC_JOBS.includes(j.id) ? h.stats.mind >= 60 : h.stats.power >= 55) w *= 1.5;
+  }
   return w;
 }

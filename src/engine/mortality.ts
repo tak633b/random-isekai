@@ -41,6 +41,12 @@ export function agingOf(h: Hero): number {
 
 export const heqOf = (h: Hero) => heq(h.age, raceOf(h.race), agingOf(h));
 
+// 人間換算の年齢から実年齢へ (heq の逆。老化しない種族は成人の年齢で止める)
+export function ageOfHeq(e: number, r: Race): number {
+  if (e < ADULT_HEQ) return Math.round((e * r.adult) / ADULT_HEQ);
+  return Math.round(r.adult + (r.k > 0 ? (e - ADULT_HEQ) / r.k : 0));
+}
+
 // 人生の段階は人間換算の年齢で決める (エルフは何十年も子どもでいる)
 export function stageAt(e: number): Stage {
   return e < 3 ? 'infant' : e < 10 ? 'child' : e < ADULT_HEQ ? 'teen' : e < 40 ? 'adult' : e < 60 ? 'middle' : 'elder';

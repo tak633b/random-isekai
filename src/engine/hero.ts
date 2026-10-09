@@ -8,7 +8,8 @@ import { raceOf } from './races';
 import { STATUS_WEALTH, statusName, statusRank, statusWeights } from './status';
 import { availableCheats, CHEATS, cheatWeight } from './cheats';
 import { personName, styleOf, withFamily, worldNames } from './names';
-import { heq } from './mortality';
+import { ageOfHeq, heq } from './mortality';
+import { anchorFamily, anchorYear } from './anchor';
 import { ALLOT_KEYS, POINT_STEP, randomBuild, traitOf } from './traits';
 import { addTie, log } from './bonds';
 import { L, T } from '../i18n';
@@ -54,11 +55,8 @@ function initialStats(rng: Rng, status: Status, talent: Talent, memory: MemoryLe
 // 始まる年齢 (人間換算)。child 5〜8 / teen 13〜16 / adult 17〜30 (召喚・転移はこれが既定)
 const START_HEQ: Record<StartAge, [number, number]> = { birth: [0, 0], child: [5, 8], teen: [13, 16], adult: [17, 30] };
 
-// 人間換算の年齢から実年齢へ (mortality.ts の heq の逆。老化しない種族は成人の年齢で止める)
-export function heqToAge(e: number, r: Race): number {
-  if (e < 16) return Math.round((e * r.adult) / 16);
-  return Math.round(r.adult + (r.k > 0 ? (e - 16) / r.k : 0));
-}
+// 人間換算の年齢から実年齢へ (mortality.ts の ageOfHeq)
+export const heqToAge = ageOfHeq;
 
 // 召喚された人の前世の仕事は、召喚された年齢でありうるものに選び直す (追加の乱数は引かない: 決まった並びから選ぶ)
 function summonedJob(age: number, job: PastLife['job']): PastLife['job'] {
@@ -67,6 +65,8 @@ function summonedJob(age: number, job: PastLife['job']): PastLife['job'] {
   const j = ok[(age * 7) % ok.length] ?? PAST_JOBS[11];
   return { ja: j[0], en: j[1] };
 }
+
+const worldCharOf = (h: Hero) => ((h.state.war > 0 ? 1 : 0) | (h.state.plague > 0 ? 2 : 0) | (h.state.famine > 0 ? 4 : 0) | (h.state.demonKing ? 8 : 0)).toString(16);
 
 export function createHero(setup: Setup): Hero {
   const rng = makeRng(setup.seed);
@@ -110,7 +110,8 @@ export function createHero(setup: Setup): Hero {
   const startAge: StartAge = c.startAge ?? (arr === 'summoned' ? 'adult' : 'birth');
   const [s0, s1] = START_HEQ[startAge];
   const startHeq = s0 + Math.floor(side() * (s1 - s0 + 1));
-  const start = startAge === 'birth' ? 0 : heqToAge(startHeq, r);
+  // ほかの人の一生で、来た年齢が決まっているとき (召喚・転移) はその年齢から
+  const start = setup.anchors?.arriveAge ?? (startAge === 'birth' ? 0 : heqToAge(startHeq, r));
   const build = randomBuild(side, world, race, { traits: c.traits, points: c.points });
   for (const k of ALLOT_KEYS) stats[k] = clamp(stats[k] + (build.points[k] ?? 0) * POINT_STEP, 0, 100);
   for (const id of build.traits) for (const [k, v] of Object.entries(traitOf(id)?.stats ?? {})) stats[k as keyof Stats] = clamp(stats[k as keyof Stats] + (v ?? 0), 0, 100);
@@ -151,8 +152,11 @@ export function createHero(setup: Setup): Hero {
     }
     sibAges.forEach((a, i) => addTie(h, { name: sibNames[i], role: 'sibling', race, sex: sibSex[i], age: a }));
   }
+  anchorFamily(h); // ほかの人の一生: 親を錨に合わせる
   const first = log(h, birthStory(h), 'arrival', true, h.people.filter((t) => t.role === 'mother' || t.role === 'father').map((t) => t.id));
   if (h.people.length) first.join = h.people.map((t) => t.id); // 最初の家族
+  h.worldHist = worldCharOf(h); // 生まれた年の世界の様子 (以後は advanceYear が毎年足す)
+  if (setup.anchors) anchorYear(h); // ほかの人の一生: 0歳の錨 (生まれた年に共有した出来事)
   return h;
 }
 

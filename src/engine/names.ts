@@ -91,6 +91,13 @@ const join = (...ps: Part[]): Part => [ps.map((p) => p[0]).join(''), ps.map((p) 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 const show = ([en, ja]: Part) => L(ja, cap(en));
 
+// 漢字の名が1文字 (「大」「小」) にならないよう、後ろの部品が空なら、前の部品で決まる空でない部品を足す (乱数は余分に引かない)
+function twoChars(a: Part, b: Part, [firsts, seconds]: [Part[], Part[]]): Part {
+  if ((a[1] + b[1]).length >= 2) return join(a, b);
+  const filled = seconds.filter((x) => x[1]);
+  return join(a, filled[firsts.indexOf(a) % filled.length]);
+}
+
 function givenPart(rng: Rng, style: Style, sex: Sex): Part {
   switch (style) {
     case 'west': return join(pick(rng, WEST_START), pick(rng, WEST_MID), pick(rng, WEST_END[sex]));
@@ -98,8 +105,8 @@ function givenPart(rng: Rng, style: Style, sex: Sex): Part {
     case 'desert': return join(pick(rng, DESERT_START), pick(rng, DESERT_MID), pick(rng, DESERT_END[sex]));
     case 'scifi': return join(pick(rng, SCIFI_START), pick(rng, SCIFI_END[sex]));
     case 'ruin': return pick(rng, RUIN_NAMES);
-    case 'wa': return join(pick(rng, WA_GIVEN[sex][0]), pick(rng, WA_GIVEN[sex][1]));
-    case 'modern': return join(pick(rng, MODERN_GIVEN[sex][0]), pick(rng, MODERN_GIVEN[sex][1]));
+    case 'wa': return twoChars(pick(rng, WA_GIVEN[sex][0]), pick(rng, WA_GIVEN[sex][1]), WA_GIVEN[sex]);
+    case 'modern': return twoChars(pick(rng, MODERN_GIVEN[sex][0]), pick(rng, MODERN_GIVEN[sex][1]), MODERN_GIVEN[sex]);
     case 'zh': { const a = pick(rng, ZH_GIVEN); const b = pick(rng, ZH_GIVEN); return [a[0] + b[0].toLowerCase(), a[1] + b[1]]; }
   }
 }

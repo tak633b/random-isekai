@@ -20,7 +20,36 @@ const notes = [];
 const OFF = process.env.MEMORIAL === 'off';
 let current = null; // 失敗したときに画面を残す
 
+// 年齢と本文の2列の行: 子要素がちょうど2つで、本文の文字が行に直に置かれていない (〈強調〉が別のセルにならない)。
+// 年齢の列が本文に押されて潰れていない (幅が 2em 以上) ことも見る
+let giftRows = 0;
+async function gridRows(page, name) {
+  const r = await page.evaluate(() => {
+    const bad = [];
+    let gifts = 0;
+    for (const li of document.querySelectorAll('.highlights li, .pstory li, .yr, .chronicle li, .otherlog li:not(.sep)')) {
+      const kids = li.children.length;
+      const loose = [...li.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim());
+      const age = li.firstElementChild;
+      const w = age ? age.getBoundingClientRect().width : 0;
+      const em = parseFloat(getComputedStyle(li).fontSize);
+      if (li.querySelector('.gift')) gifts++;
+      if (kids !== 2 || loose || (li.offsetParent && w < em * 2)) bad.push(`${li.className || li.parentElement?.className}: ${kids} children${loose ? ', loose text' : ''}, age col ${w.toFixed(0)}px`);
+    }
+    // 時の列と年齢の添え書きは1行に収まる
+    for (const el of document.querySelectorAll('.chronicle .when, .otherlog .heroage')) {
+      if (!el.offsetParent) continue;
+      const lh = parseFloat(getComputedStyle(el).lineHeight) || parseFloat(getComputedStyle(el).fontSize) * 1.7;
+      if (el.getBoundingClientRect().height > lh * 1.6 + 6) bad.push(`time label wraps: "${el.textContent}" (${el.getBoundingClientRect().height.toFixed(0)}px)`);
+    }
+    return { bad: bad.slice(0, 3), gifts };
+  });
+  giftRows += r.gifts;
+  for (const b of r.bad) errors.push(`${name} grid row broken: ${b}`);
+}
+
 async function widths(page, name) {
+  await gridRows(page, name);
   const size = page.viewportSize();
   for (const w of [375, 1280]) {
     await page.setViewportSize({ width: w, height: 900 });
@@ -213,6 +242,71 @@ async function stageChecks(page, lang, browser) {
   await page.evaluate(() => { localStorage.removeItem('current'); localStorage.removeItem('play'); });
 }
 
+// ほかの人の一生・年代記・転生者 (人生の画面、一時停止中)
+async function othersChecks(page, lang, sfx) {
+  // 人物の欄から「この人の一生」
+  await page.click('#person [data-life]');
+  await page.waitForSelector('.lifemodal .otherlog li', { timeout: 10000 });
+  const rows = await page.locator('.lifemodal .otherlog li').count();
+  const ms = await page.locator('.lifemodal .modal').getAttribute('data-ms');
+  notes.push(`[${lang}] life-of: ${rows} rows, built in ${ms}ms, shared ${await page.locator('.lifemodal li.shared').count()}`);
+  await widths(page, `${lang} life-of`);
+  await shot(page, `life-of${sfx}.png`, false);
+  const j = page.locator('.lifemodal [data-jump]').first();
+  if (await j.count()) {
+    const at = await j.getAttribute('data-jump');
+    await j.click();
+    if (!(await page.locator('#log .yr.flash').count())) errors.push(`[${lang}] life-of: jump to age ${at} did not show the year`);
+  } else await page.keyboard.press('Escape');
+  if (await page.locator('.lifemodal').count()) errors.push(`[${lang}] life-of: modal did not close`);
+  // 年代記: 項目が出て、生きていた年を押すと年表のその年へ
+  await page.click('[data-tab=chron]');
+  await page.waitForSelector('#chron .chronicle li, #chron .note');
+  const ch = await page.locator('#chron .chronicle li').count();
+  notes.push(`[${lang}] chronicle: ${ch} entries`);
+  if (!ch) errors.push(`[${lang}] chronicle: no entries`);
+  await page.evaluate(() => document.querySelector('.logpanel')?.scrollIntoView());
+  await page.waitForTimeout(80);
+  await widths(page, `${lang} chronicle`);
+  await shot(page, `chronicle${sfx}.png`, false);
+  if (lang === 'ja') {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.evaluate(() => document.querySelector('.logpanel')?.scrollIntoView());
+    await page.waitForTimeout(80);
+    await shot(page, 'chronicle-mobile.png', false);
+    await page.setViewportSize({ width: 1280, height: 900 });
+  }
+  const w = page.locator('#chron button.when').first();
+  if (await w.count()) {
+    const at = await w.getAttribute('data-jump');
+    await w.click();
+    // その年 (記録の無い年なら、近い前の年) が光る
+    if ((await page.locator('#log').isHidden()) || !(await page.locator('#log .yr.flash').count())) errors.push(`[${lang}] chronicle: jump to ${at} failed`);
+  }
+  // 転生者の一覧と、その一生
+  await page.click('[data-tab=reinc]');
+  const rn = await page.locator('#reinc .reinc li').count();
+  notes.push(`[${lang}] reincarnators listed: ${rn}`);
+  // 召喚された人の前世は「気づいたら終わっていた」ではなく来た時の様子で、一覧の中で同じ文が並ばない
+  const pasts = await page.locator('#reinc .reinc li').evaluateAll((lis) => lis.map((li) => [...li.querySelectorAll('small')].map((x) => x.textContent).find((t) => /^前世|^Past life/.test(t)) ?? ''));
+  if (pasts.some((t) => /気づいたら終わっていた|ended without warning/.test(t))) errors.push(`[${lang}] reincarnators: summoned past still says "ended without warning"`);
+  const ends = pasts.map((t) => t.replace(/^[^。.]*[。.]\s*/, ''));
+  const dup = ends.filter((t, i) => t && ends.indexOf(t) !== i && /召喚|光|連れて|神殿|教室|呼ばれ|summoned|light|taken|temple|class|name called/.test(t));
+  // 召喚の言い回しは18種。一覧の召喚者がそれより多いときだけ重なってよい
+  const summonedN = ends.filter((t) => /召喚|光|連れて|神殿|教室|呼ばれ|summoned|light|taken|temple|class|name called/.test(t)).length;
+  if (dup.length && summonedN <= 18) errors.push(`[${lang}] reincarnators: repeated summon lines: ${dup[0]}`);
+  await widths(page, `${lang} reincarnators`);
+  if (lang === 'ja') { await page.evaluate(() => document.querySelector('.logpanel')?.scrollIntoView()); await shot(page, 'reincarnators.png', false); }
+  if (rn) {
+    await page.locator('#reinc [data-life]').first().click();
+    await page.waitForSelector('.lifemodal .otherlog li', { timeout: 10000 });
+    notes.push(`[${lang}] reincarnator life: ${await page.locator('.lifemodal .otherlog li').count()} rows, gift ${await page.locator('.lifemodal .facts .gift').count()}`);
+    await page.keyboard.press('Escape');
+  }
+  await page.click('[data-tab=log]');
+  await page.evaluate(() => window.scrollTo(0, 0));
+}
+
 async function run(lang) {
   const browser = await chromium.launch();
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
@@ -264,7 +358,6 @@ async function run(lang) {
   }
   await finish(page);
   await widths(page, `${lang} death`);
-  await shot(page, `death${sfx}.png`);
   // 追悼館に残す → 館で見る → ろうそく → 一覧
   await page.waitForSelector('#postbtn');
   await page.fill('#note', lang === 'ja' ? 'よく生きた。' : 'You lived well.');
@@ -384,11 +477,32 @@ async function run(lang) {
       if (Number((await page.locator('#age').innerText()).replace(/\D/g, '')) >= 30) break;
       await page.click('#b1').catch(() => {});
     }
+    // 亡くなった直後は死亡記録へ移るまで少し間があるので、その間を待ってから確かめる
+    await page.waitForTimeout(1800);
     if (await page.locator('.death').count()) { await page.waitForSelector('.page.death'); continue; }
     const people = await page.locator('.ring [data-act=tie]').count();
     const years = await page.locator('.timeline li.yr').count();
     if ((people < 3 || years < 15) && tries < 7) continue;
-    await page.locator('.ring [data-act=tie]').first().click();
+    // 人物の欄: 仲間や友がいればその人を、いなければ最初の人を開く
+    const pick = page.locator('.ring [data-act=tie]').filter({ hasText: /仲間|友|師|Companion|Friend|Mentor/ }).first();
+    await ((await pick.count()) ? pick : page.locator('.ring [data-act=tie]').first()).click();
+    const plines = await page.locator('#person .plines dt').count();
+    const story = await page.locator('#person .pstory li').count();
+    if (!plines) errors.push(`[${lang}] person: no profile lines`);
+    else notes.push(`[${lang}] person: ${plines} profile lines, ${story} story rows`);
+    // 人物の欄が見える所まで送って、画面のまま撮る (上の帯が重ならないよう少し上に余白を取る)
+    const toPerson = () => page.evaluate(() => { const el = document.getElementById('person'); if (el) window.scrollTo(0, el.getBoundingClientRect().top + window.scrollY - 140); });
+    await toPerson();
+    await page.waitForTimeout(80);
+    await shot(page, `person${sfx}.png`, false);
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.waitForTimeout(80);
+    await toPerson();
+    await page.waitForTimeout(80);
+    await shot(page, `person-mobile${sfx}.png`, false);
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await othersChecks(page, lang, sfx);
     await page.click('[data-act=speed][data-v="2"]');
     await page.click('#pausebtn'); // 再生中の操作が見えるように (撮るあいだだけ流す)
     await widths(page, `${lang} life`);
@@ -400,14 +514,33 @@ async function run(lang) {
     await pause(page);
     notes.push(`[${lang}] life.png after ${tries + 1} tries, ${await page.locator('.timeline li.yr').count()} years in timeline`);
     await finish(page);
+    await page.evaluate(() => document.querySelector('.chronbox')?.setAttribute('open', ''));
+    const dch = await page.locator('.chronbox .chronicle li').count();
+    if (!dch) errors.push(`[${lang}] death: no chronicle`); else notes.push(`[${lang}] death chronicle: ${dch} entries`);
+    await gridRows(page, `${lang} death chronicle`);
+    await page.evaluate(() => document.querySelector('.chronbox')?.removeAttribute('open'));
+    const circle = await page.locator('.circle li').count();
+    if (!circle) errors.push(`[${lang}] death: no "people in this life" section`);
+    else notes.push(`[${lang}] death: ${circle} people in the record`);
+    await widths(page, `${lang} death (adult)`);
+    await page.evaluate(() => document.querySelector('.fulllog')?.setAttribute('open', ''));
+    await gridRows(page, `${lang} death full log`);
+    await page.evaluate(() => document.querySelector('.fulllog')?.removeAttribute('open'));
+    await shot(page, `death${sfx}.png`);
     break;
   }
 
   // 過去の人生
   await page.click('[data-go=title]');
+  // 〈強調〉を含む行を必ず1つ作って、過去の人生の記録で2列が崩れないか確かめる (主な出来事の先頭の文に足す)
+  await page.evaluate(() => {
+    const lives = JSON.parse(localStorage.getItem('lives') ?? '[]');
+    if (lives[0]?.highlights?.[0]) { lives[0].highlights[0].text += ' 〈創造〉の力で、長い一文が折り返しても崩れないかを見るための行。'; localStorage.setItem('lives', JSON.stringify(lives)); }
+  });
   await page.click('[data-go=past]');
   await page.click('.pastlist [data-i="0"]');
   await page.waitForSelector('#pastdetail .record');
+  if (!(await page.locator('#pastdetail .highlights li .gift').count())) errors.push(`[${lang}] past: the 〈〉 test row was not rendered`);
   await widths(page, `${lang} past`);
   await stageChecks(page, lang, browser);
   await browser.close();
@@ -417,6 +550,7 @@ for (const lang of ['ja', 'en']) {
   try { await run(lang); } catch (e) {
     await current?.screenshot({ path: join(OUT, '..', '..', 'dev', `e2e-fail-${lang}.png`) }).catch(() => {}); errors.push(`[${lang}] script: ${e.message.split('\n').slice(0, 3).join(' | ')}`); }
 }
+notes.push(`grid rows with 〈〉 checked: ${giftRows}`);
 console.log(notes.join('\n'));
 console.log(`errors: ${errors.length}`);
 for (const e of errors) console.log('  ' + e);

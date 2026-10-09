@@ -64,7 +64,10 @@ export function castOf(h: Hero, mourners: Tie[] = []): Cast {
   }
   const childhood = stageOf(h) === 'infant' || stageOf(h) === 'child' || stageOf(h) === 'teen';
   const near = around(h).filter((t) => t.role !== 'nemesis' && t.role !== 'rival');
-  const party = near.filter((t) => PARTY.includes(t.role)).sort((a, b) => b.bond - a.bond).slice(0, 4);
+  // その年に一緒に戦った人は、役によらず必ず並べる (舞台で一緒に打つため)
+  const allies = new Set(h.log.filter((e) => e.age === h.age).flatMap((e) => e.fight?.allies ?? []));
+  const party = near.filter((t) => PARTY.includes(t.role) || allies.has(t.id))
+    .sort((a, b) => +allies.has(b.id) - +allies.has(a.id) || b.bond - a.bond).slice(0, 4);
   const place = placeOf(h, h.kinds[h.age]);
   // 大人になって仲間がいれば、仲間が主人公の後ろ (左) に並ぶ。主人公は右端で前を向く
   if (!childhood && party.length) {
@@ -135,6 +138,9 @@ export function paintAll(root: ParentNode = document): void {
       if (!p) { if (faces.size > 500) faces.clear(); p = paintPortrait(JSON.parse(key) as Figure); faces.set(key, p); }
       p.put(cv);
     } catch { /* 形が古ければ描かない */ }
+  });
+  root.querySelectorAll<HTMLCanvasElement>('canvas[data-sprite]').forEach((cv) => {
+    try { paintSprite(JSON.parse(cv.dataset.sprite!) as Figure).put(cv); } catch { /* 同上 */ }
   });
   root.querySelectorAll<HTMLCanvasElement>('canvas[data-scene]').forEach((cv) => {
     try { drawScene(cv, JSON.parse(cv.dataset.scene!) as SceneSpec); } catch { /* 同上 */ }

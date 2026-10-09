@@ -238,7 +238,9 @@ export class Stage {
       }
       if (f && mode !== 'skip') {
         const me = a.id === 'me';
-        if (ours) { pose = 'attack'; frame = tick; }
+        // 打つのは主人公と、記録で一緒に戦った人 (allies)。ほかの人は後ろで見守る
+        const fights = me || (typeof a.id === 'number' && (f.allies ?? []).includes(a.id));
+        if (ours && fights) { pose = 'attack'; frame = tick + a.phase; }
         if (theirs && me && (f.result === 'hurt' || f.result === 'lose') && beat === 3) { pose = 'hurt'; frame = tick; flash = blink ? 'red' : undefined; }
         if (end) {
           if (f.result === 'win') { pose = me || p > 0.75 ? 'cheer' : 'idle'; frame = tick; }

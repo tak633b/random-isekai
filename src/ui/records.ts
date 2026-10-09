@@ -1,5 +1,6 @@
 // 死亡記録: 人生の終わりを1枚にまとめる。この端末の localStorage に残し、「過去の人生」で読み返せる
-import type { Figure, Hazard, Hero, LogEntry, Role, SceneSpec, Setup } from '../engine/types';
+import type { Figure, Hazard, Hero, LogEntry, Role, SceneSpec, Setup, Tie } from '../engine/types';
+import { fateLine } from '../engine/people';
 import { CHEATS, heqOf, raceOf, randomSeed, statusName, summary } from '../engine';
 import { heroFigure, sceneOf, tieFigure, faceHTML, sceneHTML, paintAll } from './pixel';
 import { ARRIVAL_NAME, KIND_NAME, ROLE_NAME, SEX_NAME, ageText, jobName } from './labels';
@@ -31,6 +32,16 @@ export interface LifeRecord {
   lastWith: { name: string; role: Role; face: Figure }[];
   highlights: LogEntry[];
   log: LogEntry[];
+  names?: [number, string][];  // 輪の人の名前 (年表の戦いの仲間に使う)
+  circle?: { name: string; role: Role; face: Figure; fate: string }[]; // 関わった人たち
+}
+
+// 関わった人たち: 大事な役を先に、近かった順に多くて8人
+const KEY_ROLES: Role[] = ['spouse', 'companion', 'mentor', 'nemesis', 'child', 'lover', 'fiance', 'disciple', 'familiar', 'rival'];
+function circleOf(h: Hero): LifeRecord['circle'] {
+  const rank = (t: Tie) => (KEY_ROLES.includes(t.role) ? 0 : 1);
+  return [...h.people].sort((a, b) => rank(a) - rank(b) || b.bond - a.bond || a.id - b.id).slice(0, 8)
+    .map((t) => ({ name: t.name, role: t.role, face: tieFigure(h, t), fate: fateLine(h, t) }));
 }
 
 export function toRecord(h: Hero): LifeRecord {
@@ -54,6 +65,7 @@ export function toRecord(h: Hero): LifeRecord {
     face: heroFigure(h), scene: sceneOf(h, s.lastWith), facts,
     lastWith: s.lastWith.map((t) => ({ name: t.name, role: t.role, face: tieFigure(h, t) })),
     highlights: s.highlights, log: [...h.log, ...aiOf(h)],
+    names: h.people.map((t) => [t.id, t.name] as [number, string]), circle: circleOf(h),
   };
 }
 
@@ -65,12 +77,26 @@ export function keep(r: LifeRecord): void {
 
 // 年表。年ごとにまとめ、big は太く、why は小さく添える。newest なら新しい年を上に
 type Entry = LogEntry & { ai?: boolean };
-export function logHTML(log: Entry[], newest = false): string {
+// 文の中の〈特典やスキルの名前〉を少し目立たせる。esc した後に囲むので、中身はテキストのまま
+export const markGifts = (escaped: string): string => escaped.replace(/〈([^〈〉<>]{1,40})〉/g, '<b class="gift">〈$1〉</b>');
+
+// 戦いの行の添え書き: 相手・結果・一緒に戦った人
+export function fightNote(f: NonNullable<LogEntry['fight']>, names?: Map<number, string>): string {
+  const allies = (f.allies ?? []).map((id) => names?.get(id)).filter(Boolean) as string[];
+  const with_ = allies.length ? L(`・${allies.join('、')}と`, `, with ${allies.join(' and ')}`) : '';
+  return L(`vs ${FOE_NAME[f.foe]}・${RESULT_NAME[f.result]}${with_}`, `vs ${FOE_NAME[f.foe]}: ${RESULT_NAME[f.result]}${with_}`);
+}
+
+// 年表。年ごとにまとめ、big は太く、why は小さく添える。newest なら新しい年を上に。
+// names は輪の人の名前 (戦いの仲間と、行に関わった人の名に使う)。link なら関わった人の名を押すとその人の欄が開く
+export function logHTML(log: Entry[], newest = false, names?: Map<number, string>, link = false): string {
   const years = new Map<number, Entry[]>();
   for (const e of log) years.set(e.age, [...(years.get(e.age) ?? []), e]);
   const ages = [...years.keys()].sort((a, b) => (newest ? b - a : a - b));
-  return `<ol class="timeline">${ages.map((a) => `<li class="yr"><span class="yrage">${ageText(a)}</span><ul>${years.get(a)!.map((e) =>
-    `<li class="k-${e.kind}${e.big ? ' big' : ''}" title="${esc(KIND_NAME[e.kind])}">${kindIcon(e.kind)}${e.ai ? '<i class="aitag" title="AI">AI</i>' : ''}${esc(e.text)}${e.fight ? `<small class="fight">${L(`vs ${FOE_NAME[e.fight.foe]}・${RESULT_NAME[e.fight.result]}`, `vs ${FOE_NAME[e.fight.foe]}: ${RESULT_NAME[e.fight.result]}`)}</small>` : ''}${e.why ? `<small class="why">${esc(e.why)}</small>` : ''}</li>`).join('')}</ul></li>`).join('')}</ol>`;
+  const who = (e: Entry) => (link && names && e.who?.length && e.kind !== 'death'
+    ? `<span class="whos">${e.who.filter((id) => names.has(id)).slice(0, 3).map((id) => `<button class="whobtn" data-act="tie" data-id="${id}">${esc(names.get(id)!)}</button>`).join('')}</span>` : '');
+  return `<ol class="timeline">${ages.map((a) => `<li class="yr" data-age="${a}"><span class="yrage">${ageText(a)}</span><ul>${years.get(a)!.map((e) =>
+    `<li class="k-${e.kind}${e.big ? ' big' : ''}" title="${esc(KIND_NAME[e.kind])}">${kindIcon(e.kind)}${e.ai ? '<i class="aitag" title="AI">AI</i>' : ''}${markGifts(esc(e.text))}${e.fight ? `<small class="fight">${esc(fightNote(e.fight, names))}</small>` : ''}${e.why ? `<small class="why">${esc(e.why)}</small>` : ''}${who(e)}</li>`).join('')}</ul></li>`).join('')}</ol>`;
 }
 
 export function recordHTML(r: LifeRecord): string {
@@ -89,8 +115,9 @@ export function recordHTML(r: LifeRecord): string {
       <h3>${L('最後にそばにいた人', 'Who was there at the end')}</h3>
       ${r.lastWith.length ? `<ul class="lastwith">${r.lastWith.map((t) => `<li>${faceHTML(t.face)}<span><b>${esc(t.name)}</b><small>${esc(ROLE_NAME[t.role])}</small></span></li>`).join('')}</ul>`
         : `<p class="note">${L('そばには誰もいなかった。', 'No one was there.')}</p>`}
-      ${r.highlights.length ? `<h3>${L('主な出来事', 'Moments that mattered')}</h3><ul class="highlights">${r.highlights.map((e) => `<li><span>${ageText(e.age)}</span>${esc(e.text)}</li>`).join('')}</ul>` : ''}
-      <details class="fulllog"><summary>${L(`年表の全体 (${r.log.length}件)`, `Full timeline (${r.log.length} entries)`)}</summary>${logHTML(r.log)}</details>
+      ${r.highlights.length ? `<h3>${L('主な出来事', 'Moments that mattered')}</h3><ul class="highlights">${r.highlights.map((e) => `<li><span>${ageText(e.age)}</span><div>${markGifts(esc(e.text))}</div></li>`).join('')}</ul>` : ''}
+      ${r.circle?.length ? `<h3>${L('関わった人たち', 'The people in this life')}</h3><ul class="circle">${r.circle.map((c) => `<li>${faceHTML(c.face)}<span><b>${esc(c.name)}</b><small>${esc(ROLE_NAME[c.role])}</small><small class="fate">${esc(c.fate)}</small></span></li>`).join('')}</ul>` : ''}
+      <details class="fulllog"><summary>${L(`年表の全体 (${r.log.length}件)`, `Full timeline (${r.log.length} entries)`)}</summary>${logHTML(r.log, false, new Map(r.names ?? []))}</details>
     </div>
   </article>`;
 }

@@ -173,6 +173,24 @@ export interface Setup {
   hero: HeroChoice;
   policy?: Policy;
   auto?: boolean; // 選択も自動で決める (集計と「最後まで」用)
+  anchors?: Anchors; // ほかの人の一生を作るときに、必ず合わせる点 (engine/others.ts)。主人公には付けない
+}
+
+// ほかの人の一生 (engine/others.ts) で、エンジンに必ず合わせさせる点。age はすべてその人の年齢
+export interface Anchors {
+  bornAt: number;                 // 生まれた時の主人公の年齢 (worldYears を引くため)
+  worldYears?: WorldYear[];       // 世界の様子 (at は主人公の年齢)。あればそれに従い、自分では戦争や疫病を引かない
+  deathAt?: { age: number; hazard: Hazard; label?: string; text?: string }; // この年にこの死因で亡くなる (それより前には死なない)
+  noDeathBefore?: number;         // この年齢より前には死なない
+  marry?: { age: number; name: string; sex: Sex; race: RaceId; until?: number; end?: 'death' | 'leave'; withHero?: boolean }; // 連れ合いの期間。ほかの人とは結婚しない。withHero: 相手が主人公
+  children?: { age: number; name: string; sex: Sex; withHero?: boolean }[]; // この年齢でこの子が生まれる (ほかに子は生まれない)。withHero: 主人公との子
+  parents?: { mother?: { name: string; age: number; diesAt?: number }; father?: { name: string; age: number; diesAt?: number } }; // 生まれた時の親 (きょうだいは同じ親)。diesAt はその人の年齢
+  shared?: { age: number; text: string; kind: YearKind; who?: string }[]; // 主人公と共有した出来事 (その人の年表に入れる)
+  job?: JobId;                    // 大人になって就く職業
+  noFamily?: boolean;             // 生まれた時の家族を作らない (主人公の親など、その親が分からない人)
+  arriveAge?: number;             // この年齢から始める (召喚・転移で来た年齢。年表はこの年齢から)
+  holdUntil?: number;             // この年齢までは、職業を job のまま変えない (しるし・英雄の筋・出来事でも)。主人公と輪でつながっていた間
+  level?: number;                 // holdUntil までの level の上限 (その年にはちょうどこの値にする)
 }
 
 // ---- 人生 -----------------------------------------------------------------
@@ -244,6 +262,27 @@ export interface Tie {
   diedAt?: number;      // 亡くなった時の主人公の年齢
   mem: Memory[];        // 共有の記憶 (新しいものほど後ろ、上限あり)
   job?: JobId | null;
+  profile?: Profile;    // その人自身のこと (engine/people.ts。古いセーブには無い)
+}
+
+// 輪の人の性格。文の言い回しと、その人の出来事の起きやすさに使う
+export type Personality = 'kind' | 'stern' | 'cheerful' | 'quiet' | 'proud' | 'timid' | 'brave' | 'cunning' | 'gentle' | 'fiery';
+
+// 輪の人自身に起きた出来事 (主人公と関係なく)。age は主人公の年齢
+export interface PersonEvent {
+  age: number;
+  text: string;         // 今の言語の文
+  kind: 'marry' | 'child' | 'promote' | 'rank' | 'level' | 'injury' | 'leave' | 'death' | 'other';
+}
+
+export interface Profile {
+  level: number;        // 仲間として戦うときの強さ (主人公と同じ尺度)
+  rank?: GuildRank;     // 冒険者ギルドに入っていれば
+  skill?: string;       // 目立つ技 (TraitDef の id)
+  personality: Personality;
+  met: string;          // どう出会ったかの一文 (今の言語)
+  story: PersonEvent[]; // その人の出来事 (新しいものほど後ろ、上限あり)
+  fate?: string;        // その人のその後の一行 (亡くなった・離れた・主人公が亡くなった時点で書く)
 }
 
 export interface LogEntry {
@@ -257,11 +296,12 @@ export interface LogEntry {
   fight?: Fight;        // 戦いの出来事なら、相手と結果 (場面の演出用。結果はエンジンが決めたもの)
   join?: number[];      // この出来事で輪に加わった人 (Tie.id)
   leave?: number[];     // この出来事で離れた・亡くなった人 (Tie.id)
+  shared?: boolean;     // ほかの人の一生の年表で、主人公と共有した行 (共有の出来事・主人公との結婚と子・主人公の死を知る行・出会いや戦い)
 }
 
 // 戦いの相手の大分類。絵は世界ごとに描き分ける (ui/enemy.ts)
 export type Foe = 'monster' | 'beast' | 'bandit' | 'soldier' | 'undead' | 'dragon' | 'demon' | 'machine';
-export interface Fight { foe: Foe; result: 'win' | 'hurt' | 'flee' | 'lose' } // lose はその戦いで亡くなった
+export interface Fight { foe: Foe; result: 'win' | 'hurt' | 'flee' | 'lose'; allies?: number[] } // lose はその戦いで亡くなった。allies は一緒に戦った輪の人 (Tie.id)
 
 // 立ち絵の姿勢 (ui/sprite.ts)。コマ数は sprite.ts の POSE_FRAMES
 export type Pose = 'idle' | 'walk' | 'attack' | 'hurt' | 'down' | 'cheer'
@@ -323,7 +363,10 @@ export interface Hero {
   auto: boolean;
   policy: Policy;
   used: string[];       // 一生に一度の出来事の id
+  reinc?: ReincState;   // ほかの転生者との関わり (engine/reincarnators.ts)。古いセーブには無い
+  worldHist?: string;   // 各年の世界の様子 (年齢ごとに1文字。16進で 1 戦争 / 2 大疫病 / 4 飢饉 / 8 魔王)。古いセーブには無い
   recent?: Record<string, number>; // 何度も起きる出来事が最後に起きた年齢 (id → 年齢。続けて起きないように)
+  peopleLog?: { n: number; wait: LogEntry[] }; // 人物像が年表に足した件数と、翌年に差し込む行 (engine/people.ts。保存に残す)
 }
 
 // その年の世界の様子 (戦争・疫病・飢饉・魔王)
@@ -351,12 +394,14 @@ export interface EventDef {
   races?: RaceId[];
   cheat?: boolean;            // true: 何か転生特典を持つ / false: 持たない
   cheats?: CheatId[];         // この特典のどれかを持つ
+  needs?: ('skill' | 'ability' | 'blessing' | 'constitution')[]; // その種類の trait を1つ以上持つ (文の {skill} {ability} {blessing} {trait} が埋まる)
   memory?: boolean;           // true: 前世の記憶が今ある / false: ない
   arrival?: Arrival[];
   sex?: Sex;
   flag?: string;              // このしるしが立っている
   noFlag?: string;            // このしるしが立っていない
   w: number;                  // 起きやすさ (1 = ふつう、3 = よくある、0.3 = まれ)
+  birth?: boolean;            // 子が生まれる出来事 (産む側が子を持てる年齢のときだけ起きる)
   repeat?: boolean;           // 一生に何度も起きてよい (省略 = 一度きり)。同じ出来事は5年あけてから
   alone?: boolean;            // その年にほかの記録が何も無いときだけ起きる (「穏やかな一年だった」のような穴埋め)
   kind: YearKind;
@@ -435,4 +480,66 @@ export interface SceneSpec {
   season: 0 | 1 | 2 | 3;
   figures: Figure[];   // 左から並べる。多くて5人
   dead?: boolean;      // 墓の場面
+}
+
+// ---- ほかの人の一生・ほかの転生者・年代記 (engine/others.ts, reincarnators.ts, chronicle.ts) ----
+// at はどれも「主人公の年齢」で数えた時点 (主人公が生まれる前は負)。主人公の一生の年表と横に並べるため
+
+// 世界のその年の様子 (主人公の一生を同じ seed で辿り直して得る。前後は横の乱数で延ばす)
+export interface WorldYear { at: number; war: boolean; plague: boolean; famine: boolean; demonKing: boolean }
+
+// 主人公以外の一生。log の age はその人の年齢
+export interface OtherLife {
+  key: string;            // 't:<Tie.id>' か 'r:<転生者の番号>'
+  name: string;
+  race: RaceId;
+  sex: Sex;
+  status: Status;
+  bornAt: number;         // 生まれた時の主人公の年齢 (負なら主人公より年上)
+  diedAt?: number;        // 亡くなった時の主人公の年齢 (主人公の一生より後なら、その後の年齢)
+  ageAtDeath?: number;
+  death?: DeathRecord;
+  job: JobId | null;
+  level: number;
+  rank?: GuildRank;
+  cheat?: CheatId;
+  past?: PastLife;
+  log: LogEntry[];
+}
+
+// ほかの転生者・召喚者・目覚めた者
+// 主人公とほかの転生者の関わり (Hero.reinc)。保存と再開にそのまま乗る
+export interface ReincFight { id: number; at: number; result: 'win' | 'hurt' | 'flee' } // id は Reincarnator.id、at は主人公の年齢
+export interface ReincState {
+  wait: LogEntry[];       // 年表に足すのを待っている行
+  heard: number[];        // 噂を聞いた転生者の id
+  met: [number, number][]; // 会った転生者の id と、輪に入れた Tie.id
+  allied: number[];
+  foes: number[];
+  fights: ReincFight[];
+  n: number;              // 年表に足した行の数
+}
+
+export type ReincarnatorFate = 'hero' | 'demonlord' | 'ruler' | 'merchant' | 'retired' | 'early' | 'wanderer' | 'villain';
+export interface Reincarnator {
+  id: number;             // この人生の中で一意 (1から)
+  seed: number;
+  name: string;
+  race: RaceId;
+  sex: Sex;
+  arrival: Arrival;
+  cheat: CheatId;
+  past: PastLife;
+  bornAt: number;         // この世界に生まれた (召喚なら来た) 時の主人公の年齢
+  fate: ReincarnatorFate; // 一生の大筋 (その一生を最後まで辿ると、これに沿う)
+  tieId?: number;         // 主人公が会って輪に入れたなら、その Tie.id
+}
+
+export type ChronicleKind = 'war' | 'plague' | 'famine' | 'demon' | 'reincarnator' | 'hero' | 'realm';
+export interface ChronicleEntry {
+  at: number;             // 主人公の年齢 (負は生まれる前)
+  text: string;           // 今の言語
+  kind: ChronicleKind;
+  who?: string[];         // 関わった人 (OtherLife.key と同じ形。't:3' 'r:2')
+  lived?: boolean;        // 主人公が生きて経験した年 (年表のその年へ飛べる)
 }

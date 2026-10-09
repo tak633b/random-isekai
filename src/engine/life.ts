@@ -7,10 +7,16 @@ import { traitFertility } from './traits';
 import { attentionOf, deathChance, hazards, heq, HAZARDS, maternalRisk, mustDie, agingOf, heqOf, warStartP, WAR_MEAN_YEARS, plagueP, famineP, FAMINE_MEAN_YEARS, ADULT_HEQ } from './mortality';
 import { raceOf } from './races';
 import { CHEATS } from './cheats';
-import { jobOf, jobsFor, jobWeight, JOBS, type JobDef } from './jobs';
+import { FIGHT_JOBS, jobOf, jobsFor, jobWeight, JOBS, type JobDef } from './jobs';
 import { statusRank } from './status';
 import { demonKingWorld, hasTag } from './worlds';
-import { deathRecord, foeFor, isClash, drawEvents, eventByRef, eventDecision, newTie, type Die } from './events';
+import { reincarnatorYear } from './reincarnators';
+import { capLevel, jobHeld, LIVE, anchoredDeath, anchoredWorld, anchorsOf, anchorYear, canBear, deathBlocked, dressDeath, familyFixed } from './anchor';
+import { arcYear, ensureFightJob, fightJobFor, promote } from './arc';
+import { alliesFor, peopleYear } from './people';
+import { onArc } from './events';
+import { endLovers } from './events';
+import { deathRecord, fightOf, fill, foeFor, isClash, drawEvents, eventByRef, eventDecision, newTie, type Die } from './events';
 import { deathWhy, reviveWhy } from './why';
 import { styleOf, worldNames } from './names';
 import { L, T } from '../i18n';
@@ -20,8 +26,10 @@ import { L, T } from '../i18n';
 // 死の取り消し (死に戻り・不死の体) は回数が残る限り使う。老いは取り消せない。不死の体も封印 (処刑・魔法) には勝てない
 const unrevivable = (h: Hero, hz: Hazard) => hz === 'age' || (h.cheat === 'immortal_body' && (hz === 'execution' || hz === 'magic'));
 
+let forcing = false; // 錨の死 (anchor.ts) を起こしている間
 export const die: Die = (h, hz) => {
   if (!h.alive) return;
+  if (!forcing && deathBlocked(h)) return; // ほかの人の一生: 錨の死の年より前には死なない
   if (h.revives > 0 && !unrevivable(h, hz)) {
     h.revives--;
     h.flags.revived = h.age;
@@ -33,10 +41,13 @@ export const die: Die = (h, hz) => {
   }
   h.alive = false;
   h.death = deathRecord(h, hz);
-  const e = log(h, h.death.text, 'death', true, closest(h).map((t) => t.id), deathWhy(h, hz));
+  // 最期のそばにいた人: 連れ合いがいれば先に (近さの順だと、恋人や友が連れ合いより前に来ることがある)
+  const sp = byRole(h, 'spouse');
+  const by = sp ? [sp, ...closest(h, 4).filter((t) => t !== sp)].slice(0, 3) : closest(h);
+  const e = log(h, h.death.text, 'death', true, by.map((t) => t.id), deathWhy(h, hz));
   e.hazard = hz;
   // 戦いで倒れたなら、その記録にも戦いを付ける (暴力は刃を交えた死だけ。毒や断罪は付けない)
-  if (hz === 'monster' || hz === 'war' || (hz === 'violence' && isClash(h.death.text))) e.fight = { foe: foeFor(h, hz, h.death.text), result: 'lose' };
+  if (hz === 'monster' || hz === 'war' || (hz === 'violence' && isClash(h.death.text))) e.fight = fightOf(h, foeFor(h, hz, h.death.text), 'lose');
   h.kinds[h.age] = 'death';
   h.pending = [];
 };
@@ -48,6 +59,9 @@ export function pickHazard(h: Hero): Hazard {
 }
 
 // ---- 世界の状態 -----------------------------------------------------------
+
+// その年の世界の様子を1文字に (Hero.worldHist。others.ts の worldTimeline が読む)
+export const worldChar = (h: Hero) => ((h.state.war > 0 ? 1 : 0) | (h.state.plague > 0 ? 2 : 0) | (h.state.famine > 0 ? 4 : 0) | (h.state.demonKing ? 8 : 0)).toString(16);
 
 function stepWorld(h: Hero): void {
   const w = h.world, s = h.state;
@@ -75,11 +89,14 @@ function draft(h: Hero): void {
   const e = heqOf(h);
   const j = jobOf(h.job);
   if (e < ADULT_HEQ || h.flags.retired !== undefined) return;
-  if (j?.war) { log(h, L(`${T({ ja: j.ja, en: j.en })}として戦に出た。`, `Went to war as a ${j.en.toLowerCase()}.`), 'battle', true).fight = { foe: foeFor(h, 'war', ''), result: 'win' }; return; }
+  // 一緒に戦う仲間がいれば、その人と並んで出る
+  const ally = alliesFor(h)[0];
+  const [wja, wen] = ally ? [`${ally.name}と並んで`, ` alongside ${ally.name}`] : ['', ''];
+  if (j?.war) { log(h, L(`${T({ ja: j.ja, en: j.en })}として、${wja}戦に出た。`, `Went to war as a ${j.en.toLowerCase()}${wen}.`), 'battle', true).fight = fightOf(h, foeFor(h, 'war', '')); return; }
   // 徴兵は前近代の軍で多く、近代以降 (tech 7 以上) は職業軍人が主になる
   if (h.sex === 'M' && e < 45 && statusRank(h.status) <= statusRank('commoner') && h.rng() < (h.world.tech >= 7 ? 0.05 : 0.25)) {
     h.flags.drafted = h.age;
-    log(h, L('徴兵され、戦に出ることになった。', 'Was conscripted and sent to war.'), 'battle', true).fight = { foe: foeFor(h, 'war', ''), result: 'win' };
+    log(h, L(`徴兵され、${wja}戦に出ることになった。`, `Was conscripted and sent to war${wen}.`), 'battle', true).fight = fightOf(h, foeFor(h, 'war', ''));
   }
 }
 
@@ -109,8 +126,9 @@ function demonKing(h: Hero): void {
     const heroish = att >= 2 || h.cheat === 'sword_saint' || h.talent === 'might';
     const saintly = h.cheat === 'holy_power' || (h.sex === 'F' && h.talent === 'magic');
     if (saintly && h.rng() < 0.08) {
-      h.flags.saint = h.age; h.job = 'saint'; h.jobYears = 0; bump(h, { fame: 30 });
-      log(h, L(`${worldNames(h).god}の神託で、聖女に選ばれた。`, `The oracle of ${worldNames(h).god} named them the Saint.`), 'fame', true);
+      // 男性は神官として (聖女は女性の呼び名)
+      h.flags.saint = h.age; h.job = h.sex === 'M' ? 'priest' : 'saint'; h.jobYears = 0; bump(h, { fame: 30 });
+      log(h, L(`${worldNames(h).god}の神託で、${h.sex === 'M' ? '聖者' : '聖女'}に選ばれた。`, `The oracle of ${worldNames(h).god} named them the Saint.`), 'fame', true);
     } else if (heroish && h.rng() < 0.06) {
       h.flags.hero = h.age; h.job = 'hero'; h.jobYears = 0; bump(h, { fame: 30 });
       log(h, L(...dkLines(h)[1]), 'fame', true);
@@ -118,7 +136,7 @@ function demonKing(h: Hero): void {
   }
   if (h.flags.hero !== undefined && h.alive && h.rng() < 0.12) {
     s.demonKing = false; h.flags.demonKingSlain = h.age; bump(h, { fame: 40, happy: 15 });
-    log(h, L(...dkLines(h)[2]), 'fame', true).fight = { foe: 'demon', result: 'win' };
+    log(h, L(...dkLines(h)[2]), 'fame', true).fight = fightOf(h, 'demon');
   } else if (h.rng() < 0.05) {
     s.demonKing = false;
     log(h, L(...dkLines(h)[3]), 'family');
@@ -191,29 +209,20 @@ function milestones(h: Hero, out: Decision[]): void {
   // 成人と職業選び
   if (h.flags.adult === undefined && e >= ADULT_HEQ) {
     h.flags.adult = h.age;
-    if (!h.job) { const d = jobDecision(h, jobOptions(h)); if (d) out.push(d); }
+    const aj = anchorsOf(h)?.job;
+    if (aj) { h.job = aj; h.jobYears = 0; }
+    else if (!h.job && !jobHeld(h)) { const d = jobDecision(h, jobOptions(h)); if (d) out.push(d); }
   }
   if (h.flags.adult !== undefined) adultLife(h, e);
 }
 
 function adultLife(h: Hero, e: number): void {
   const j = jobOf(h.job);
-  // ギルド登録と昇格 (research/02 の 10.6節: F→C に5〜10年、多くは C で引退、B 以上は1割)
-  if (h.job === 'adventurer' && h.flags.retired === undefined) {
-    if (h.flags.guild === undefined) {
-      h.flags.guild = h.age; h.rank = 'F';
-      log(h, L(`${worldNames(h).guild}に冒険者として登録した。ランクはF。`, `Registered with ${worldNames(h).guild} as an adventurer. Rank F.`), 'adventure', true);
-    } else if (h.rank && h.rank !== 'S') {
-      const ranks = ['F', 'E', 'D', 'C', 'B', 'A', 'S'] as const;
-      const i = ranks.indexOf(h.rank);
-      const boost = h.cheat === 'exp_boost' || h.cheat === 'growth' ? 2 : 1;
-      const p = Math.max(0.02, (0.18 + (h.stats.power - 40) / 250) * boost * (i >= 3 ? 0.35 : 1) * (i >= 5 ? 0.3 : 1));
-      if (h.rng() < p) {
-        h.rank = ranks[i + 1]; bump(h, { fame: 4 + i * 3, wealth: 3 });
-        log(h, L(`ランク${h.rank}に上がった。`, `Promoted to rank ${h.rank}.`), 'fame', i >= 3);
-      }
-    }
-  }
+  // ギルド登録と昇格。冒険者の職に就いた人は登録し、昇格は職の冒険者と英雄の筋に乗った人 (arc.ts の promote)
+  if (h.job === 'adventurer' && h.flags.retired === undefined && h.flags.guild === undefined) {
+    h.flags.guild = h.age; h.rank = 'F';
+    log(h, L(`${worldNames(h).guild}に冒険者として登録した。ランクはF。`, `Registered with ${worldNames(h).guild} as an adventurer. Rank F.`), 'adventure', true);
+  } else promote(h);
   // 隠居
   if (j && h.flags.retired === undefined && e >= (j.retire ?? 60)) {
     h.flags.retired = h.age;
@@ -221,18 +230,19 @@ function adultLife(h: Hero, e: number): void {
   }
   // 結婚 (人間換算 16〜50歳)。恋人がいればその人と
   const spouse = byRole(h, 'spouse');
-  if (!spouse && e < 50 && h.flags.married === undefined && h.rng() < (statusRank(h.status) >= statusRank('gentry') ? 0.16 : 0.1)) {
+  if (!familyFixed(h) && !spouse && e < 50 && h.flags.married === undefined && h.rng() < (statusRank(h.status) >= statusRank('gentry') ? 0.16 : 0.1)) {
     const lover = byRole(h, 'lover') ?? byRole(h, 'fiance');
     const t = lover ?? newTie(h, 'spouse');
     t.role = 'spouse';
     h.flags.married = h.age; delete h.flags.engaged; delete h.flags.widowed; bump(h, { happy: 10 });
     const e = shared(h, [t], L(`${t.name}と結婚した。`, `Married ${t.name}.`), 'love', 8, true);
     if (!lover) e.join = [t.id];
+    endLovers(h, t); // ほかの恋人との仲は終わる
   }
   // 子 (結婚していて、人間換算 16〜45歳)。女性の主人公は翌年に産む (その年の出産の危険を受ける)
+  // 子: 産む側 (主人公か連れ合いの女性) が人間換算45歳まで (anchor.ts の canBear)
   const sp = byRole(h, 'spouse');
-  const fertileHeq = h.sex === 'F' ? e : sp ? heq(sp.age, raceOf(sp.race)) : 99;
-  if (sp && h.flags.pregnant === undefined && fertileHeq < 45 && h.rng() < raceOf(h.race).fertility * 0.7 * traitFertility(h)) {
+  if (sp && !familyFixed(h) && h.flags.pregnant === undefined && canBear(h) && h.rng() < raceOf(h.race).fertility * 0.7 * traitFertility(h)) {
     if (h.sex === 'F') h.flags.pregnant = h.age;
     else born(h, sp);
   }
@@ -255,6 +265,9 @@ function born(h: Hero, mother?: Tie): void {
 function jobOptions(h: Hero): JobId[] {
   let pool: JobDef[] = jobsFor(h);
   const ids: JobId[] = [];
+  // 成人前に英雄の筋で登録した人は、その世界の戦う職を必ず1つめの候補にする (自動の「ふつう」はこれを選ぶ)
+  const fj = onArc(h) && h.flags.guild !== undefined ? fightJobFor(h) : null;
+  if (fj) { ids.push(fj); pool = pool.filter((x) => x.id !== fj); }
   while (ids.length < 3 && pool.length) {
     const j = pickWeighted(h.rng, pool, (x) => jobWeight(h, x));
     ids.push(j.id);
@@ -279,10 +292,16 @@ export function jobDecision(h: Hero, ids: JobId[]): Decision | null {
         log(x, L(`${JOBS[id].ja}になった。`, `Became a ${JOBS[id].en.toLowerCase()}.`), 'work', true);
       },
     })),
-    auto: (x) => (x.policy === 'normal' ? 0 : ids.reduce((bi, id, i) => {
+    auto: (x) => {
+      if (x.policy === 'normal') return 0;
+      // 慎重な人でも、特典を持っていれば3割で戦う職を選ぶ (力を使う道に少しは寄せる)
+      const fight = ids.findIndex((id) => FIGHT_JOBS.includes(id));
+      if (x.policy === 'careful' && x.cheat && fight >= 0 && x.rng() < 0.3) return fight;
+      return ids.reduce((bi, id, i) => {
       const better = x.policy === 'careful' ? jobRisk(JOBS[id]) < jobRisk(JOBS[ids[bi]]) : jobRisk(JOBS[id]) > jobRisk(JOBS[ids[bi]]);
       return better ? i : bi;
-    }, 0)),
+    }, 0);
+    },
   };
 }
 
@@ -336,23 +355,34 @@ function settlePending(h: Hero, decs: Decision[]): void {
 export function advanceYear(h: Hero): void {
   if (!h.alive) return;
   if (h.pending.length) { if (!h.auto) return; settlePending(h, []); if (!h.alive) return; }
-  // 1. 生死
+  // 1. 生死 (ほかの人の一生では、錨の死の年にその死因で亡くなる)
+  const fixed = anchoredDeath(h);
+  if (fixed) { forcing = true; die(h, fixed); forcing = false; dressDeath(h); return; }
   if (h.rng() < deathChance(h)) { die(h, pickHazard(h)); if (!h.alive) return; }
-  // 2. 年を取る
+  // 2. 年を取る (先に輪の人が年を取る。生まれたばかりの子が、その年のうちに1歳の死亡率を受けないように)
   h.age++;
-  agePeople(h); // 先に輪の人が年を取る (生まれたばかりの子が、その年のうちに1歳の死亡率を受けないように)
+  agePeople(h);
+  peopleYear(h); // 輪の人それぞれの1年 (結婚・昇進・負傷・旅立ち。people.ts、横の乱数)
+  if (!anchorsOf(h)) reincarnatorYear(h); // ほかの転生者との出会い・噂 (reincarnators.ts、横の乱数)。ほかの人の一生では起こさない
+  anchorYear(h); // ほかの人の一生: その年の錨 (結婚・子・共有の出来事)
   if (h.flags.pregnant !== undefined) { delete h.flags.pregnant; born(h); }
-  siblings(h);
+  if (!familyFixed(h)) siblings(h);
   // 3. 世界
-  stepWorld(h);
+  const wy = anchoredWorld(h);
+  if (wy) Object.assign(h.state, { war: wy.war ? 1 : 0, plague: wy.plague ? 1 : 0, famine: wy.famine ? 1 : 0, demonKing: wy.demonKing });
+  else stepWorld(h);
+  h.worldHist = (h.worldHist ?? '') + worldChar(h);
   // 4. 節目 と 5. 出来事
   const decs: Decision[] = [];
   milestones(h, decs);
+  if (h.alive) arcYear(h, die, fill('{beast}', h));
   if (h.alive) decs.push(...drawEvents(h, die));
   settlePending(h, decs);
   if (!h.alive) return;
+  ensureFightJob(h); // 英雄の筋で登録した大人は、その年のうちに戦う職へ (登録が出来事でも節目でも)
   // 6. 能力
   drift(h);
+  capLevel(h); // ほかの人の一生: 主人公の輪にいた間の level を人物像に合わせる
   if (!h.kinds[h.age]) h.kinds[h.age] = baseKind(h);
 }
 
@@ -374,6 +404,7 @@ export function liveOut(h: Hero, maxYears = 4000): Hero {
   h.auto = auto;
   return h;
 }
+LIVE.out = liveOut;
 
 // ---- 保存と再開 -----------------------------------------------------------
 
@@ -408,6 +439,35 @@ export interface Summary {
   highlights: LogEntry[];
 }
 
+// 主な出来事: 一生全体から、子ども時代から晩年まで偏らずに選ぶ。
+// 一生を年代で5つに分け、各枠に2件まで大事さの順で入れ、余った枠は一生全体の大事さの順で埋める (並びは年の順)
+const HIGHLIGHT_MAX = 10;
+const IMPORTANT = /生まれ|洗礼|魔力を測|霊力|気の巡り|適性|力があると気づ|初めて〈|登録|門を叩|名を連ね|資格を取|踏破|討った|守り抜|酒場でも語|吟遊詩人|結婚|亡くなった|魔王|鬼の王|魔尊|勇者|聖女|追放|置いて、|になった|ランク[A-S]|born|baptism|Married|died|Demon|Hero|Saint|exiled|became|rank [A-S]/i;
+function importance(e: LogEntry): number {
+  let s = e.big ? 3 : 0;
+  if (e.kind === 'arrival') s += 10; // 誕生・転生・召喚
+  if (e.kind === 'fame' || e.kind === 'power' || e.kind === 'love') s += 2;
+  if (e.kind === 'family' || e.kind === 'loss' || e.kind === 'adventure' || e.kind === 'battle') s += 1.5;
+  if (e.join?.length || e.leave?.length) s += 1;
+  if (e.fight?.result === 'win') s += 0.5;
+  if (IMPORTANT.test(e.text)) s += 2;
+  return s;
+}
+export function highlights(h: Hero): LogEntry[] {
+  const pool = h.log.filter((e) => e.kind !== 'death' && (e.big || importance(e) >= 3));
+  if (!pool.length) return [];
+  const start = h.log[0]?.age ?? 0, end = h.age + 1;
+  const width = Math.max(1, (end - start) / 5);
+  const byScore = (a: LogEntry, b: LogEntry) => importance(b) - importance(a) || a.age - b.age;
+  const chosen = new Set<LogEntry>();
+  for (let k = 0; k < 5; k++) {
+    const lo = start + k * width, hi = start + (k + 1) * width;
+    pool.filter((e) => e.age >= lo && e.age < hi).sort(byScore).slice(0, 2).forEach((e) => chosen.add(e));
+  }
+  for (const e of [...pool].sort(byScore)) { if (chosen.size >= HIGHLIGHT_MAX) break; chosen.add(e); }
+  return h.log.filter((e) => chosen.has(e));
+}
+
 export function summary(h: Hero): Summary {
   const last = h.log[h.log.length - 1];
   const death = last?.kind === 'death' ? last : undefined;
@@ -416,7 +476,7 @@ export function summary(h: Hero): Summary {
     ...(h.death ? { hazard: h.death.hazard, cause: h.death.label, text: h.death.text } : {}),
     ...(death?.why ? { why: death.why } : {}),
     lastWith: h.alive ? closest(h) : (death?.who ?? []).map((id) => h.people.find((t) => t.id === id)!).filter(Boolean),
-    highlights: h.log.filter((e) => e.big && e.kind !== 'death').slice(-10),
+    highlights: highlights(h),
   };
 }
 

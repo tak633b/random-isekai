@@ -4,14 +4,16 @@
 import type { Hero, LogEntry, Memory, RaceId, Role, Sex, StatKey, Tie, YearKind } from './types';
 import { clamp } from './rng';
 import { lifeTableFor, qAt } from './mortality';
-import { L } from '../i18n';
+import { isEn, L, an } from '../i18n';
+import { ensureProfile } from './people';
 
 export const MEM_MAX = 12;
 
 // ---- 年表と能力 (どのファイルからも使う小さな道具) ---------------------------
 
 export function log(h: Hero, text: string, kind: YearKind, big = false, who?: number[], why?: string): LogEntry {
-  const e: LogEntry = { age: h.age, text, kind };
+  // 英語の文は頭を大文字に (データや名前の組み合わせで小文字から始まることがある。why と同じ扱い)
+  const e: LogEntry = { age: h.age, text: isEn && text ? an(text.charAt(0).toUpperCase() + text.slice(1)) : text, kind };
   if (big) e.big = true;
   if (who?.length) e.who = who;
   if (why) e.why = why;
@@ -56,6 +58,7 @@ export function addTie(h: Hero, t: NewTie): Tie {
     bond: t.bond ?? initialBond(t.role), since: h.age, mem: [] };
   if (t.job !== undefined) tie.job = t.job;
   h.people.push(tie);
+  ensureProfile(h, tie); // 人物像 (横の乱数だけを引く。h.rng は変えない)
   return tie;
 }
 
@@ -112,13 +115,17 @@ export function callName(t: Tie): string {
 
 // 輪の全員が1年年を取り、それぞれの種族の生命表で亡くなることがある。
 // 主人公の年齢はもう1つ進んだ後に呼ぶ (diedAt は主人公の今の年齢)
+// ほかの人の一生 (anchor.ts) で、錨の人 (連れ合い・子・親) を年取りの死から外す。主人公には何もしない (乱数は今までどおり引く)
+let keepAlive: (h: Hero, t: Tie) => boolean = () => false;
+export const setKeepAlive = (f: (h: Hero, t: Tie) => boolean) => { keepAlive = f; };
+
 export function agePeople(h: Hero): Tie[] {
   const died: Tie[] = [];
   for (const t of h.people) {
     if (!t.alive) continue;
     const q = qAt(lifeTableFor(h.world, t.race), Math.max(0, t.age));
     t.age++;
-    if (h.rng() < q) died.push(t);
+    if (h.rng() < q && !keepAlive(h, t)) died.push(t);
   }
   for (const t of died) {
     const near = t.until === undefined && t.role !== 'nemesis' && t.role !== 'rival';

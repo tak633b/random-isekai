@@ -5,6 +5,7 @@ import { sceneHTML, paintAll } from './pixel';
 import { ROLE_NAME, ageText } from './labels';
 import { esc, load, save } from './dom';
 import { screen, type Nav } from './nav';
+import { markGifts } from './records';
 import { L, T, lang } from '../i18n';
 
 const LIT = 'candles-lit';
@@ -38,7 +39,7 @@ function detailHTML(e: MemorialEntry): string {
       <div class="cause"><b>${esc(e.causeLabel)}</b><p>${esc(e.causeText)}</p>${e.why ? `<p class="why">${L('なぜ: ', 'Why: ')}${esc(e.why)}</p>` : ''}</div>
       ${e.note ? `<p class="message">${L('「', '“')}${esc(e.note)}${L('」', '”')}</p>` : ''}
       ${e.lastWith.length ? `<h3>${L('最後にそばにいた人', 'Who was there at the end')}</h3><p>${e.lastWith.map((t) => `${esc(t.name)} <small>(${esc(ROLE_NAME[t.role] ?? t.role)})</small>`).join(L('、', ', '))}</p>` : ''}
-      ${e.highlights.length ? `<h3>${L('主な出来事', 'Moments that mattered')}</h3><ul class="highlights">${e.highlights.map((h) => `<li><span>${ageText(h.age)}</span>${esc(h.text)}</li>`).join('')}</ul>` : ''}
+      ${e.highlights.length ? `<h3>${L('主な出来事', 'Moments that mattered')}</h3><ul class="highlights">${e.highlights.map((h) => `<li><span>${ageText(h.age)}</span><div>${markGifts(esc(h.text))}</div></li>`).join('')}</ul>` : ''}
       <div class="choices"><button class="primary" data-candle="${e.id}" ${done ? 'disabled' : ''}>${done ? L('ろうそくを灯した', 'Candle lit') : L('ろうそくを灯す', 'Light a candle')} <small id="cn">${e.candles}</small></button>
         <button data-list="1">${L('一覧へ', 'Back to the list')}</button></div>
       <p class="note" id="candlemsg" role="status"></p>

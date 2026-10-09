@@ -4,7 +4,7 @@ import { BLESSING, CHEATS, CHEAT_IDS, lifeTableFor, RACE_IDS, STATUSES, TALENTS,
 import { paintScene } from './scene';
 import { paintSprite } from './sprite';
 import { faceHTML, sceneHTML, sceneOf, paintAll, heroFigure } from './pixel';
-import { ARRIVAL_NAME, MEMORY_NAME, PAST_CAUSE_NAME, POLICY_NAME, SEX_NAME, TALENT_NAME, ageText } from './labels';
+import { ARRIVAL_NAME, MEMORY_NAME, POLICY_NAME, SEX_NAME, TALENT_NAME, ageText, pastEnd } from './labels';
 import { buildErrors, buildHTML, listHTML, newBuild, onBuildClick, prune, traitTags, type BuildState } from './build';
 import { aiSettingsPanel } from './aipanel';
 import { esc, load, save } from './dom';
@@ -225,7 +225,8 @@ export function showArrival(h: Hero, asked: Setup, nav: Nav): void {
     [L('名前', 'Name'), f.name ?? h.given, !!a.name],
     [L('性格', 'Temperament'), POLICY_NAME[h.policy], !!asked.policy],
   ];
-  const past = h.past ? L(`前世は${h.past.age}歳の${T(h.past.job)}。${PAST_CAUSE_NAME[h.past.cause]}。`, `In a past life: a ${h.past.age}-year-old ${T(h.past.job)}. ${PAST_CAUSE_NAME[h.past.cause]}.`) : '';
+  const end = h.past ? pastEnd(h.past.cause, h.arrival === 'summoned', h.seed).text : '';
+  const past = h.past ? L(`前世は${h.past.age}歳の${T(h.past.job)}。${end}。`, `In a past life: a ${h.past.age}-year-old ${T(h.past.job)}. ${end}.`) : '';
   screen(`
   <main class="page arrival">
     <article class="record">

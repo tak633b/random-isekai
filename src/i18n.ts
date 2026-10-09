@@ -16,11 +16,14 @@ export const lang: Lang = detect();
 export const isEn = lang === 'en';
 
 // 日本語と英語を並べて書き、今の言語の方を返す
-export const L = (ja: string, en: string): string => (isEn ? en : ja);
+// 英語の a / an を後ろの語で直す。職業や種族を差し込む文が多く、書く側では決められないため
+// (母音で始まる語と 8・11・18 の前は an。uni- / use で始まる語は a のまま)
+export const an = (s: string): string => s.replace(/\b([Aa]) (?=[aeioAEIO]|[uU](?!ni|se|su|ro|ti)|8|11\b|18\b)/g, '$1n ');
+export const L = (ja: string, en: string): string => (isEn ? an(en) : ja);
 
 // データに {ja, en} の組で持っている文を、今の言語で
 export interface Text { ja: string; en: string }
-export const T = (t: Text): string => (isEn ? t.en : t.ja);
+export const T = (t: Text): string => (isEn ? an(t.en) : t.ja);
 
 export function setLang(next: Lang): void {
   try { localStorage.setItem('lang', next); } catch { /* 保存できなくても今回だけは切り替える */ }

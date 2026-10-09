@@ -4,6 +4,7 @@ import { randomSeed } from '../engine';
 import { keep, recordHTML, toRecord } from './records';
 import { paintAll } from './pixel';
 import { Stage } from './stage';
+import { chronicleHTML, nearestYear, openLife } from './lifeview';
 import { memorialAvailable, postMemorial } from '../net/memorial';
 import { memorialOffHTML } from './memorial';
 import { aiEpitaph } from './aipanel';
@@ -17,6 +18,7 @@ export function showDeath(h: Hero, nav: Nav): void {
   screen(`
   <main class="page death">
     ${recordHTML(r)}
+    <details class="panel chronbox"><summary>${L('年代記 (この世界の歴史)', 'Chronicle (the history of this world)')}</summary>${chronicleHTML(h)}</details>
     <div id="aiepi"></div>
     <section class="panel" id="leave"><h2>${L('追悼館に残す', 'Leave it in the memorial')}</h2><p class="note">${L('確かめています…', 'Checking…')}</p></section>
     <div class="choices">
@@ -27,6 +29,10 @@ export function showDeath(h: Hero, nav: Nav): void {
     </div>
     <p class="note">${L('「同じ設定」は、おまかせで決まった項目も含めて固定し、運だけを変える。', '"Same setup" keeps everything that was decided, including what was random, and changes only luck.')}</p>
   </main>`, (t) => {
+    const lk = t.closest<HTMLElement>('[data-life]')?.dataset.life;
+    if (lk) return openLife(h, lk, jump);
+    const jp = t.closest<HTMLElement>('[data-jump]')?.dataset.jump;
+    if (jp !== undefined) return jump(Number(jp));
     const go = t.closest<HTMLElement>('[data-go]')?.dataset.go;
     if (go === 'trials') nav.trials(h.setup);
     if (go === 'again') nav.start({ ...h.setup, seed: randomSeed() });
@@ -38,6 +44,15 @@ export function showDeath(h: Hero, nav: Nav): void {
   });
   const app = document.getElementById('app')!;
   paintAll(app);
+  // 年表の全体を開いて、その年へ
+  function jump(age: number): void {
+    const d = app.querySelector<HTMLDetailsElement>('.fulllog');
+    if (d) d.open = true;
+    const el = nearestYear(app.querySelector('.fulllog')!, age);
+    el?.scrollIntoView({ block: 'center' });
+    el?.classList.add('flash');
+    setTimeout(() => el?.classList.remove('flash'), 1600);
+  }
   // 墓の場面: 最後にそばにいた人が静かに立つ
   const grave = app.querySelector<HTMLCanvasElement>('.record > canvas.scene');
   if (grave) new Stage(grave).showSpec(r.scene);
