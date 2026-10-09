@@ -209,8 +209,20 @@ const ADJ: Part[] = [['', ''], ['', ''], ['', ''], ['black ', '黒い'], ['two-h
 export function beastName(rng: Rng, w: World): string {
   const s = styleOf(w);
   const pool = w.tags.includes('sea') ? [...BEASTS[s], ...SEA_BEASTS] : w.id === 'beast' ? [...BEASTS[s], ...BEAST_WILDS] : BEASTS[s];
-  const [en, ja] = join(pick(rng, ADJ), pick(rng, pool));
-  return L(ja, en);
+  const adj = pick(rng, ADJ), b = pick(rng, pool);
+  // 「giant giant spider」にならないよう、魔物の名に入っている形容は重ねない (乱数は同じだけ引く)
+  const ja = adj[1] + b[1];
+  return L(ja, adj[0] && b[0].split(' ').includes(adj[0].trim()) ? b[0] : adj[0] + b[0]);
+}
+
+// 魔物の名の複数形 (a horde of {beasts})。最後の語だけを変える。数えない名 (kraken, jiangshi …) はそのまま
+const SAME_PLURAL = /(?:kraken|jiangshi|nue|danuki|djinn|folk)$/;
+export function plural(s: string): string {
+  if (!isEn || SAME_PLURAL.test(s)) return s;
+  if (/wolf$/.test(s)) return s.replace(/f$/, 'ves');
+  if (/[^aeiou]y$/.test(s)) return s.replace(/y$/, 'ies');
+  if (/(?:s|x|z|ch|sh)$/.test(s)) return `${s}es`;
+  return `${s}s`;
 }
 
 const GUILD_A: Part[] = [['Silver', '銀'], ['Iron', '鉄'], ['Azure', '蒼'], ['Crimson', '紅'], ['Golden', '金'], ['Black', '黒']];
@@ -246,10 +258,11 @@ export function lordName(rng: Rng, w: World): string {
 export interface WorldNames { town: string; god: string; guild: string; lord: string }
 const cache = new Map<string, WorldNames>();
 export function worldNames(h: Hero): WorldNames {
-  const key = `${h.seed}|${h.world.id}`;
+  const seed = h.lineage?.rootSeed ?? h.seed; // 続けた主人公も、最初の主人公と同じ町・神・ギルド・領主
+  const key = `${seed}|${h.world.id}`;
   const hit = cache.get(key);
   if (hit) return hit;
-  const rng = makeRng((h.seed ^ 0x5eed1234) >>> 0);
+  const rng = makeRng((seed ^ 0x5eed1234) >>> 0);
   const n = { town: townName(rng, h.world), god: godName(rng, h.world), guild: guildName(rng, h.world), lord: lordName(rng, h.world) };
   if (cache.size > 2000) cache.clear(); // 何千回も試す集計で膨らまないように
   cache.set(key, n);

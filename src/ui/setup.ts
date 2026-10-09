@@ -10,6 +10,13 @@ import { aiSettingsPanel } from './aipanel';
 import { esc, load, save } from './dom';
 import { screen, type Nav } from './nav';
 import { L, T } from '../i18n';
+import { BLESSING_KEY, isSeen, isUnlocked, priceOf, unlock, unlockedChoices } from '../meta/unlocks';
+import type { UnlockKey } from '../meta/types';
+import { loadProgress } from '../meta/store';
+import { randomBuild, allTraits } from '../engine';
+import { lockIcon } from './labels';
+import { lockedBtn } from './lockbtn';
+import { toast } from './toast';
 
 export interface Choice {
   world: WorldId | 'random';
@@ -41,6 +48,27 @@ export function toSetup(c: Choice): Setup {
   return { seed: randomSeed(), world, hero, ...(c.policy ? { policy: c.policy } : {}) };
 }
 
+// おまかせの項目を、解放したものの中から引いて埋める (エンジンに任せると、まだ解放していないものまで出るため)。
+// 引くのは設定の seed から作る別の乱数 (人生の乱数の並びは変えない)
+export function fillFromUnlocked(s: Setup, c: Choice): Setup {
+  const r = makeRng((s.seed ^ 0x9e3779b9) >>> 0);
+  const pick = <T,>(xs: T[], d: T): T => (xs.length ? xs[Math.floor(r() * xs.length)] : d);
+  const u0 = unlockedChoices();
+  const world = c.world === 'random' ? pick(u0.worlds, 'medieval' as WorldId) : c.world;
+  const w = resolveWorld({ ...s.world, preset: world }, makeRng(1));
+  const u = unlockedChoices(w);
+  const hero = { ...s.hero };
+  if (hero.race === undefined) hero.race = pick(u.races.length ? u.races : unlockedChoices().races, 'human' as RaceId);
+  if (hero.status === undefined) hero.status = pick(u.statuses, 'commoner' as Status);
+  if (hero.cheat === undefined) hero.cheat = r() < 0.12 || !u.cheats.length ? 'none' : pick(u.cheats, 'none' as CheatId | 'none');
+  if (hero.traits === undefined) {
+    const ok = new Set(unlockedChoices(w, hero.race).traits);
+    const b = randomBuild(r, w, hero.race!, {}, allTraits().filter((t) => ok.has(t.id)));
+    hero.traits = b.traits; hero.points = b.points;
+  }
+  return { ...s, world: { ...s.world, preset: world }, hero };
+}
+
 // 世界を選んだ後の値 (おまかせなら代表として剣と魔法の中世)
 const worldOf = (c: Choice): World | null => (c.world === 'random' ? null : resolveWorld(toSetup(c).world, makeRng(1)));
 const racesOf = (w: World | null): RaceId[] => (w ? w.races.filter(([, n]) => n > 0).map(([r]) => r) : RACE_IDS);
@@ -49,8 +77,10 @@ const cheatsOf = (w: World | null): CheatId[] => (w ? availableCheats(w).map((x)
 // ---- 部品 -----------------------------------------------------------------
 
 // 一つの項目の選択肢。v が undefined の「おまかせ」を先頭に
-function seg<V extends string | number>(k: keyof Choice, cur: V | undefined, opts: [V, string][], wide = false, random = true): string {
+function seg<V extends string | number>(k: keyof Choice, cur: V | undefined, opts: [V, string][], wide = false, random = true, keyOf?: (v: V) => UnlockKey | null): string {
   const b = (v: V | undefined, label: string) => {
+    const key = v !== undefined && keyOf ? keyOf(v) : null;
+    if (key && !isUnlocked(key)) return lockedBtn(key, label);
     const on = v === cur;
     return `<button type="button" data-k="${k}" data-v="${v === undefined ? '' : esc(String(v))}" class="${on ? 'on' : ''}" aria-pressed="${on}">${esc(label)}</button>`;
   };
@@ -75,19 +105,19 @@ function heroForm(c: Choice, w: World | null): string {
   const sw = w ?? WORLDS.medieval;
   const cheats = cheatsOf(w);
   return `
-    ${row(L('種族', 'Race'), seg('race', c.race, racesOf(w).map((r) => [r, T(raceOf(r).name)]), true),
+    ${row(L('種族', 'Race'), seg('race', c.race, racesOf(w).map((r) => [r, T(raceOf(r).name)]), true, true, (r) => `race:${r}`),
       w ? L('この世界で生まれうる種族。', 'Races that can be born in this world.') : L('世界がおまかせなので、どの種族も選べる。', 'Any race, since the world is random.'))}
     <div class="preview" aria-live="polite">${c.race ? `${faceHTML({ seed: 7, race: c.race, sex: c.sex ?? 'F', stage: 'adult', job: null, status: c.status ?? 'commoner' }, 'face big')}<canvas class="pix sprite" id="pvsprite" width="32" height="48" aria-hidden="true"></canvas>
       <p><b>${esc(T(raceOf(c.race).name))}</b><small>${L(`成人 ${raceOf(c.race).adult}歳・寿命の上限 ${raceOf(c.race).maxAge}歳`, `Adult at ${raceOf(c.race).adult}, at most ${raceOf(c.race).maxAge} years`)}</small></p>` : `<p class="note">${L('種族を選ぶと、顔と立ち絵がここに出る。', 'Pick a race to see a face and figure here.')}</p>`}</div>
     ${row(L('性別', 'Sex'), seg('sex', c.sex, [['F', SEX_NAME.F], ['M', SEX_NAME.M]]))}
-    ${row(L('身分', 'Born into'), seg('status', c.status, STATUSES.map((s) => [s, statusName(s, sw)]), true))}
+    ${row(L('身分', 'Born into'), seg('status', c.status, STATUSES.map((s) => [s, statusName(s, sw)]), true, true, (s) => `status:${s}`))}
     ${row(L('才能', 'Talent'), seg('talent', c.talent, TALENTS.map((t) => [t, TALENT_NAME[t]])))}
-    ${row(L('転生特典', 'Gift'), seg('cheat', c.cheat, [['none', L('なし', 'None')], ...cheats.map((id) => [id, T(CHEATS[id].name)] as [CheatId, string])], true),
-      c.cheat && c.cheat !== 'none' ? esc(T(CHEATS[c.cheat].desc)) : w ? L('この世界の魔法と技術で使える特典だけ。', 'Only gifts that work with this world’s magic and technology.') : '')}
+    ${row(L('転生特典', 'Cheat skill'), seg('cheat', c.cheat, [['none', L('なし', 'None')], ...cheats.map((id) => [id, T(CHEATS[id].name)] as [CheatId | 'none', string])], true, true, (id) => (id === 'none' ? null : `cheat:${id}`)),
+      c.cheat && c.cheat !== 'none' ? esc(T(CHEATS[c.cheat].desc)) : w ? L('この世界の魔法と技術で使える特典だけ。', "Only cheat skills that work with this world's magic and technology.") : '')}
     ${row(L('転生の型', 'Arrival'), seg('arrival', c.arrival, ARRIVALS.map((a) => [a, ARRIVAL_NAME[a]])), L('召喚は今の体のまま来る。現地の生まれは前世を持たない。', 'The summoned arrive as they are. The native-born have no past life.'))}
     ${row(L('前世の記憶', 'Memories of a past life'), seg('memory', c.memory, MEMORIES.map((m) => [m, MEMORY_NAME[m]])))}
-    ${row(L('始まる年齢', 'Starting age'), seg('startAge', c.startAge, START_AGES.map((a) => [a, START_NAME[a]]), true), L('おまかせは転生の型どおり (召喚なら大人、ほかは赤ちゃんから)。', 'Random follows the arrival type (adults when summoned, otherwise from birth).'))}
-    ${row(L('女神の加護', 'Goddess’s blessing'), seg('blessing', c.blessing ? '1' : '0', [['0', L('なし', 'No')], ['1', L('あり', 'Yes')]], false, false), blessingNote(w, c.race))}
+    ${row(L('始まる年齢', 'Starting age'), seg('startAge', c.startAge, START_AGES.map((a) => [a, START_NAME[a]]), true, true, (a) => `startAge:${a}`), L('おまかせは転生の型どおり (召喚なら大人、ほかは赤ちゃんから)。', 'Random follows the arrival type (adults when summoned, otherwise from birth).'))}
+    ${row(L('女神の加護', "Goddess's blessing"), seg('blessing', c.blessing ? '1' : '0', [['0', L('なし', 'No')], ['1', L('あり', 'Yes')]], false, false, (v) => (v === '1' ? BLESSING_KEY : null)), blessingNote(w, c.race))}
     <div class="row"><label><h3>${L('名前 (任意)', 'Name (optional)')}</h3><input id="name" maxlength="24" value="${esc(c.name ?? '')}" placeholder="${L('空ならこの世界らしい名前', 'Leave empty for a local name')}" autocomplete="off"></label></div>
     ${row(L('自動で選ぶときの性格', 'When choosing automatically'), seg('policy', c.policy, POLICIES.map((p) => [p, POLICY_NAME[p]])), L('「最後まで」や何回も試すときに、選択肢をどう選ぶか。', 'How choices are made when you skip ahead or run many lives.'))}`;
 }
@@ -108,21 +138,37 @@ export function showSetup(nav: Nav): void {
   c.build = { ...newBuild(), ...(c.build ?? {}), query: '', more: false };
   let removed: string[] = [];
   if (c.world !== 'random' && !WORLD_IDS.includes(c.world)) c.world = 'random';
-  const cards = (['random', ...WORLD_IDS] as const).map((id) => `<button type="button" class="wcard" data-world="${id}" aria-pressed="false">
-    <canvas class="pix" width="320" height="100" ${id === 'random' ? '' : `data-mini="${id}"`} aria-hidden="true"></canvas><span>${id === 'random' ? L('おまかせ', 'Random') : esc(T(WORLDS[id].name))}</span></button>`).join('');
+  const cards = () => (['random', ...WORLD_IDS] as const).map((id) => {
+    const key: UnlockKey | null = id === 'random' ? null : `world:${id}`;
+    const locked = key && !isUnlocked(key);
+    const name = id === 'random' ? L('おまかせ (解放した世界から)', 'Random (from unlocked worlds)') : T(WORLDS[id].name);
+    return `<button type="button" class="wcard${locked ? ' locked' : ''}" ${locked ? `data-unlock="${key}" data-label="${esc(name)}"` : `data-world="${id}"`} aria-pressed="false">
+    <canvas class="pix" width="320" height="100" ${id === 'random' ? '' : `data-mini="${id}"`} aria-hidden="true"></canvas><span>${locked ? `${lockIcon()} ` : ''}${esc(name)}${locked ? ` <small class="price${isSeen(key!) ? ' seen' : ''}">${isSeen(key!) ? L('見た・', 'seen · ') : ''}${priceOf(key!)}</small>` : ''}</span></button>`;
+  }).join('');
   screen(`
   <main class="page setup">
     <button class="back" data-go="title">${L('← タイトルへ', '← Back to title')}</button>
-    <h1>${L('設定して転生', 'Choose your rebirth')}</h1>
+    <h1>${L('設定して転生', 'Choose your rebirth')} <small class="tickets" id="tix">${loadProgress().tickets}${L('枚', ' tickets')}</small></h1>
     <p class="note">${L('どの項目も「おまかせ」のままでいい。選ばなかったものは生まれるときに決まる。', 'Leave anything on Random. Whatever you skip is decided at birth.')}</p>
-    <section class="panel"><h2>${L('世界', 'World')}</h2><div class="worlds">${cards}</div><div id="knobs"></div></section>
+    <section class="panel"><h2>${L('世界', 'World')}</h2><div class="worlds" id="worlds">${cards()}</div><div id="knobs"></div></section>
     <section class="panel"><h2>${L('主人公', 'You')}</h2><div id="heroform"></div></section>
     <section class="panel"><h2>${L('スキル・能力・加護・体質・弱点', 'Skills, abilities, blessings, constitution, weaknesses')}</h2><div id="build"></div></section>
     <div id="aibox"></div>
-    <div class="choices sticky"><button class="primary" data-go="start" id="startbtn">${L('この設定で転生', 'Be reborn')}</button><button data-go="reset">${L('全部おまかせに戻す', 'Reset all to Random')}</button></div>
+    <div class="sticky"><div id="unlockask" role="alertdialog" aria-live="polite" hidden></div><div class="choices"><button class="primary" data-go="start" id="startbtn">${L('この設定で転生', 'Be reborn')}</button><button data-go="reset">${L('全部おまかせに戻す', 'Reset all to Random')}</button></div></div>
   </main>`, (t) => {
     if (t.closest('[data-go=title]')) return nav.title();
-    if (t.closest('[data-go=start]')) { if (buildErrors(c.build!, worldOf(c), c.race).length) return; save(KEY, c); return nav.start(toSetup(c)); }
+    if (t.closest('[data-go=start]')) { if (buildErrors(c.build!, worldOf(c), c.race).length) return; save(KEY, c); const asked = toSetup(c); return nav.start(fillFromUnlocked(asked, c), false, asked); }
+    // 解放: 尋ねてから、チケットを引いて開ける
+    const ub = t.closest<HTMLElement>('[data-unlock]');
+    if (ub) return askUnlock(ub.dataset.unlock as UnlockKey, ub.dataset.label ?? '');
+    const yes = t.closest<HTMLElement>('[data-unlockyes]')?.dataset.unlockyes;
+    if (yes) {
+      const ok = unlock(yes as UnlockKey);
+      document.getElementById('unlockask')!.hidden = true;
+      if (ok) { toast(L('解放した', 'Unlocked'), document.querySelector<HTMLElement>('#unlockask b')?.textContent ?? ''); repaintWorlds(); refresh(`[data-v="${yes.split(':')[1]}"]`); }
+      return;
+    }
+    if (t.closest('[data-unlockno]')) { document.getElementById('unlockask')!.hidden = true; return; }
     if (t.closest('[data-go=reset]')) { for (const k of Object.keys(c) as (keyof Choice)[]) delete c[k]; c.world = 'random'; c.build = newBuild(); return refresh(); }
     const bt = t.closest<HTMLElement>('[data-b]');
     if (bt) {
@@ -143,8 +189,9 @@ export function showSetup(nav: Nav): void {
     }
   });
   const app = document.getElementById('app')!;
-  app.querySelectorAll<HTMLCanvasElement>('canvas[data-mini]').forEach((cv) =>
+  const paintMini = () => app.querySelectorAll<HTMLCanvasElement>('canvas[data-mini]').forEach((cv) =>
     paintScene({ seed: 11, world: cv.dataset.mini as WorldId, place: 'town', home: 'house', tod: 'day', season: 1, figures: [] }).put(cv));
+  paintMini();
   app.onchange = (e) => {
     const s = (e.target as HTMLElement).closest<HTMLSelectElement>('[data-sel]');
     if (s) { const k = s.dataset.sel as 'danger' | 'war'; c[k] = s.value === '' ? undefined : Number(s.value); }
@@ -161,7 +208,29 @@ export function showSetup(nav: Nav): void {
     if (box && w && c.race) box.innerHTML = listHTML(c.build!, w, c.race);
   }
 
+  function askUnlock(key: UnlockKey, label: string): void {
+    const box = document.getElementById('unlockask')!;
+    const price = priceOf(key) ?? 0, have = loadProgress().tickets;
+    box.hidden = false;
+    box.innerHTML = have >= price
+      ? `<p>${L(`<b>${esc(label)}</b> をチケット${price}枚で解放する? (今${have}枚)`, `Unlock <b>${esc(label)}</b> for ${price} tickets? (You have ${have}.)`)}${isSeen(key) ? `<small>${L('おまかせの人生で見たので半額。', 'Half price: you have seen it in a random life.')}</small>` : ''}</p>
+        <div class="choices"><button class="primary" data-unlockyes="${esc(key)}">${L('解放する', 'Unlock')}</button><button data-unlockno="1">${L('やめる', 'Cancel')}</button></div>`
+      : `<p>${L(`<b>${esc(label)}</b> の解放にはチケット${price}枚が要る。今${have}枚。`, `<b>${esc(label)}</b> needs ${price} tickets. You have ${have}.`)}</p><div class="choices"><button data-unlockno="1">${L('閉じる', 'Close')}</button></div>`;
+    box.querySelector<HTMLElement>('button')?.focus();
+  }
+  function repaintWorlds(): void {
+    document.getElementById('worlds')!.innerHTML = cards();
+    paintMini();
+    document.getElementById('tix')!.textContent = `${loadProgress().tickets}${L('枚', ' tickets')}`;
+  }
+
   function refresh(focus?: string): void {
+    // 解放していないものは選んだままにしない (前に選んだ記録などから)
+    if (c.world !== 'random' && !isUnlocked(`world:${c.world}`)) c.world = 'random';
+    for (const [k, pre] of [['race', 'race'], ['status', 'status'], ['startAge', 'startAge']] as const) { const v = c[k]; if (v !== undefined && !isUnlocked(`${pre}:${v}` as UnlockKey)) delete c[k]; }
+    if (c.cheat && c.cheat !== 'none' && !isUnlocked(`cheat:${c.cheat}`)) delete c.cheat;
+    if (c.blessing && !isUnlocked(BLESSING_KEY)) c.blessing = false;
+    c.build!.traits = c.build!.traits.filter((id) => isUnlocked(`trait:${id}`));
     const w = worldOf(c);
     if (c.race && !racesOf(w).includes(c.race)) delete c.race;
     if (c.cheat && c.cheat !== 'none' && !cheatsOf(w).includes(c.cheat)) delete c.cheat;
@@ -217,16 +286,16 @@ export function showArrival(h: Hero, asked: Setup, nav: Nav): void {
     [L('性別', 'Sex'), SEX_NAME[h.sex], !!a.sex],
     [L('身分', 'Born into'), statusName(h.status, h.world), !!a.status],
     [L('才能', 'Talent'), TALENT_NAME[h.talent], !!a.talent],
-    [L('転生特典', 'Gift'), h.cheat ? T(CHEATS[h.cheat].name) : L('なし', 'None'), !!a.cheat],
+    [L('転生特典', 'Cheat skill'), h.cheat ? T(CHEATS[h.cheat].name) : L('なし', 'None'), !!a.cheat],
     [L('転生の型', 'Arrival'), ARRIVAL_NAME[h.arrival], !!a.arrival],
     [L('前世の記憶', 'Memories'), MEMORY_NAME[h.memory], !!a.memory],
     [L('始まる年齢', 'Starting age'), ageText(h.age), !!a.startAge],
-    [L('女神の加護', 'Goddess’s blessing'), h.blessing ? L('あり', 'Yes') : L('なし', 'No'), true],
+    [L('女神の加護', "Goddess's blessing"), h.blessing ? L('あり', 'Yes') : L('なし', 'No'), true],
     [L('名前', 'Name'), f.name ?? h.given, !!a.name],
     [L('性格', 'Temperament'), POLICY_NAME[h.policy], !!asked.policy],
   ];
   const end = h.past ? pastEnd(h.past.cause, h.arrival === 'summoned', h.seed).text : '';
-  const past = h.past ? L(`前世は${h.past.age}歳の${T(h.past.job)}。${end}。`, `In a past life: a ${h.past.age}-year-old ${T(h.past.job)}. ${end}.`) : '';
+  const past = h.past ? L(`前世は${h.past.age}歳の${T(h.past.job)}。${end}。`, `In a past life: a ${h.past.age}-year-old ${T(h.past.job)}. ${end}`) : '';
   screen(`
   <main class="page arrival">
     <article class="record">

@@ -118,8 +118,10 @@ describe('世界の年ごとの様子', () => {
 // 連れ合いと恋人・婚約者の期間 (主人公の年齢で [輪に入った年, 離れた年か亡くなった年か今)) が重ならない。主人公の一生と、輪の人の一生の両方で
 describe('連れ合いと恋人', () => {
   const span = (h: Hero, t: Tie): [number, number] => [t.since, t.until ?? t.diedAt ?? h.age + 1];
+  // 連れ合いの期間は結婚した年から (恋人・婚約者から連れ合いになった人は、それまで since が早い)
+  const wed = (h: Hero, t: Tie) => h.log.find((e) => e.kind === 'love' && e.who?.includes(t.id) && /結婚|Married|married/.test(e.text))?.age ?? t.since;
   const check = (h: Hero) => {
-    const sp = h.people.filter((t) => t.role === 'spouse').map((t) => span(h, t));
+    const sp = h.people.filter((t) => t.role === 'spouse').map((t) => [wed(h, t), span(h, t)[1]] as [number, number]);
     for (const t of h.people.filter((x) => x.role === 'lover' || x.role === 'fiance')) {
       const [a, b] = span(h, t);
       for (const [c, d] of sp) expect(a < d && c < b && !(a === c), `${t.name} ${a}-${b} / 連れ合い ${c}-${d}`).toBe(false);

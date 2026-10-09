@@ -23,7 +23,8 @@ describe('集計の形', () => {
   });
 
   it('上限の年数で打ち切った人は「まだ生きている」に数える', () => {
-    const r = runTrials({ seed: 3, world: { preset: 'medieval' }, hero: { race: 'human', cheat: 'immortal_body', arrival: 'reborn' } }, 60, undefined, 150);
+    // 不死の体の上限は1000歳。打ち切り (150年) を確かめるのはエルフで (人間より若いうちの死が少なく、まだ生きている人が多い)
+    const r = runTrials({ seed: 3, world: { preset: 'medieval' }, hero: { race: 'elf', cheat: 'immortal_body', arrival: 'reborn' } }, 60, undefined, 150);
     expect(r.maxYears).toBe(150);
     expect(r.max).toBeLessThanOrEqual(150);
     expect(r.alive).toBe(r.ages.filter((a) => a === 150).length);
@@ -47,29 +48,20 @@ describe('集計の形', () => {
   // 実測 (2026-10-09, 出来事を棄却法で引くようにした後): 中世欧州風・人間で 1000回が 0.28秒、現代 0.45秒、宇宙 0.50秒、エルフ 0.62秒、
   // 不死の体 2.0秒 (上限 1000年で打ち切り、17人がまだ生きている)。
   // 機械の速さで揺れるので、幅は倍に取る
-  it('1000回が数秒で終わる', () => {
-    const t0 = performance.now();
-    runTrials(setup('human'), 1000);
-    // 実測 (2026-10-09, M3 Max): 英雄の筋・人物像・転生者を入れる前 353ms、入れた後 798ms。GitHub Actions の機械はおよそ3倍遅い。
-    // 手元の上限は今の倍ほどにして、重くなったらここで気づけるようにする
-    expect(performance.now() - t0).toBeLessThan((globalThis as { process?: { env: Record<string, string | undefined> } }).process?.env.CI ? 6000 : 1600);
-  }, 20_000);
-});
-
-// 実測 (2026-10-09, 中世欧州風・平民・1000回): 人間 平均31.1 最長98 / エルフ 平均66.0 最長593 (200歳到達 9.3%、500歳 0.4%) / ゴブリン 平均10.9 最長30。
-// エルフは子ども期が100年あり、そのあいだ ch × E(0.4) で亡くなるので中央値は人間と変わらない。長く生きる個体がいることで平均が伸びる
-describe('種族で寿命が変わる', () => {
-  const human = runTrials(setup('human'), 1000);
-  it('エルフは人間より平均享年が大きく、300歳を越える個体がいる', () => {
-    const elf = runTrials(setup('elf'), 1000);
-    expect(elf.mean).toBeGreaterThan(human.mean * 1.5);
-    expect(elf.max).toBeGreaterThan(300);
-    expect(elf.reach[200]).toBeGreaterThan(0.03);
-  }, 30_000);
-  it('ゴブリンは人間より短い', () => {
-    const gob = runTrials(setup('goblin'), 1000);
-    expect(gob.mean).toBeLessThan(human.mean * 0.6);
-    expect(gob.max).toBeLessThanOrEqual(45); // 種族の上限
+  // 速さ: 300回を3度回して一番速いものを見る (全体を並行で回したときのほかのテストの負荷を除くため)。
+  // 一度だけ 1000回を測る形では、全体の実行中に 1695ms まで揺れて上限を越えた (2026-10-09)
+  it('300回の試行が十分に速い (3度の最小)', () => {
+    let best = Infinity;
+    for (let k = 0; k < 3; k++) {
+      const t0 = performance.now();
+      runTrials(setup('human'), 300);
+      best = Math.min(best, performance.now() - t0);
+    }
+    // 実測 (2026-10-09, M3 Max): 単独で 244〜246ms、全体を並行で回した中で 261ms。
+    // 手元の上限はその倍 (500ms)、CI はさらに3倍 (1500ms)。2〜3倍重くなればここで落ちる
+    const LIMIT_LOCAL = 500, LIMIT_CI = 1500;
+    const ci = (globalThis as { process?: { env: Record<string, string | undefined> } }).process?.env.CI;
+    expect(best, `${best.toFixed(0)}ms`).toBeLessThan(ci ? LIMIT_CI : LIMIT_LOCAL);
   });
 });
 

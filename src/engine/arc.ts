@@ -10,7 +10,7 @@ import { jobHeld } from './anchor';
 import { bump, log } from './bonds';
 import { CHEATS } from './cheats';
 import { heqOf } from './mortality';
-import { styleOf, worldNames } from './names';
+import { plural, styleOf, worldNames } from './names';
 import { fightOf, foeFor, heroActive, onArc, type Die } from './events';
 import { rankWord } from './people';
 import { L, T } from '../i18n';
@@ -33,11 +33,11 @@ const gift = (h: Hero) => (h.cheat ? T(CHEATS[h.cheat].name) : '');
 function joinLine(h: Hero): [string, string] {
   const g = worldNames(h).guild;
   switch (styleOf(h.world)) {
-    case 'zh': return [`${g}の門を叩き、外門弟子として名を記された。位は末席の「F」から。`, `Knocked at the gate of ${g} and was entered as an outer disciple. Rank F, the lowest seat.`];
-    case 'wa': return [`${g}に名を連ね、請け負い仕事を始めた。格付けは「F」から。`, `Joined ${g} and began taking contracts. Rank F to start.`];
-    case 'modern': return [`${g}の探索者資格を取った。等級はF。`, `Earned an explorer's license from ${g}. Grade F.`];
-    case 'scifi': return [`${g}に登録した。等級はF。`, `Signed on with ${g}. Grade F.`];
-    case 'ruin': return [`${g}に拾われ、見張りと狩りの番に加わった。序列は一番下の「F」。`, `Was taken in by ${g} for watch and hunting duty. Rank F, bottom of the pecking order.`];
+    case 'zh': return [`${g}の門を叩き、外門弟子として名を記された。位は末席の「F」から。`, `Knocked at the gate of ${g} and was entered as an outer disciple. Grade F, the lowest seat.`];
+    case 'wa': return [`${g}に名を連ね、請け負い仕事を始めた。格付けは「F」から。`, `Joined ${g} and began taking contracts. Grade F to start.`];
+    case 'modern': return [`${g}の探索者資格を取った。等級はF。`, `Earned an explorer's license from ${g}. F-Rank Explorer.`];
+    case 'scifi': return [`${g}に登録した。等級はF。`, `Signed on with ${g}. Tier F.`];
+    case 'ruin': return [`${g}に拾われ、見張りと狩りの番に加わった。序列は一番下の「F」。`, `Was taken in by ${g} for watch and hunting duty. Grade F, bottom of the pecking order.`];
     default: return [`${g}に冒険者として登録した。ランクはF。`, `Registered with ${g} as an adventurer. Rank F.`];
   }
 }
@@ -149,7 +149,7 @@ export function arcYear(h: Hero, die: Die, beast: string): void {
       f['arc.saved'] = now;
       bump(h, { fame: 12, happy: 6 });
       fightLog(h, L(`${worldNames(h).town}に${beast}の群れが押し寄せた夜、〈${gift(h)}〉で門を守り抜いた。朝、町の人々が{name}の名を呼んだ。`.replace('{name}', h.given),
-        `The night a horde of ${beast} fell upon ${worldNames(h).town}, ${h.given} held the gate with "${gift(h)}". At dawn, the townsfolk were calling ${h.given}'s name.`), 'battle', foeFor(h, 'monster', beast));
+        `The night a horde of ${plural(beast)} fell upon ${worldNames(h).town}, ${h.given} held the gate with "${gift(h)}". At dawn, the townsfolk were calling ${h.given}'s name.`), 'battle', foeFor(h, 'monster', beast));
       if (h.rng() < riskOf(h, 0.03)) die(h, 'monster');
     }
     return;

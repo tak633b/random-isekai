@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { WORLDS, WORLD_IDS, TABLE_E0 } from './worlds';
 import { RACES } from './races';
-import { agingOf, baseHazards, deathChance, hazards, heq, lifeTableFor, stageAt, total } from './mortality';
+import { AGELESS_MAX, agingOf, baseHazards, deathChance, hazards, heq, lifeTableFor, stageAt, total } from './mortality';
 import { createHero } from './hero';
 import type { Hero, Setup } from './types';
 
@@ -82,5 +82,24 @@ describe('ハザードの形', () => {
     for (const h of [farmer, adv]) { h.age = 25; h.flags.adult = 16; }
     farmer.job = 'farmer'; adv.job = 'adventurer'; adv.rank = 'F';
     expect(hazards(adv).monster / hazards(farmer).monster).toBeGreaterThan(4);
+  });
+});
+
+describe('不死の体でも種族の上限で亡くなる', () => {
+  it('エルフも人間も1000歳を越えない (medieval seed 119 のエルフは以前 1793歳まで生きた)', async () => {
+    const { liveOut } = await import('./life');
+    const elf = liveOut(createHero({ seed: 119, world: { preset: 'medieval' }, hero: { race: 'elf', cheat: 'immortal_body', arrival: 'reborn' }, auto: true }));
+    expect(elf.alive).toBe(false);
+    expect(elf.age).toBeLessThanOrEqual(RACES.elf.maxAge);
+    // 千年に届いて亡くなった人は、老衰ではなく自分で選んだ終わり (d.age-rest)
+    if (elf.death!.hazard === 'age') expect(elf.death!.id).toBe('d.age-rest');
+    let rest = 0;
+    for (let s = 1; s <= 30; s++) {
+      const h = liveOut(createHero({ seed: s, world: { preset: 'medieval' }, hero: { race: 'human', cheat: 'immortal_body', arrival: 'reborn' }, auto: true }));
+      expect(h.age).toBeLessThanOrEqual(AGELESS_MAX);
+      if (h.age >= AGELESS_MAX) { rest++; expect(h.death!.id).toBe('d.age-rest'); }
+    }
+    // 実測 (2026-10-09): 不死の人間30人のうち千年に届くのは seed 15 の1人 (40人なら 15・36 の2人)
+    expect(rest).toBeGreaterThan(0);
   });
 });

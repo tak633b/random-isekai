@@ -43,12 +43,12 @@ export const EVENTS: EventDef[] = [
     ja: '{name}のギルド証が銀色のものに替わった。受付の人の口調が少しだけ丁寧になった。',
     en: "{name}'s guild card was replaced with a silver one. The receptionist's tone became a little more polite.",
     eff: { fame: 3, wealth: 3, level: 1 }, set: 'rankC',
-    why: { ja: 'Cランクは一人前の壁。多くの冒険者はここで一生を終える', en: 'C rank is the wall of competence. Most adventurers end their careers here' },
+    why: { ja: 'Cランクは一人前の壁。多くの冒険者はここで一生を終える', en: 'Rank C is the wall that separates the amateurs. Most adventurers end their careers there' },
   },
   {
     id: 'fa.rank-b-exam', stage: ['adult', 'middle'], tags: F, jobs: ['adventurer'], flag: 'rankC', noFlag: 'rankB', w: 0.5, kind: 'adventure',
     ja: 'Bランクの昇格試験の実技は、街道を荒らす本物の盗賊団の討伐だと告げられた。',
-    en: "{name} was told the practical part of the B-rank exam would be taking down a real gang of highway bandits.",
+    en: "{name} was told the practical part of the Rank B exam would be taking down a real gang of highway bandits.",
     choice: {
       ja: '試験を受けるか', en: 'Take the exam?',
       options: [
@@ -62,14 +62,14 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fa.rank-a', stage: ['adult', 'middle'], tags: F, jobs: ['adventurer'], flag: 'rankB', noFlag: 'rankA', w: 0.15, kind: 'fame', big: true,
     ja: '{name}はAランクに上がった。それからは、王都から封蝋つきの指名依頼が届くようになった。',
-    en: '{name} reached A rank. After that, named requests began arriving from the capital under wax seals.',
+    en: '{name} reached Rank A. After that, requests addressed to {him} by name began arriving from the capital under wax seals.',
     eff: { fame: 8, wealth: 6, level: 3 }, set: 'rankA',
-    why: { ja: 'Aランクは国の切り札で、地方に数人しかいない', en: "A rank is a nation's trump card; only a handful exist in any region" },
+    why: { ja: 'Aランクは国の切り札で、地方に数人しかいない', en: "A Rank A adventurer is a nation's trump card; only a handful exist in any region" },
   },
   {
     id: 'fa.epithet', stage: ['adult'], tags: F, jobs: ['adventurer', 'mercenary'], flag: 'rankC', noFlag: 'epithet', w: 0.7, kind: 'fame',
     ja: '酒場で、{name}に二つ名がついていると聞かされた。本人はあまり気に入っていない。',
-    en: 'At the tavern, {name} learned they had been given an epithet. They did not much care for it.',
+    en: 'At the tavern, {name} learned that people had given {him} an epithet. {He} did not much care for it.',
     eff: { fame: 5 }, set: 'epithet',
   },
   {
@@ -80,7 +80,7 @@ export const EVENTS: EventDef[] = [
       ja: 'どちらを通るか', en: 'Which way?',
       options: [
         { ja: '峠を越える', en: 'Take the pass', eff: { wealth: 5 }, risk: { hazard: 'violence', p: 0.03 },
-          log: { ja: '峠では矢が二本飛んできただけで済み、隊商主は上乗せの銀貨をくれた。', en: 'Only two arrows came at them in the pass, and the caravan master paid a silver bonus.' } },
+          log: { ja: '峠では矢が二本飛んできただけで済み、隊商主は上乗せの銀貨をくれた。', en: 'Only two arrows came at the caravan in the pass, and the caravan master paid a bonus in silver.' } },
         { ja: '遠回りする', en: 'Go around', eff: { wealth: 2, hp: -1 },
           log: { ja: '遠回りの道は泥だらけで、{name}の靴は一足だめになった。', en: 'The long road was all mud, and {name} ruined a pair of boots.' } },
       ],
@@ -102,7 +102,7 @@ export const EVENTS: EventDef[] = [
         { ja: '応じる', en: 'Answer', eff: { fame: 4, charm: 2, level: 1 }, risk: { hazard: 'monster', p: 0.04 },
           log: { ja: '{name}は二晩、森の際の柵を守った。', en: '{name} held the fence at the forest edge for two nights.' } },
         { ja: '町を離れる', en: 'Leave town', eff: { charm: -3, fame: -2 },
-          log: { ja: '{name}は夜のうちに隣町へ移った。戻った時、ギルドの掲示板に自分の名前が書かれていた。', en: '{name} slipped off to the next town overnight. On returning, their name was posted on the guild board.' } },
+          log: { ja: '{name}は夜のうちに隣町へ移った。戻った時、ギルドの掲示板に自分の名前が書かれていた。', en: '{name} slipped off to the next town overnight. On returning, {he} found {his} name posted on the guild board.' } },
       ],
     },
   },
@@ -136,7 +136,7 @@ export const EVENTS: EventDef[] = [
         { ja: 'ギルドに報告する', en: 'Report it to the guild', eff: { fame: 3, wealth: 2 },
           log: { ja: '発見者として{name}の名が台帳に残った。', en: "{name}'s name was entered in the ledger as the discoverer." } },
         { ja: '黙って先に潜る', en: 'Go in first, quietly', eff: { wealth: 8, level: 2 }, risk: { hazard: 'monster', p: 0.05 },
-          log: { ja: '最初の部屋の宝箱は、誰も開けたことのない重さだった。', en: 'The chest in the first room had the weight of something no one had ever opened.' } },
+          log: { ja: '最初の部屋の宝箱は、誰も開けたことのない重さだった。', en: 'The chest in the first room was heavy in the way only an unopened chest can be.' } },
       ],
     },
   },
@@ -155,7 +155,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fa.companion-wounded', stage: ['adult', 'middle'], tags: F, jobs: ['adventurer'], w: 0.5, kind: 'loss',
     ja: '{companion}が魔物の爪で深手を負った。傷が塞がると、冒険者をやめて故郷へ帰ると言った。',
-    en: "{companion} took a deep wound from a monster's claws. Once it closed, they said they were quitting and going home.",
+    en: "{companion} took a deep wound from a monster's claws. Once it closed, {he:companion} announced {he:companion} was quitting and going home.",
     eff: { happy: -5 }, tie: { role: 'companion', d: -5 },
   },
   {
@@ -175,37 +175,37 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fa.exiled', stage: ['adult'], tags: F, jobs: ['adventurer'], flag: 'party', noFlag: 'exiled', w: 0.5, kind: 'hard', big: true,
     ja: 'パーティの会議で、{name}は「足手まといだ」と告げられた。分け前を机に置いて出ていくよう言われた。',
-    en: 'At a party meeting, {name} was told they were dead weight, and asked to leave their share on the table and go.',
+    en: 'At a party meeting, {name} was called dead weight and told to leave {his} share on the table and go.',
     eff: { happy: -8, wealth: -3 }, set: 'exiled', tie: { role: 'companion', d: -40 },
     why: { ja: '目立たない支援役ほど、いなくなるまで働きが見えない', en: "The quieter a support role, the less anyone sees the work until it's gone" },
   },
   {
     id: 'fa.exile-awakening', stage: ['adult'], tags: F, flag: 'exiled', w: 0.8, kind: 'power',
     ja: '一人で潜るようになって、{name}は自分の技がずっと仲間に合わせて抑えられていたことに気づいた。',
-    en: "Diving alone now, {name} realized their skills had always been held back to match the party's.",
+    en: "Diving solo now, {name} realized {his} skills had always been held back to match the party's pace.",
     eff: { power: 6, level: 3 },
   },
   {
     id: 'fa.exile-new-party', stage: ['adult'], tags: F, flag: 'exiled', noFlag: 'party2', w: 1, kind: 'adventure',
     ja: '追放された次の季節、{name}は同じく行き場のなかった{companion}と組み直した。今度は分け前を最初に紙に書いた。',
-    en: 'The season after being cast out, {name} teamed up with {companion}, who also had nowhere to go. This time they wrote the split down first.',
+    en: 'The season after being kicked out, {name} teamed up with {companion}, who also had nowhere to go. This time they wrote down the split first.',
     eff: { happy: 5, charm: 2 }, set: 'party2', tie: { role: 'companion', new: true, d: 20 },
   },
   {
     id: 'fa.zamaa', stage: ['adult', 'middle'], tags: F, flag: 'exiled', noFlag: 'zamaa', w: 0.7, kind: 'fame',
     ja: '{name}を追い出したパーティが、荷物の管理も罠の見張りもないまま依頼に失敗し、解散したと噂で聞いた。',
-    en: 'Word reached {name} that the party that had thrown them out failed a job with no one minding supplies or traps, and had broken up.',
+    en: 'Word reached {name} that the party that had kicked {him} out had failed a job with no one minding the supplies or the traps, and had broken up.',
     eff: { happy: 5, fame: 2 }, set: 'zamaa',
   },
   {
     id: 'fa.zamaa-plea', stage: ['adult', 'middle'], tags: F, flag: 'zamaa', w: 0.6, kind: 'hard',
     ja: '昔の仲間の一人が、戻ってきてほしいと{name}の宿の前で頭を下げた。',
-    en: "One of the old party members bowed outside {name}'s inn and asked them to come back.",
+    en: "One of the old party members bowed outside {name}'s inn and begged {him} to come back.",
     choice: {
       ja: 'どう答えるか', en: 'How to answer?',
       options: [
         { ja: '断る', en: 'Refuse', eff: { happy: 3 },
-          log: { ja: '{name}は扉を閉めた。その夜はよく眠れた。', en: '{name} closed the door. They slept well that night.' } },
+          log: { ja: '{name}は扉を閉めた。その夜はよく眠れた。', en: '{name} closed the door. {He} slept well that night.' } },
         { ja: '一度だけ手を貸す', en: 'Help them once', eff: { charm: 4, wealth: 2 }, risk: { hazard: 'monster', p: 0.02 },
           log: { ja: '一度きりの依頼を片づけ、{name}は分け前を受け取らずに帰った。', en: '{name} finished the one job and left without taking a share.' } },
       ],
@@ -230,7 +230,7 @@ export const EVENTS: EventDef[] = [
         { ja: '剣を抜く', en: 'Draw your sword', eff: { fame: 10, wealth: 8, level: 5 }, set: 'dragonSlayer', risk: { hazard: 'monster', p: 0.12 },
           log: { ja: '夜明けまでかかった。竜の鱗は一枚で家が一軒買えた。', en: 'It took until dawn. A single dragon scale could buy a house.' } },
         { ja: '語りかける', en: 'Speak to it', eff: { mind: 5, fame: 4 }, set: 'dragonPact', risk: { hazard: 'magic', p: 0.03 },
-          log: { ja: '竜は長いあいだ{name}を見下ろし、それから低い声で名前を訊いた。', en: 'The dragon looked down at {name} for a long time, then asked their name in a low voice.' } },
+          log: { ja: '竜は長いあいだ{name}を見下ろし、それから低い声で名前を訊いた。', en: 'The dragon looked down at {name} for a long time, then asked {his} name in a low voice.' } },
         { ja: '伏せて待つ', en: 'Lie low and wait', eff: { happy: -1 },
           log: { ja: '竜は羊を二頭さらって去った。', en: 'The dragon carried off two sheep and left.' } },
       ],
@@ -239,7 +239,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fa.dragon-pact-ride', stage: ['adult', 'middle', 'elder'], tags: F, flag: 'dragonPact', w: 0.6, kind: 'power',
     ja: '約束の夜、竜は{name}を背に乗せ、雲の上から{town}の灯りを見せた。',
-    en: 'On the promised night, the dragon took {name} on its back and showed them the lights of {town} from above the clouds.',
+    en: 'On the promised night, the dragon carried {name} on its back and showed {him} the lights of {town} from above the clouds.',
     eff: { happy: 8, mind: 3 },
   },
 
@@ -247,7 +247,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fa.knighted', stage: ['adult', 'middle'], tags: F, jobs: ['soldier', 'mercenary', 'adventurer', 'servant'], noFlag: 'knighted', w: 0.25, kind: 'fame', big: true,
     ja: '戦の後の式で、{name}の肩に剣の平が置かれた。騎士の位を賜った。',
-    en: "At the ceremony after the war, the flat of a sword was laid on {name}'s shoulder. They were made a knight.",
+    en: "At the ceremony after the war, the flat of a sword touched {name}'s shoulder. {He} had been made a knight.",
     eff: { fame: 8, wealth: 4, charm: 3 }, set: 'knighted',
     why: { ja: '平民が貴族の端に入る数少ない道は、戦場の手柄', en: 'One of the few ways a commoner reaches the edge of nobility is merit on the battlefield' },
   },
@@ -257,10 +257,10 @@ export const EVENTS: EventDef[] = [
     en: "In a palace corridor, {rival} insulted {name}'s family name. Everyone nearby turned silently to look at {name}.",
     tie: { role: 'rival', new: true, d: -10 },
     choice: {
-      ja: '決闘を申し込むか', en: 'Challenge them to a duel?',
+      ja: '決闘を申し込むか', en: 'Demand a duel?',
       options: [
         { ja: '申し込む', en: 'Challenge', eff: { fame: 5, power: 2 }, risk: { hazard: 'violence', p: 0.04 },
-          log: { ja: '決闘は三合で終わった。{rival}は膝をつき、それから二度と目を合わせなかった。', en: 'The duel ended in three exchanges. {rival} went to one knee and never met their eyes again.' } },
+          log: { ja: '決闘は三合で終わった。{rival}は膝をつき、それから二度と目を合わせなかった。', en: 'The duel ended in three exchanges. {rival} went down on one knee and never met {name}\'s eyes again.' } },
         { ja: '笑って流す', en: 'Laugh it off', eff: { charm: 2, fame: -1 },
           log: { ja: '{name}は笑って通り過ぎた。陰口は一週間で止んだ。', en: '{name} laughed and walked on. The whispers stopped within a week.' } },
       ],
@@ -287,7 +287,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fa.soldier-rout', stage: ['adult'], tags: F, jobs: ['soldier', 'mercenary'], w: 0.6, kind: 'battle',
     ja: '{name}の隊は敗走した。三日歩いて味方の陣に着いた時、隊は半分になっていた。',
-    en: "{name}'s unit was routed. When they reached friendly lines after three days on foot, half of them were gone.",
+    en: "{name}'s unit was routed. By the time the survivors reached friendly lines after three days on foot, half of them were gone.",
     eff: { hp: -4, happy: -6 }, risk: { hazard: 'war', p: 0.05 },
   },
   {
@@ -327,14 +327,14 @@ export const EVENTS: EventDef[] = [
         { ja: '寝返る', en: 'Switch sides', eff: { wealth: 8, charm: -5 }, risk: { hazard: 'violence', p: 0.03 },
           log: { ja: '{name}の旗は翌朝、反対の丘に立っていた。', en: "The next morning, {name}'s banner stood on the opposite hill." } },
         { ja: '契約を守る', en: 'Keep the contract', eff: { charm: 3, fame: 2 },
-          log: { ja: '{name}は使者を縛って雇い主に引き渡した。', en: '{name} tied up the envoy and handed them to the employer.' } },
+          log: { ja: '{name}は使者を縛って雇い主に引き渡した。', en: '{name} tied up the envoy and handed the envoy over to the employer.' } },
       ],
     },
   },
   {
     id: 'fa.merc-unpaid', stage: ['adult'], tags: F, jobs: ['mercenary'], w: 0.8, repeat: true, kind: 'hard',
     ja: '戦が終わると、雇い主の伯爵は払いを渋った。{name}たちは城門の前に十日座り込んだ。',
-    en: "When the war ended, the count who had hired them balked at paying. {name}'s company sat outside the castle gate for ten days.",
+    en: "When the war ended, the count who had hired the company balked at paying. {name}'s company sat outside the castle gate for ten days.",
     eff: { wealth: -3, happy: -2 },
   },
   {
@@ -345,7 +345,7 @@ export const EVENTS: EventDef[] = [
       ja: '出場するか', en: 'Enter?',
       options: [
         { ja: '出る', en: 'Enter', eff: { wealth: 6, fame: 4, level: 1 }, risk: { hazard: 'violence', p: 0.04 },
-          log: { ja: '{name}は準決勝まで勝ち進み、観客に名前を覚えられた。', en: '{name} made it to the semifinals, and the crowd learned their name.' } },
+          log: { ja: '{name}は準決勝まで勝ち進み、観客に名前を覚えられた。', en: '{name} made it to the semifinals, and the crowd learned {his} name.' } },
         { ja: '観客席で見る', en: 'Watch from the stands', eff: { happy: 2 },
           log: { ja: '{name}は干し肉をかじりながら、他人の血が砂に吸われるのを見ていた。', en: "{name} chewed jerky and watched other people's blood soak into the sand." } },
       ],
@@ -387,7 +387,7 @@ export const EVENTS: EventDef[] = [
       ja: '村に入るか', en: 'Go into the village?',
       options: [
         { ja: '入って残る', en: 'Go and stay', eff: { charm: 6, fame: 4, mind: 2 }, risk: { hazard: 'disease', p: 0.06 },
-          log: { ja: '{name}は二か月村に留まった。最後の病人が起き上がった日、鐘を一つだけ鳴らした。', en: 'For two months {name} stayed. On the day the last patient sat up, they rang the bell once.' } },
+          log: { ja: '{name}は二か月村に留まった。最後の病人が起き上がった日、鐘を一つだけ鳴らした。', en: '{name} stayed for two months. On the day the last patient sat up, {he} rang the bell once.' } },
         { ja: '薬と祈りを送る', en: 'Send medicine and prayers', eff: { charm: -2 },
           log: { ja: '{name}は薬箱を荷車に積み、村の境で引き返した。', en: '{name} loaded the medicine onto a cart and turned back at the village boundary.' } },
       ],
@@ -401,16 +401,16 @@ export const EVENTS: EventDef[] = [
       ja: '説を撤回するか', en: 'Recant?',
       options: [
         { ja: '撤回する', en: 'Recant', eff: { happy: -4, fame: -2 },
-          log: { ja: '{name}は署名し、その晩、自分の書いたものを炉で燃やした。', en: '{name} signed, and that night burned their own writings in the stove.' } },
+          log: { ja: '{name}は署名し、その晩、自分の書いたものを炉で燃やした。', en: '{name} signed, and that night burned {his} own writings in the stove.' } },
         { ja: '撤回しない', en: 'Refuse', eff: { fame: 5, mind: 3 }, set: 'heretic', risk: { hazard: 'execution', p: 0.05 },
-          log: { ja: '{name}は首を振った。審問官は何も言わずに羽根ペンを置いた。', en: '{name} shook their head. The inquisitor set down the quill without a word.' } },
+          log: { ja: '{name}は首を振った。審問官は何も言わずに羽根ペンを置いた。', en: '{name} shook {his} head. The inquisitor set down the quill without a word.' } },
       ],
     },
   },
   {
     id: 'fa.priest-funerals', stage: ['adult', 'middle'], tags: F, jobs: ['priest'], w: 1, repeat: true, kind: 'work',
     ja: '{name}はその年、四十二人の葬儀で祈りを読んだ。名前は全部覚えている。',
-    en: "That year {name} read the prayers at forty-two funerals. They remember every name.",
+    en: "That year {name} read the prayers at forty-two funerals, and remembered every name.",
     eff: { mind: 1, happy: -1, charm: 1 },
   },
   {
@@ -438,18 +438,18 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fa.shop-open', stage: ['adult', 'middle'], tags: F, jobs: ['merchant', 'smith', 'cook', 'alchemist', 'herbalist', 'adventurer'], noFlag: 'shop', w: 0.6, kind: 'work', big: true,
     ja: '{name}は{town}の裏通りに小さな店を借りた。看板の文字は自分で描いた。',
-    en: '{name} rented a small shop on a back street in {town} and painted the sign themselves.',
+    en: '{name} rented a small shop on a back street in {town} and painted the sign {himself}.',
     eff: { wealth: -4, happy: 6 }, set: 'shop',
   },
   {
     id: 'fa.desert-caravan', stage: ['adult', 'middle'], tags: ['fantasy', 'desert'], not: NF, jobs: ['merchant'], w: 0.6, kind: 'work',
     ja: '砂漠を越える隊商に荷を預ければ、塩は向こうで十倍で売れる。ただし三回に一回は、隊商ごと戻らない。',
-    en: 'Send goods with the caravan across the desert and salt sells for ten times as much. But one caravan in three never comes back.',
+    en: 'Salt sent across the desert with a caravan sold for ten times the price. But one caravan in three never came back.',
     choice: {
       ja: '荷を預けるか', en: 'Send the goods?',
       options: [
         { ja: '全部預ける', en: 'Send everything', eff: { wealth: 9 }, risk: { hazard: 'accident', p: 0.03 },
-          log: { ja: '自分も駱駝に乗った。四十日後、{name}は空の荷袋と重い金袋を持って帰った。', en: '{name} rode along. Forty days later they came home with empty sacks and a heavy purse.' } },
+          log: { ja: '自分も駱駝に乗った。四十日後、{name}は空の荷袋と重い金袋を持って帰った。', en: '{name} rode along. Forty days later {he} came home with empty sacks and a heavy purse.' } },
         { ja: '近場で売る', en: 'Sell close to home', eff: { wealth: 2 },
           log: { ja: '{name}は市場の端で塩を量り売りした。', en: '{name} sold salt by weight at the edge of the market.' } },
       ],
@@ -464,9 +464,9 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fa.soap-spreads', stage: ['adult', 'middle'], tags: F, jobs: ['merchant', 'alchemist'], memory: true, w: 0.5, kind: 'fame',
     ja: '前の世界の記憶をたよりに{name}が売り出した石鹸が、隣の国の市場にまで並ぶようになった。',
-    en: '{name} had started selling soap from memories of a former life. Now it lined the market stalls of the neighboring country.',
+    en: '{name} had started selling soap made from memories of a past life. Now it lined the market stalls of the neighboring country.',
     eff: { wealth: 8, fame: 4 },
-    why: { ja: 'この世界にない品の作り方を知っていた', en: 'They knew how to make something this world did not have' },
+    why: { ja: 'この世界にない品の作り方を知っていた', en: 'Knew how to make something this world did not have' },
   },
   {
     id: 'fa.smith-masterwork', stage: ['adult', 'middle'], tags: F, jobs: ['smith'], w: 0.8, kind: 'work',
@@ -477,7 +477,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fa.smith-burn', stage: ['adult', 'middle'], tags: F, jobs: ['smith'], w: 0.6, repeat: true, kind: 'ill',
     ja: '跳ねた鉄の粒が{name}の前腕に落ちた。痕は硬貨ほどの大きさで、もう消えない。',
-    en: "A spatter of molten iron landed on {name}'s forearm. The scar is the size of a coin and will not fade.",
+    en: "A spatter of molten iron landed on {name}'s forearm. It left a coin-sized scar that never faded.",
     eff: { hp: -3 }, risk: { hazard: 'accident', p: 0.01 },
   },
   {
@@ -489,12 +489,12 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fa.cook-monster-meat', stage: ['adult'], tags: F, jobs: ['cook', 'hunter', 'adventurer'], w: 0.6, kind: 'work',
     ja: 'ギルドが買い取らなかった魔物の肉が、{name}の前に山になっていた。誰も食べたことのない肉だった。',
-    en: 'Monster meat the guild would not buy sat piled in front of {name}. No one had ever eaten it.',
+    en: 'Monster meat the guild refused to buy sat piled in front of {name}. No one had ever eaten it.',
     choice: {
       ja: '料理するか', en: 'Cook it?',
       options: [
         { ja: '煮込んでみる', en: 'Try stewing it', eff: { fame: 5, wealth: 3 }, risk: { hazard: 'disease', p: 0.02 },
-          log: { ja: '一晩煮込むと、肉は驚くほど柔らかくなった。翌月から店の名物になった。', en: 'After stewing overnight, it turned surprisingly tender. It became the house specialty the next month.' } },
+          log: { ja: '一晩煮込むと、肉は驚くほど柔らかくなった。翌月から店の名物になった。', en: 'After stewing overnight, the meat turned surprisingly tender. By the next month it was the house specialty.' } },
         { ja: '捨てる', en: 'Throw it out', eff: { happy: -1 },
           log: { ja: '{name}は肉を裏の穴に埋めた。野良犬が三日間そこを掘っていた。', en: '{name} buried it out back. Stray dogs dug at the spot for three days.' } },
       ],
@@ -514,7 +514,7 @@ export const EVENTS: EventDef[] = [
       ja: '誰で試すか', en: 'Who tests it?',
       options: [
         { ja: '自分で飲む', en: 'Drink it yourself', eff: { hp: 6, mind: 4 }, risk: { hazard: 'magic', p: 0.05 },
-          log: { ja: '一晩高い熱にうなされ、朝には古い膝の痛みが消えていた。', en: 'A high fever all night, and by morning an old ache in the knee was gone.' } },
+          log: { ja: '一晩高い熱にうなされ、朝には古い膝の痛みが消えていた。', en: '{name} burned with fever all night, and by morning an old ache in {his} knee was gone.' } },
         { ja: '鼠で試す', en: 'Test it on a rat', eff: { mind: 2 },
           log: { ja: '鼠はそれから四年生きた。{name}は記録をつけ続けた。', en: 'The rat lived four more years. {name} kept notes the whole time.' } },
       ],
@@ -545,7 +545,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fa.harvest', stage: ['adult', 'middle'], tags: ['fantasy', 'rural'], jobs: ['farmer'], w: 2, repeat: true, kind: 'work',
     ja: '麦がよく実った年だった。{name}は最後の束を納屋に入れ、扉に寄りかかって息をついた。',
-    en: 'The wheat came in heavy that year. {name} put the last sheaf in the barn and leaned against the door to catch their breath.',
+    en: 'The wheat came in heavy that year. {name} put the last sheaf in the barn and leaned against the door to catch {his} breath.',
     eff: { happy: 2, wealth: 2 },
   },
   {
@@ -571,7 +571,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fa.crop-rotation', stage: ['adult', 'middle'], tags: ['fantasy', 'rural'], jobs: ['farmer', 'lord'], memory: true, w: 0.5, kind: 'work',
     ja: '前の世界で覚えた畑の回し方を試すと、三年目の収穫が隣の家の倍になった。村の年寄りたちが見に来た。',
-    en: "{name} tried a crop rotation remembered from a former life. By the third year the harvest was double the neighbors'. The village elders came to look.",
+    en: "{name} tried a crop rotation remembered from a past life. By the third year the harvest was double the neighbors', and the village elders came to see for themselves.",
     eff: { wealth: 5, fame: 2, charm: 2 },
   },
   {
@@ -582,7 +582,7 @@ export const EVENTS: EventDef[] = [
       ja: '追うか', en: 'Follow it?',
       options: [
         { ja: '追う', en: 'Follow', eff: { wealth: 5, fame: 2 }, risk: { hazard: 'monster', p: 0.04 },
-          log: { ja: '日が落ちる前に追いついた。帰りは鹿を背負い、星を頼りに歩いた。', en: '{name} caught up before sunset and walked home under the stars with the stag on their back.' } },
+          log: { ja: '日が落ちる前に追いついた。帰りは鹿を背負い、星を頼りに歩いた。', en: '{name} caught up before sunset and walked home under the stars with the stag on {his} back.' } },
         { ja: '見送る', en: 'Let it go', eff: { mind: 1 },
           log: { ja: '{name}は沢の手前で弓を下ろした。森の奥はもう暗かった。', en: '{name} lowered the bow at the water. The deep woods were already dark.' } },
       ],
@@ -603,7 +603,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fa.familiar-grows', stage: ['adult', 'middle'], tags: F, jobs: ['tamer'], w: 0.8, kind: 'power',
     ja: '{familiar}の背丈が{name}を越えた。それでも寝る時は、{name}の足元で丸くなろうとする。',
-    en: '{familiar} grew taller than {name}, yet at night it still tried to curl up at their feet.',
+    en: '{familiar} grew taller than {name}, yet at night it still tried to curl up at {his} feet.',
     eff: { power: 3, happy: 3 }, tie: { role: 'familiar', d: 10 },
   },
   {
@@ -621,21 +621,21 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fa.sea-serpent', stage: ['adult', 'middle'], tags: ['sea'], not: NF, magic: 1, jobs: ['sailor'], w: 0.5, kind: 'battle',
     ja: '船の脇に、樽より太い鱗の背が浮かんだ。海蛇は船の周りをゆっくり一周した。',
-    en: 'A scaled back thicker than a barrel surfaced beside the ship. The sea serpent circled them slowly once.',
+    en: 'A scaled back thicker than a barrel surfaced beside the ship. The sea serpent circled the ship once, slowly.',
     choice: {
       ja: 'どうするか', en: 'What do you do?',
       options: [
         { ja: '銛を構える', en: 'Ready the harpoon', eff: { fame: 6, wealth: 4, level: 2 }, risk: { hazard: 'monster', p: 0.06 },
           log: { ja: '銛は首の付け根に入った。港では一週間、海蛇の肉が売られた。', en: 'The harpoon struck at the base of its neck. Serpent meat was sold at the harbor for a week.' } },
         { ja: '舵を切って逃げる', en: 'Turn and run', eff: { wealth: -2 },
-          log: { ja: '積み荷を半分捨てて船を軽くし、{name}たちは風下へ逃げた。', en: 'They dumped half the cargo to lighten the ship and fled downwind.' } },
+          log: { ja: '積み荷を半分捨てて船を軽くし、{name}たちは風下へ逃げた。', en: '{name} and the crew dumped half the cargo to lighten the ship and fled downwind.' } },
       ],
     },
   },
   {
     id: 'fa.unknown-isle', stage: ['adult'], tags: ['sea'], not: NF, jobs: ['sailor', 'adventurer'], w: 0.5, kind: 'adventure',
     ja: '地図にない島に寄港した。島の子どもたちは、{name}の言葉を一つも知らなかった。',
-    en: "They put in at an island that was on no chart. The island's children did not know a single word of {name}'s language.",
+    en: "The ship put in at an island that was on no chart. The island's children did not know a single word of {name}'s language.",
     eff: { mind: 2, happy: 3 },
   },
   {
@@ -652,9 +652,9 @@ export const EVENTS: EventDef[] = [
       ja: '誰に言うか', en: 'Who do you tell?',
       options: [
         { ja: '親方に報告する', en: 'Report it to the foreman', eff: { wealth: 2, charm: 3 },
-          log: { ja: '親方は{name}の肩を叩き、その月だけ給金を倍にした。', en: "The foreman clapped {name}'s shoulder and doubled their pay that month." } },
+          log: { ja: '親方は{name}の肩を叩き、その月だけ給金を倍にした。', en: "The foreman clapped {name} on the shoulder and doubled {his} pay that month." } },
         { ja: '隠して自分で掘る', en: 'Hide it and dig it yourself', eff: { wealth: 8 }, risk: { hazard: 'violence', p: 0.03 },
-          log: { ja: '夜ごと少しずつ削り出した。半年後、誰かが{name}の寝床を探った跡があった。', en: "{name} chipped it out a little each night. Half a year later, someone had searched their bed." } },
+          log: { ja: '夜ごと少しずつ削り出した。半年後、誰かが{name}の寝床を探った跡があった。', en: "{name} chipped it out a little each night. Half a year later, {he} found that someone had searched {his} bed." } },
       ],
     },
   },
@@ -669,7 +669,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fa.song-spreads', stage: ['adult', 'middle'], tags: F, jobs: ['bard'], w: 0.7, kind: 'fame',
     ja: '{name}の作った歌が、行ったこともない町の酒場で歌われていた。歌詞が一行違っていた。',
-    en: "A song {name} had written was being sung in a tavern in a town they had never visited. One line was wrong.",
+    en: "A song {name} had written was being sung in a tavern in a town {he} had never visited. One line was wrong.",
     eff: { fame: 5, happy: 3 },
   },
   {
@@ -680,7 +680,7 @@ export const EVENTS: EventDef[] = [
       ja: '歌うか', en: 'Sing it?',
       options: [
         { ja: '歌う', en: 'Sing it', eff: { fame: 6, wealth: 3 }, risk: { hazard: 'violence', p: 0.04 },
-          log: { ja: '三つ目の町で、黒い外套の男たちが{name}の宿を訪ねてきた。裏の窓から逃げた。', en: 'In the third town, men in black cloaks came to the inn. {name} left through the back window.' } },
+          log: { ja: '三つ目の町で、黒い外套の男たちが{name}の宿を訪ねてきた。裏の窓から逃げた。', en: 'In the third town, men in black cloaks came asking at the inn. {name} left through the back window.' } },
         { ja: '歌わない', en: 'Keep quiet', eff: { mind: 1 },
           log: { ja: '{name}はその話を、誰にも聞かれない古い羊皮紙にだけ書いた。', en: '{name} wrote it down only on an old scrap of parchment no one would read.' } },
       ],
@@ -703,7 +703,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fa.thief-caught', stage: ['adult'], tags: F, jobs: ['thief'], noFlag: 'branded', w: 0.5, kind: 'hard',
     ja: '市場で財布に手を入れたところを掴まれた。{name}の肩には焼き印が残った。',
-    en: "{name} was caught with a hand in someone's purse at the market. A brand was burned into their shoulder.",
+    en: "{name} was caught at the market with {his} hand in someone's purse. A brand was burned into {his} shoulder.",
     eff: { hp: -3, charm: -4 }, set: 'branded', risk: { hazard: 'execution', p: 0.02 },
   },
   {
@@ -722,14 +722,14 @@ export const EVENTS: EventDef[] = [
         { ja: '仕事をする', en: 'Do the job', eff: { wealth: 8, happy: -6, level: 1 }, risk: { hazard: 'violence', p: 0.03 },
           log: { ja: '{name}はそれからあのパン屋に行かなくなった。', en: '{name} stopped going to that bakery.' } },
         { ja: '逃がす', en: 'Let them go', eff: { happy: 3, charm: 2 }, set: 'defector', risk: { hazard: 'violence', p: 0.06 },
-          log: { ja: '夜のうちに写本師を荷馬車に乗せ、国境の方へ送った。組織にはまだ知られていない。', en: 'Overnight, {name} put the copyist on a cart bound for the border. The guild does not know yet.' } },
+          log: { ja: '夜のうちに写本師を荷馬車に乗せ、国境の方へ送った。組織にはまだ知られていない。', en: 'Overnight, {name} put the copyist on a cart bound for the border. The guild had not found out yet.' } },
       ],
     },
   },
   {
     id: 'fa.assassin-hunted', stage: ['adult', 'middle'], tags: F, jobs: ['assassin', 'thief'], noFlag: 'hunted', w: 0.4, kind: 'hard',
     ja: '同じ組織の{nemesis}が、{name}を消せという命令を受けたと聞いた。',
-    en: '{name} heard that {nemesis}, from the same guild, had been ordered to get rid of them.',
+    en: '{name} heard that {nemesis}, from the same guild, had been ordered to get rid of {him}.',
     eff: { happy: -5 }, set: 'hunted', tie: { role: 'nemesis', new: true, d: -30 }, risk: { hazard: 'violence', p: 0.03 },
   },
   {
@@ -758,26 +758,26 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fa.hero-chosen', stage: ['adult'], tags: F, magic: 2, noFlag: 'hero', w: 0.04, kind: 'fame', big: true,
     ja: '{god}の神託が下り、{name}は勇者として名を呼ばれた。その日から、知らない人に名前で呼ばれるようになった。',
-    en: "An oracle of {god} came down, and {name} was named the hero. From that day on, strangers called them by name.",
+    en: "An oracle came down from {god}, and {name} was named the Hero. From that day on, strangers called {him} by name.",
     eff: { fame: 10, power: 4, happy: -2 }, set: 'hero',
-    why: { ja: '魔王のいる時代、神は人の中から一人を選ぶ', en: 'In an age with a demon king, the gods choose one among the people' },
+    why: { ja: '魔王のいる時代、神は人の中から一人を選ぶ', en: 'In an age with a Demon Lord, the gods choose one among the people' },
   },
   {
     id: 'fa.hero-party', stage: ['adult'], tags: F, jobs: ['hero'], w: 1.5, kind: 'adventure',
     ja: '王都で勇者の仲間を選ぶ試合が開かれた。{name}は、負けた側にいた{companion}を選んだ。',
-    en: "A tournament was held in the capital to choose the hero's companions. {name} chose {companion}, from the losing side.",
+    en: "A tournament was held in the capital to choose the Hero's companions. {name} picked {companion}, from the losing side.",
     eff: { charm: 3 }, tie: { role: 'companion', new: true, d: 20 },
   },
   {
     id: 'fa.join-hero-party', stage: ['adult'], tags: F, magic: 2, jobs: ['adventurer', 'mage', 'priest', 'knight'], noFlag: 'hero', flag: 'rankC', w: 0.2, kind: 'fame', big: true,
     ja: '{name}は勇者の一行に加えられた。出発の朝、母親たちが沿道で泣いていた。',
-    en: "{name} was added to the hero's party. On the morning they set out, mothers wept along the road.",
+    en: "{name} joined the Hero's party. On the morning they set out, mothers wept along the road.",
     eff: { fame: 6, level: 2, happy: -2 }, risk: { hazard: 'monster', p: 0.03 },
   },
   {
     id: 'fa.demon-general', stage: ['adult', 'middle'], tags: F, magic: 2, jobs: ['hero', 'knight'], noFlag: 'generalSlain', w: 0.6, kind: 'battle',
     ja: '魔王軍の四将の一人が、国境の砦に陣を敷いた。砦の裏には、まだ逃げ遅れた村が二つある。',
-    en: "One of the demon king's four generals made camp at the border fortress. Behind it, two villages had not yet fled.",
+    en: "One of the Demon Lord's Four Generals made camp at the border fortress. Behind it, two villages had not yet fled.",
     choice: {
       ja: 'どうするか', en: 'What do you do?',
       options: [
@@ -791,38 +791,38 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fa.demon-king-slain', stage: ['adult', 'middle'], tags: F, magic: 2, jobs: ['hero'], flag: 'generalSlain', noFlag: 'demonKingSlain', w: 0.5, kind: 'battle', big: true,
     ja: '玉座の間での戦いは丸一日続いた。最後に{name}の剣が魔王の胸に届いた。',
-    en: "The battle in the throne room lasted a full day. In the end, {name}'s sword reached the demon king's heart.",
+    en: "The battle in the throne room lasted a full day. In the end, {name}'s sword reached the Demon Lord's heart.",
     eff: { fame: 10, level: 5, happy: 4, hp: -6 }, set: 'demonKingSlain', risk: { hazard: 'magic', p: 0.1 },
   },
   {
     id: 'fa.demon-king-peace', stage: ['adult', 'middle'], tags: F, magic: 2, jobs: ['hero', 'lord', 'priest'], noFlag: 'demonKingSlain', w: 0.1, kind: 'fame', big: true,
     ja: '{name}は剣を置いて魔王と同じ卓につき、三日かけて国境の線を引き直した。',
-    en: "{name} set down their sword, sat at the same table as the demon king, and spent three days redrawing the border.",
+    en: "{name} set down {his} sword, sat at the same table as the Demon Lord, and spent three days redrawing the border.",
     eff: { fame: 8, charm: 5, mind: 3 }, set: 'demonPeace',
   },
   {
     id: 'fa.hero-aftermath', stage: ['adult', 'middle'], tags: F, flag: 'demonKingSlain', w: 0.8, kind: 'hard',
     ja: '魔王がいなくなると、王宮は勇者をどう扱うかで揉め始めた。{name}への手紙が届かなくなった。',
-    en: "With the demon king gone, the court began quarreling over what to do with the hero. {name}'s letters stopped arriving.",
+    en: "With the Demon Lord gone, the court began quarreling over what to do with the Hero. Letters to {name} stopped arriving.",
     eff: { happy: -4, fame: 2 },
   },
   {
     id: 'fa.saint-recognized', stage: ['adult'], tags: F, magic: 2, jobs: ['priest', 'herbalist'], sex: 'F', noFlag: 'saint', w: 0.08, kind: 'fame', big: true,
     ja: '{name}の手が触れた病人の傷が、目の前で塞がった。翌月、教会は{name}を聖女と認めた。',
-    en: "A sick man's wound closed under {name}'s hand in front of witnesses. The next month, the church declared {name} a saint.",
+    en: "A sick man's wound closed under {name}'s hand in front of witnesses. The next month, the church declared {him} the Saintess.",
     eff: { fame: 9, charm: 5 }, set: 'saint',
   },
   {
     id: 'fa.fake-saint', stage: ['adult', 'middle'], tags: F, jobs: ['saint'], noFlag: 'exiled', w: 0.3, kind: 'hard', big: true,
     ja: '新しく来た聖女の方が本物だと、司教たちは言った。{name}は偽りの聖女として国を出るよう命じられた。',
-    en: 'The bishops said the newly arrived saint was the true one. {name} was declared false and ordered to leave the country.',
+    en: 'The bishops said the newly arrived Saintess was the real one. {name} was branded a fake and ordered to leave the country.',
     eff: { fame: -5, happy: -6, wealth: -5 }, set: 'exiled',
-    why: { ja: '聖女の座は祈りより政治で決まることがある', en: "Sometimes a saint's seat is decided by politics, not prayer" },
+    why: { ja: '聖女の座は祈りより政治で決まることがある', en: "Sometimes the seat of the Saintess is decided by politics, not prayer" },
   },
   {
     id: 'fa.saint-barrier', stage: ['adult', 'middle'], tags: F, magic: 2, jobs: ['saint'], w: 0.8, repeat: true, kind: 'work',
     ja: '国境の結界を張り直す儀式で、{name}は三日間眠らずに祈った。終わった時、髪がひと房白くなっていた。',
-    en: '{name} prayed for three days without sleep to renew the border ward. When it was done, a lock of their hair had gone white.',
+    en: '{name} prayed for three days without sleep to renew the border barrier. When it was done, a lock of {his} hair had gone white.',
     eff: { hp: -4, fame: 3, mind: 2 }, risk: { hazard: 'magic', p: 0.01 },
   },
 
@@ -850,13 +850,13 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fa.marry-across-race', stage: ['adult', 'middle'], tags: F, noFlag: 'married', w: 0.3, kind: 'love',
     ja: '寿命の違う相手との結婚に、両方の親族が顔をしかめた。{name}と{spouse}は、川の中州で二人だけで誓いを立てた。',
-    en: "Both families frowned at a marriage between two different lifespans. {name} and {spouse} made their vows alone on a sandbar in the river.",
+    en: "Both families frowned on a marriage between two races with such different lifespans. {name} and {spouse} made their vows alone on a sandbar in the river.",
     eff: { happy: 7, charm: -2 }, set: 'married', tie: { role: 'spouse', new: true, d: 35 },
   },
   {
     id: 'fa.child-born', stage: ['adult', 'middle'], tags: F, flag: 'married', w: 0.5, repeat: true, birth: true, kind: 'family', big: true,
     ja: '{name}に子が生まれ、{child}と名付けた。夜泣きの声で、隣の家の犬まで起きた。',
-    en: "{name} had a child and named them {child}. The crying at night woke even the neighbor's dog.",
+    en: "{name} had a child, {child}. The crying at night woke even the neighbor's dog.",
     eff: { happy: 7, wealth: -2 }, tie: { role: 'child', new: true, d: 40 },
   },
   {
@@ -868,7 +868,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fa.mentor-last-lesson', stage: ['adult'], tags: F, w: 0.6, kind: 'loss',
     ja: '{mentor}が床に伏せった。最後の稽古は、寝台の上で指を動かしてみせるだけだった。',
-    en: "{mentor} took to their bed. The last lesson was only the movement of a few fingers above the blanket.",
+    en: "{mentor} took to {his:mentor} bed. The last lesson was only the movement of a few fingers above the blanket.",
     eff: { mind: 3, happy: -5 }, tie: { role: 'mentor', d: 10 },
   },
   {
@@ -880,7 +880,7 @@ export const EVENTS: EventDef[] = [
       ja: '仇を討つか', en: 'Take revenge?',
       options: [
         { ja: '討つ', en: 'Take it', eff: { power: 3, happy: 2, fame: 3 }, risk: { hazard: 'violence', p: 0.05 },
-          log: { ja: '果たした後、{name}は思っていたほど何も感じなかった。', en: 'Afterward, {name} felt far less than they had expected.' } },
+          log: { ja: '果たした後、{name}は思っていたほど何も感じなかった。', en: 'Afterward, {name} felt far less than {he} had expected.' } },
         { ja: '役人に引き渡す', en: 'Hand him to the law', eff: { charm: 3, mind: 2 },
           log: { ja: '男は裁かれ、鉱山送りになった。{name}は判決の日、{mentor}の墓に花を置いた。', en: "The man was tried and sent to the mines. On the day of the verdict, {name} left flowers at {mentor}'s grave." } },
       ],
@@ -889,7 +889,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fa.nemesis-rises', stage: ['adult'], tags: F, jobs: FIGHTERS, w: 0.4, kind: 'hard',
     ja: '{name}が討ち損じた盗賊の頭が、{nemesis}と名乗って別の土地で勢力を広げていると聞いた。',
-    en: 'The bandit chief {name} had failed to finish off was now calling themself {nemesis} and gathering power in another land.',
+    en: 'The bandit chief {name} had failed to finish off had taken the name {nemesis} and was gathering power in another land.',
     eff: { happy: -3 }, tie: { role: 'nemesis', new: true, d: -20 },
   },
   {
@@ -903,7 +903,7 @@ export const EVENTS: EventDef[] = [
         { ja: '決着をつける', en: 'Settle it', eff: { fame: 7, level: 3 }, risk: { hazard: 'violence', p: 0.08 },
           log: { ja: '谷に風が戻った時、立っていたのは{name}だった。', en: 'When the wind returned to the valley, it was {name} left standing.' } },
         { ja: '剣を収める', en: 'Sheathe your sword', eff: { mind: 3, happy: 2 },
-          log: { ja: '{name}は背を向けた。{nemesis}は斬りかからなかった。', en: '{name} turned their back. {nemesis} did not strike.' } },
+          log: { ja: '{name}は背を向けた。{nemesis}は斬りかからなかった。', en: '{name} turned {his} back. {nemesis} did not strike.' } },
       ],
     },
   },
@@ -916,7 +916,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fa.gamey-skill', stage: ['adult', 'middle'], tags: ['gamey'], not: NF, w: 0.8, repeat: true, kind: 'power',
     ja: '目の前に浮かんだ文字が、新しい技能を覚えたと告げた。{name}は名前の読み方がわからなかった。',
-    en: 'Letters floated before {name}, announcing a new skill. {name} could not tell how to pronounce its name.',
+    en: 'Letters floated before {name}, announcing a new Skill. {He} had no idea how to pronounce its name.',
     eff: { level: 2, mind: 1 },
   },
   {
@@ -928,7 +928,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fa.myth-shrine', stage: ['adult', 'middle'], tags: ['myth'], not: NF, w: 0.6, kind: 'power',
     ja: '山頂の祠で一晩を明かした{name}の夢に、{god}が鹿の姿で立った。',
-    en: '{name} spent a night at a mountaintop shrine, and {god} stood in their dream in the shape of a deer.',
+    en: '{name} spent a night at a mountaintop shrine, and {god} appeared in {his} dream in the shape of a deer.',
     eff: { luck: 4, mind: 2 },
   },
   {
@@ -956,12 +956,12 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fa.adventurer-retire', stage: ['middle'], tags: F, jobs: ['adventurer', 'mercenary'], noFlag: 'retired', w: 1, kind: 'old',
     ja: '朝起きると、膝が階段を一段ずつしか許さなくなっていた。{name}は剣を磨きながら、これからのことを考えた。',
-    en: "One morning {name}'s knees would only allow the stairs one at a time. Polishing the sword, they thought about what came next.",
+    en: "One morning {name}'s knees would only take the stairs one at a time. Polishing {his} sword, {he} thought about what came next.",
     choice: {
       ja: '引退するか', en: 'Retire?',
       options: [
         { ja: '引退して宿を開く', en: 'Retire and open an inn', eff: { happy: 5, wealth: 2 }, set: 'retired',
-          log: { ja: '{name}は街道沿いに宿を開いた。若い冒険者の話を聞くのが仕事になった。', en: '{name} opened an inn by the highway. Listening to young adventurers became the job.' } },
+          log: { ja: '{name}は街道沿いに宿を開いた。若い冒険者の話を聞くのが仕事になった。', en: '{name} opened an inn by the highway. Listening to young adventurers became {his} new job.' } },
         { ja: '現役を続ける', en: 'Keep going', eff: { fame: 2, hp: -2 }, risk: { hazard: 'monster', p: 0.03 },
           log: { ja: '{name}はもう一度依頼の掲示板の前に立った。', en: '{name} stood in front of the job board once more.' } },
       ],
@@ -970,7 +970,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fa.old-wound', stage: ['middle', 'elder'], tags: F, jobs: FIGHTERS, w: 1.2, repeat: true, kind: 'ill',
     ja: '雨の前になると、若い頃に受けた脇腹の古傷が疼く。{name}の天気の読みは、もう外れない。',
-    en: "Before rain, the old wound in {name}'s side aches. Their weather forecasts are never wrong anymore.",
+    en: "Before rain, the old wound in {name}'s side ached. {His} weather forecasts were never wrong anymore.",
     eff: { hp: -2 },
   },
   {
@@ -988,19 +988,19 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fa.disciple-independent', stage: ['middle', 'elder'], tags: F, flag: 'teacher', w: 0.6, kind: 'family',
     ja: '{disciple}が自分の工房を構えた。看板の隅に、小さく{name}の名前が入っていた。',
-    en: "{disciple} opened a workshop of their own. In the corner of the sign, {name}'s name was written small.",
+    en: "{disciple} opened a workshop of {his:disciple} own. In the corner of the sign, {name}'s name was written small.",
     eff: { happy: 5, fame: 2 }, tie: { role: 'disciple', d: 8 },
   },
   {
     id: 'fa.disciple-astray', stage: ['middle', 'elder'], tags: F, flag: 'teacher', noFlag: 'strayDisciple', w: 0.25, kind: 'loss',
     ja: '{disciple}が、{name}の教えた技で人を殺めたと聞いた。手配書の似顔絵は、少しも似ていなかった。',
-    en: "{name} heard that {disciple} had killed someone with the very techniques {name} had taught. The wanted poster looked nothing like them.",
+    en: "{name} heard that {disciple} had killed someone with the very techniques {he} had taught. The wanted poster looked nothing like {him:disciple}.",
     eff: { happy: -7 }, set: 'strayDisciple', tie: { role: 'disciple', d: -40 },
   },
   {
     id: 'fa.knight-commander', stage: ['middle'], tags: F, jobs: ['knight'], flag: 'knighted', noFlag: 'commander', w: 0.4, kind: 'fame', big: true,
     ja: '{name}は騎士団長に任じられた。新しい外套は重く、最初の週は肩が凝った。',
-    en: "{name} was made commander of the knights. The new cloak was heavy, and their shoulders ached all the first week.",
+    en: "{name} was made commander of the knights. The new cloak was heavy, and {his} shoulders ached all that first week.",
     eff: { fame: 6, wealth: 4 }, set: 'commander',
   },
   {
@@ -1011,7 +1011,7 @@ export const EVENTS: EventDef[] = [
       ja: 'どう戦うか', en: 'How to fight?',
       options: [
         { ja: '夜に渡河して奇襲する', en: 'Cross at night and strike', eff: { fame: 8, level: 2 }, risk: { hazard: 'war', p: 0.07 },
-          log: { ja: '霧が味方をした。朝には敵の陣が空になっていた。', en: 'The fog was on their side. By morning the enemy camp was empty.' } },
+          log: { ja: '霧が味方をした。朝には敵の陣が空になっていた。', en: 'The fog was on {name}\'s side. By morning the enemy camp was empty.' } },
         { ja: '川岸で守りを固める', en: 'Dig in at the bank', eff: { charm: 3, fame: 2 },
           log: { ja: '睨み合いのまま冬が来て、どちらも兵を退いた。死者はほとんど出なかった。', en: 'Winter came during the standoff, and both sides withdrew. Almost no one died.' } },
       ],
@@ -1034,7 +1034,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fa.lord-border', stage: ['middle'], tags: F, flag: 'lord', w: 0.5, kind: 'hard',
     ja: '隣の領の{rival}が、境の小川の向こう岸まで自分の土地だと言い出した。',
-    en: 'The neighboring lord, {rival}, began claiming that the land up to the far bank of the boundary stream was theirs.',
+    en: 'The neighboring lord, {rival}, began claiming the land all the way to the far bank of the boundary stream.',
     eff: { wealth: -2, mind: 1 }, tie: { role: 'rival', new: true, d: -15 },
   },
   {
@@ -1046,7 +1046,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fa.lord-promoted', stage: ['middle'], tags: F, flag: 'lord', noFlag: 'count', w: 0.3, kind: 'fame', big: true,
     ja: '開拓の功で、{name}は伯爵に上げられた。王都の夜会に呼ばれるようになり、着ていく服に困った。',
-    en: "For opening up the frontier, {name} was raised to count. Invitations to the capital's evening parties began, and so did the problem of what to wear.",
+    en: "For opening up the frontier, {name} was raised to the rank of count. Invitations to the capital's evening parties began, and so did the problem of what to wear.",
     eff: { fame: 6, wealth: 5 }, set: 'count',
   },
   {
@@ -1066,12 +1066,12 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fa.child-wants-adventure', stage: ['middle'], tags: F, w: 0.8, kind: 'family',
     ja: '{child}が、冒険者になると言い出した。手には、{name}が昔使っていた短剣を握っていた。',
-    en: "{child} announced they were going to be an adventurer, gripping the dagger {name} used to carry.",
+    en: "{child} announced {he:child} was going to be an adventurer, gripping the dagger {name} used to carry.",
     tie: { role: 'child', d: 0 },
     choice: {
       ja: 'どう答えるか', en: 'How do you answer?',
       options: [
-        { ja: '許して鍛える', en: 'Allow it and train them', eff: { happy: 3, power: 1 },
+        { ja: '許して鍛える', en: 'Allow it and train {him:child}', eff: { happy: 3, power: 1 },
           log: { ja: '翌朝から、{name}は{child}と裏庭で木剣を打ち合った。', en: 'From the next morning, {name} and {child} crossed wooden swords in the backyard.' } },
         { ja: '反対する', en: 'Forbid it', eff: { happy: -3 },
           log: { ja: '{child}は三日口をきかなかった。四日目の朝、短剣は{name}の枕元に戻されていた。', en: "{child} would not speak for three days. On the fourth morning, the dagger was back by {name}'s pillow." } },
@@ -1081,7 +1081,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fa.child-academy', stage: ['middle'], tags: F, magic: 1, w: 0.6, kind: 'family',
     ja: '{child}が王都の魔術学院に受かった。{name}は荷造りを手伝い、余計なものを三つ詰め込んだ。',
-    en: '{child} was accepted at the royal academy of magic. {name} helped pack and slipped in three things that were not needed.',
+    en: '{child} was accepted at the royal academy of magic. {name} helped pack and slipped in three things {he:child} would never need.',
     eff: { happy: 5, wealth: -4 }, tie: { role: 'child', d: 5 },
   },
   {
@@ -1093,31 +1093,31 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fa.grandchild', stage: ['middle', 'elder'], tags: F, w: 0.6, kind: 'family', big: true,
     ja: '{child}に子が生まれた。{name}はその小さな手を、なかなか放せなかった。',
-    en: "{child} had a baby. {name} found it hard to let go of the tiny hand.",
+    en: "{child} had a baby. {name} found it hard to let go of its tiny hand.",
     eff: { happy: 8 }, tie: { role: 'child', d: 10 }, set: 'grandparent',
   },
   {
     id: 'fa.hand-over-house', stage: ['middle', 'elder'], tags: F, flag: 'lord', noFlag: 'retired', w: 0.5, kind: 'family',
     ja: '{name}は家督を{child}に譲った。印章を渡す時、思っていたより指が震えた。',
-    en: "{name} handed the family seat to {child}. Passing over the seal, their fingers shook more than expected.",
+    en: "{name} handed the family seat to {child}. Passing over the seal, {his} fingers shook more than {he} had expected.",
     eff: { happy: 3, fame: 1 }, set: 'retired', tie: { role: 'child', d: 8 },
   },
   {
     id: 'fa.widowed', stage: ['middle', 'elder'], tags: F, flag: 'married', noFlag: 'widowed', w: 0.25, kind: 'loss', big: true,
     ja: '{spouse}が流行り病で亡くなった。{name}は食卓の椅子を、ずっと片付けられなかった。',
-    en: '{spouse} died of a fever that was going around. {name} could never bring themselves to put away the chair at the table.',
+    en: '{spouse} died of a fever that was going around. {name} could never bring {himself} to put away {his:spouse} chair at the table.',
     eff: { happy: -10, hp: -2 }, set: 'widowed', tie: { role: 'spouse', d: 0, dies: true },
   },
   {
     id: 'fa.remarry', stage: ['middle'], tags: F, flag: 'widowed', noFlag: 'remarried', w: 0.3, kind: 'love',
     ja: '市場で毎週同じ時間に会う{spouse}と、{name}は再婚した。式は家族だけで、雨の日だった。',
-    en: '{name} remarried {spouse}, whom they had met at the market at the same hour every week. Only family came, and it rained.',
+    en: '{name} remarried. {spouse} was someone {he} had met at the market at the same hour every week. Only family came, and it rained.',
     eff: { happy: 6 }, set: 'remarried', tie: { role: 'spouse', new: true, d: 25 },
   },
   {
     id: 'fa.hidden-child', stage: ['middle'], tags: F, jobs: ['adventurer', 'mercenary', 'bard', 'sailor', 'knight'], w: 0.15, kind: 'family',
     ja: '見知らぬ若者が{name}を訪ねてきて、母の名を告げた。{name}はその名前を覚えていた。',
-    en: "A young stranger came to {name}'s door and gave their mother's name. {name} remembered it.",
+    en: "A young stranger came to {name}'s door and named their mother. {name} remembered the name.",
     eff: { happy: 2, mind: 2 }, tie: { role: 'child', new: true, d: 5 },
   },
   {
@@ -1147,7 +1147,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fa.mana-decline', stage: ['middle'], tags: F, magic: 2, jobs: ['mage', 'priest', 'saint', 'necromancer'], w: 0.9, kind: 'old',
     ja: '若い頃なら一息で唱えられた術に、{name}は今では二度息を継ぐ。',
-    en: 'A spell {name} once cast in a single breath now takes two.',
+    en: 'A spell {name} had once cast in a single breath now took two.',
     eff: { mind: -2, hp: -1 },
   },
   {
@@ -1164,7 +1164,7 @@ export const EVENTS: EventDef[] = [
       ja: '残り半分を探すか', en: 'Search for the other half?',
       options: [
         { ja: '研究に没頭する', en: 'Throw yourself into it', eff: { mind: 6, fame: 3, wealth: -4 }, risk: { hazard: 'magic', p: 0.04 },
-          log: { ja: '五年目の春、{name}は塔の部屋から中庭へ一瞬で移った。着地で足首をひねった。', en: 'In the spring of the fifth year, {name} moved from the tower room to the courtyard in an instant, and twisted an ankle landing.' } },
+          log: { ja: '五年目の春、{name}は塔の部屋から中庭へ一瞬で移った。着地で足首をひねった。', en: 'In the spring of the fifth year, {name} jumped from the tower room to the courtyard in an instant, and twisted {his} ankle on landing.' } },
         { ja: '写して学院に送る', en: 'Copy it and send it to the academy', eff: { charm: 2, mind: 1 },
           log: { ja: '学院から礼状が届いた。それきり何の便りもない。', en: 'A thank-you note came from the academy. Nothing after that.' } },
       ],
@@ -1173,13 +1173,13 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fa.legend-told', stage: ['middle', 'elder'], tags: F, flag: 'dragonSlayer', w: 0.8, kind: 'fame',
     ja: '旅の吟遊詩人が、竜を討った英雄の歌を{name}の目の前で歌った。英雄の背丈が、実際より頭一つ高かった。',
-    en: 'A traveling bard sang the ballad of the dragon slayer right in front of {name}. The hero in the song was a head taller than in life.',
+    en: 'A traveling bard sang the ballad of the dragon slayer right in front of {name}. The hero in the song was a head taller than in real life.',
     eff: { fame: 4, happy: 2 }, set: 'famous',
   },
   {
     id: 'fa.advise-young-hero', stage: ['middle', 'elder'], tags: F, magic: 2, w: 0.3, kind: 'work',
     ja: '新しく選ばれた勇者の{disciple}が、{name}に教えを乞いに来た。まだ剣の握り方が甘かった。',
-    en: '{disciple}, the newly chosen hero, came to {name} for guidance. Their grip on the sword was still loose.',
+    en: '{disciple}, the newly chosen Hero, came to {name} for guidance. {His:disciple} grip on the sword was still loose.',
     eff: { charm: 3, fame: 2 }, tie: { role: 'disciple', new: true, d: 15 },
   },
   {
@@ -1190,16 +1190,16 @@ export const EVENTS: EventDef[] = [
       ja: 'どうするか', en: 'What do you do?',
       options: [
         { ja: '北へ向かう', en: 'Head north', eff: { fame: 6, level: 2 }, risk: { hazard: 'war', p: 0.08 },
-          log: { ja: '兆しは魔王の残党が起こした火だった。{name}はそれを消して帰った。', en: "The omens were fires set by the demon king's remnants. {name} put them out and came home." } },
+          log: { ja: '兆しは魔王の残党が起こした火だった。{name}はそれを消して帰った。', en: "The omens were fires set by the remnants of the Demon Lord's army. {name} put them out and came home." } },
         { ja: '若い者に任せる', en: 'Leave it to the young', eff: { mind: 2, happy: 1 },
-          log: { ja: '{name}は剣を若い騎士に渡し、門まで見送った。', en: '{name} gave the sword to a young knight and saw them off at the gate.' } },
+          log: { ja: '{name}は剣を若い騎士に渡し、門まで見送った。', en: '{name} gave the sword to a young knight and saw the knight off at the gate.' } },
       ],
     },
   },
   {
     id: 'fa.merchant-guild-head', stage: ['middle'], tags: F, jobs: ['merchant'], flag: 'shop', w: 0.4, kind: 'fame',
     ja: '{name}は商人ギルドの会頭に選ばれた。祝いの席で、昔の取引相手が若い頃の失敗を三つ話した。',
-    en: "{name} was elected head of the merchants' guild. At the celebration, an old trading partner told three stories of their early mistakes.",
+    en: "{name} was elected head of the merchants' guild. At the celebration, an old trading partner told three stories about {his} early blunders.",
     eff: { fame: 5, wealth: 6 },
   },
   {
@@ -1212,14 +1212,14 @@ export const EVENTS: EventDef[] = [
         { ja: '金貸しから借りて立て直す', en: 'Borrow from a moneylender', eff: { wealth: 2, happy: -3 }, risk: { hazard: 'violence', p: 0.02 },
           log: { ja: '借金は七年で返し終えた。利子は元金を超えていた。', en: 'The debt took seven years to repay. The interest came to more than the principal.' } },
         { ja: '店をたたむ', en: 'Close the shop', eff: { wealth: -6, happy: -4, mind: 2 },
-          log: { ja: '{name}は看板を外し、裏の井戸で長いこと手を洗った。', en: '{name} took down the sign and spent a long time washing their hands at the well out back.' } },
+          log: { ja: '{name}は看板を外し、裏の井戸で長いこと手を洗った。', en: '{name} took down the sign and spent a long time washing {his} hands at the well out back.' } },
       ],
     },
   },
   {
     id: 'fa.smith-hands', stage: ['middle'], tags: F, jobs: ['smith'], w: 0.7, kind: 'old',
     ja: '槌を握る指が、朝のうちは伸びなくなった。{name}は湯に手を浸してから火を入れるようになった。',
-    en: "{name}'s fingers would no longer straighten around the hammer in the mornings. They began soaking their hands in hot water before lighting the forge.",
+    en: "{name}'s fingers would no longer straighten around the hammer in the mornings. {He} began soaking {his} hands in hot water before lighting the forge.",
     eff: { hp: -2, mind: 1 },
   },
   {
@@ -1231,7 +1231,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fa.priest-bishop', stage: ['middle'], tags: F, jobs: ['priest'], w: 0.3, kind: 'fame',
     ja: '{name}は{town}の司教に任じられた。新しい法衣の裾は、階段で三度踏んだ。',
-    en: "{name} was appointed bishop of {town}. They stepped on the hem of the new vestments three times on the stairs.",
+    en: "{name} was appointed bishop of {town}. {He} stepped on the hem of the new vestments three times on the stairs.",
     eff: { fame: 5, wealth: 3, charm: 2 },
   },
   {
@@ -1250,14 +1250,14 @@ export const EVENTS: EventDef[] = [
         { ja: '乗る', en: 'In', eff: { wealth: 10, fame: 3 }, risk: { hazard: 'execution', p: 0.06 },
           log: { ja: '盗んだ王冠はその月のうちに溶かされ、誰にも見つからなかった。', en: 'The stolen crown was melted down that same month and never found.' } },
         { ja: '足を洗う', en: 'Go straight', eff: { happy: 3 },
-          log: { ja: '{name}は錠前屋の看板を出した。腕は確かだと評判になった。', en: '{name} hung out a locksmith sign. Word spread that their work was very good.' } },
+          log: { ja: '{name}は錠前屋の看板を出した。腕は確かだと評判になった。', en: '{name} hung out a locksmith\'s sign. Word spread that {his} work was very good.' } },
       ],
     },
   },
   {
     id: 'fa.assassin-out', stage: ['middle'], tags: F, jobs: ['assassin'], w: 0.6, kind: 'hard',
     ja: '組織の長が代替わりした。古い者は始末されるか、さらに深く縛られるかだという。',
-    en: 'The guild had a new master. The old hands would either be disposed of or bound in deeper.',
+    en: 'The guild had a new master. The old hands would either be disposed of or bound in even deeper.',
     choice: {
       ja: 'どうするか', en: 'What do you do?',
       options: [
@@ -1271,20 +1271,20 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fa.saint-successor', stage: ['middle'], tags: F, jobs: ['saint'], w: 0.6, kind: 'work',
     ja: '新しい聖女候補の{disciple}が、{name}のもとに預けられた。祈りの言葉より先に、休み方を教えた。',
-    en: "{disciple}, the new candidate for saint, was placed in {name}'s care. Before the words of prayer, {name} taught how to rest.",
+    en: "{disciple}, the new candidate for Saintess, was placed in {name}'s care. Before teaching a single prayer, {name} taught {him:disciple} how to rest.",
     eff: { charm: 3, mind: 2 }, tie: { role: 'disciple', new: true, d: 15 },
   },
   {
     id: 'fa.necro-lich', stage: ['middle', 'elder'], tags: F, magic: 3, jobs: ['necromancer'], noFlag: 'lich', w: 0.4, kind: 'power',
     ja: '{name}は、自分の魂を移す器のための骨壺を作り終えた。あとは決めるだけだった。',
-    en: '{name} finished crafting the urn meant to hold their own soul. All that remained was the decision.',
+    en: '{name} finished crafting the phylactery meant to hold {his} own soul. All that remained was the decision.',
     choice: {
       ja: '儀式を行うか', en: 'Perform the ritual?',
       options: [
         { ja: '行う', en: 'Perform it', eff: { mind: 6, power: 5, hp: -8, charm: -6 }, set: 'lich', risk: { hazard: 'magic', p: 0.1 },
-          log: { ja: '儀式の後、{name}の脈は止まったまま、目だけが開いていた。', en: "After the ritual, {name}'s pulse had stopped, yet their eyes stayed open." } },
-        { ja: '骨壺を割る', en: 'Break the urn', eff: { happy: 3, mind: 1 },
-          log: { ja: '{name}は骨壺を庭の石に打ちつけ、破片を土に埋めた。', en: '{name} smashed the urn against a garden stone and buried the shards.' } },
+          log: { ja: '儀式の後、{name}の脈は止まったまま、目だけが開いていた。', en: "After the ritual, {name}'s pulse had stopped, yet {his} eyes stayed open." } },
+        { ja: '骨壺を割る', en: 'Break the phylactery', eff: { happy: 3, mind: 1 },
+          log: { ja: '{name}は骨壺を庭の石に打ちつけ、破片を土に埋めた。', en: '{name} smashed the phylactery against a garden stone and buried the shards.' } },
       ],
     },
   },
@@ -1297,19 +1297,19 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fa.cook-inn', stage: ['middle'], tags: F, jobs: ['cook'], w: 0.6, kind: 'work',
     ja: '{name}の宿屋の煮込みを食べに、隣の町から歩いてくる客がいる。鍋は二十年、火を落としていない。',
-    en: "Some guests walk from the next town just to eat the stew at {name}'s inn. The pot has not been off the fire in twenty years.",
+    en: "Some guests walked from the next town just to eat the stew at {name}'s inn. The pot had not been off the fire in twenty years.",
     eff: { wealth: 3, happy: 3, fame: 2 },
   },
   {
     id: 'fa.sailor-captain', stage: ['middle'], tags: ['sea'], not: NF, jobs: ['sailor'], w: 0.5, kind: 'fame',
     ja: '{name}は自分の船の船長になった。船の名前は、最初に乗った船からもらった。',
-    en: '{name} became captain of their own ship and named it after the first ship they ever sailed on.',
+    en: '{name} became captain of {his} own ship and named it after the first ship {he} had ever sailed on.',
     eff: { fame: 4, wealth: 4, happy: 4 },
   },
   {
     id: 'fa.miner-lungs', stage: ['middle', 'elder'], tags: F, jobs: ['miner'], w: 0.8, kind: 'ill',
     ja: '咳が止まらなくなった。吐いた痰は、坑道の岩と同じ灰色だった。',
-    en: "{name}'s cough would not stop. What they coughed up was the same gray as the tunnel rock.",
+    en: "{name}'s cough would not stop. What {he} coughed up was the same gray as the tunnel rock.",
     eff: { hp: -5 }, risk: { hazard: 'disease', p: 0.02 },
   },
   {
@@ -1321,13 +1321,13 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fa.familiar-old', stage: ['middle', 'elder'], tags: F, w: 0.5, kind: 'old',
     ja: '{familiar}の鼻先の毛が白くなった。散歩の道は、毎年少しずつ短くなっている。',
-    en: "The fur on {familiar}'s muzzle has gone white. Their walk gets a little shorter every year.",
+    en: "The fur on {familiar}'s muzzle had gone white. Its walks got a little shorter every year.",
     eff: { happy: -1 }, tie: { role: 'familiar', d: 8 },
   },
   {
     id: 'fa.herbalist-garden', stage: ['middle', 'elder'], tags: F, jobs: ['herbalist'], w: 0.7, kind: 'work',
     ja: '{name}の薬草畑は、四十種を越えた。どれがどの病に効くか、全部書き留めた帳面は三冊目になった。',
-    en: "{name}'s herb garden passed forty kinds. The notebook recording which cures what was on its third volume.",
+    en: "{name}'s herb garden passed forty kinds. The notebook recording what cured what was on its third volume.",
     eff: { mind: 3, wealth: 2 },
   },
   {
@@ -1339,31 +1339,31 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fa.servant-steward', stage: ['middle'], tags: F, jobs: ['servant'], w: 0.6, kind: 'work',
     ja: '{name}は屋敷の家令になった。銀器の数から庭師の給金まで、全部{name}の頭に入っている。',
-    en: "{name} became steward of the house. Everything from the count of the silver to the gardener's wages lives in {name}'s head.",
+    en: "{name} became steward of the house. Everything from the count of the silver to the gardener's wages lived in {his} head.",
     eff: { wealth: 4, mind: 2, charm: 2 },
   },
   {
     id: 'fa.mercenary-company', stage: ['middle'], tags: F, jobs: ['mercenary'], noFlag: 'company', w: 0.5, kind: 'work',
     ja: '{name}は三十人の傭兵団を率いることになった。最初に決めたのは、団の旗の色だった。',
-    en: '{name} took command of a mercenary company of thirty. The first thing decided was the color of the banner.',
+    en: '{name} took command of a mercenary company of thirty. The first thing {he} decided was the color of the banner.',
     eff: { wealth: 5, fame: 3 }, set: 'company',
   },
   {
     id: 'fa.kingdom-falls', stage: ['middle'], tags: F, w: 0.08, kind: 'loss', big: true,
     ja: '王都が落ちた。{name}は家族と荷車一台分の荷物だけを持って、山を越えて隣の国へ逃れた。',
-    en: 'The capital fell. {name} fled over the mountains to the next kingdom with family and a single cartload of belongings.',
+    en: 'The capital fell. {name} fled over the mountains to the next kingdom with {his} family and a single cartload of belongings.',
     eff: { wealth: -8, happy: -8, hp: -3 }, risk: { hazard: 'war', p: 0.04 },
   },
   {
     id: 'fa.hero-middle', stage: ['middle'], tags: F, flag: 'hero', w: 0.6, kind: 'old',
     ja: '勇者の印は、まだ{name}の手の甲に残っている。ただ、昔ほどは光らなくなった。',
-    en: "The hero's mark is still on the back of {name}'s hand. It just does not glow the way it used to.",
+    en: "The Hero's mark was still on the back of {name}'s hand. It just did not glow the way it used to.",
     eff: { power: -2, mind: 2 },
   },
   {
     id: 'fa.gamey-level-cap', stage: ['middle'], tags: ['gamey'], not: NF, w: 0.6, kind: 'old',
     ja: '何年も経験を積んでいるのに、{name}の頭の上の数字はもう動かなくなった。',
-    en: 'Years of experience, and the number above {name}\'s head no longer moves.',
+    en: 'For all {his} years of experience, the level above {name}\'s head no longer moved.',
     eff: { happy: -2, mind: 2 },
   },
 
@@ -1385,31 +1385,31 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fa.tell-grandkids', stage: ['elder'], tags: F, flag: 'grandparent', w: 1, repeat: true, kind: 'family',
     ja: '{child}の子どもたちに、{name}は迷宮の話をした。話すたびに、魔物は少しずつ大きくなる。',
-    en: "{name} told {child}'s children about the labyrinth. With each telling, the monsters grow a little larger.",
+    en: "{name} told {child}'s children about the labyrinth. With each telling, the monsters grew a little larger.",
     eff: { happy: 3 }, tie: { role: 'child', d: 3 },
   },
   {
     id: 'fa.great-grandchild', stage: ['elder'], tags: F, flag: 'grandparent', w: 0.3, kind: 'family', big: true,
     ja: 'ひ孫が生まれた。{name}は名前を三度聞き返し、四度目に覚えた。',
-    en: '{name} had a great-grandchild, and had to ask the name three times before it stuck on the fourth.',
+    en: '{name} had a great-grandchild, and had to ask the baby\'s name three times before it stuck on the fourth.',
     eff: { happy: 7 },
   },
   {
     id: 'fa.old-friends-gone', stage: ['elder'], tags: F, flag: 'party', w: 0.8, repeat: true, kind: 'loss',
     ja: '若い頃のパーティの一人の訃報が届いた。{name}は窓辺で、その人の好きだった酒を一杯だけ飲んだ。',
-    en: "Word came that someone from the old party had died. {name} drank a single cup of their favorite at the window.",
+    en: "Word came that someone from the old party had died. {name} drank a single cup of that friend's favorite at the window.",
     eff: { happy: -4 },
   },
   {
     id: 'fa.long-lived-spouse', stage: ['elder'], tags: F, flag: 'married', noFlag: 'widowed', w: 0.6, kind: 'family',
     ja: '{spouse}が{name}の白い髪を梳かしてくれた。手つきは、初めて会った頃と変わらなかった。',
-    en: "{spouse} combed {name}'s white hair, with the same hands as the year they first met.",
+    en: "{spouse} combed {name}'s white hair with the same hands as in the year they first met.",
     eff: { happy: 5 }, tie: { role: 'spouse', d: 8 },
   },
   {
     id: 'fa.elder-widowed', stage: ['elder'], tags: F, flag: 'married', noFlag: 'widowed', w: 0.4, kind: 'loss', big: true,
     ja: '{spouse}は、冬の終わりの朝、眠ったまま目を覚まさなかった。{name}は二人分の茶を淹れてから気づいた。',
-    en: "{spouse} did not wake one morning at the end of winter. {name} realized only after making tea for two.",
+    en: "{spouse} did not wake one morning at the end of winter. {name} only realized after making tea for two.",
     eff: { happy: -10 }, set: 'widowed', tie: { role: 'spouse', d: 0, dies: true },
   },
   {
@@ -1427,7 +1427,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fa.last-adventure', stage: ['elder'], tags: F, jobs: ['adventurer', 'hero', 'knight', 'mercenary', 'hunter', 'none'], w: 0.5, kind: 'adventure',
     ja: '若い頃に引き返した扉のことを、{name}は今でも夢に見る。地図はまだ箪笥の奥にある。',
-    en: '{name} still dreams of the door they turned back from in their youth. The map is still at the bottom of the chest.',
+    en: '{name} still dreamed of the door {he} had turned back from in {his} youth. The map was still at the bottom of the chest.',
     choice: {
       ja: '最後の冒険に出るか', en: 'Set out on one last adventure?',
       options: [
@@ -1441,7 +1441,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fa.become-legend', stage: ['elder'], tags: F, flag: 'demonKingSlain', noFlag: 'legend', w: 0.8, kind: 'fame', big: true,
     ja: '子どもたちの遊びで、魔王を倒す役の名前が{name}になっていた。本人を見ても、誰もそれと気づかなかった。',
-    en: "In the children's games, the one who defeats the demon king was called {name}. Seeing the real one, nobody recognized them.",
+    en: "In the children's games, whoever played the one who slew the Demon Lord was called {name}. When they saw the real one, none of them recognized {him}.",
     eff: { fame: 6, happy: 4 }, set: 'legend',
   },
   {
@@ -1453,7 +1453,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fa.choose-grave', stage: ['elder'], tags: F, noFlag: 'graveChosen', w: 0.5, kind: 'old',
     ja: '{name}は丘の上の樫の木の下を自分の墓所に決め、そこまでの坂道を毎朝歩くようになった。',
-    en: '{name} chose a spot under the oak on the hill for their grave, and began walking the slope up to it every morning.',
+    en: '{name} chose a spot under the oak on the hill for {his} grave, and began walking up the slope to it every morning.',
     eff: { mind: 2, hp: 1 }, set: 'graveChosen',
   },
   {
@@ -1471,7 +1471,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fa.elder-knees', stage: ['elder'], tags: F, w: 1.5, repeat: true, kind: 'old',
     ja: '井戸まで水を汲みに行くのに、{name}は途中で二度休むようになった。',
-    en: '{name} now rests twice on the way to the well.',
+    en: '{name} now had to rest twice on the way to the well.',
     eff: { hp: -2 },
   },
   {
@@ -1483,7 +1483,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fa.elder-rival-tea', stage: ['elder'], tags: F, w: 0.6, kind: 'family',
     ja: '{rival}が杖をついて訪ねてきた。二人は昔の勝負の話は一度もせず、天気の話だけをして日が暮れた。',
-    en: '{rival} came by, leaning on a cane. They never once mentioned their old contests, and talked only about the weather until dark.',
+    en: '{rival} came by, leaning on a cane. Neither of them once mentioned their old contests; they talked only about the weather until dark.',
     eff: { happy: 4 }, tie: { role: 'rival', d: 15 },
   },
   {
@@ -1495,7 +1495,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fa.elder-familiar', stage: ['elder'], tags: F, w: 0.5, kind: 'family',
     ja: '暖炉の前で、{familiar}が{name}の膝に顎を載せて眠っている。どちらも、もう遠くへは行かない。',
-    en: "By the fire, {familiar} sleeps with its chin on {name}'s knee. Neither of them goes far anymore.",
+    en: "By the fire, {familiar} slept with its chin on {name}'s knee. Neither of them went far anymore.",
     eff: { happy: 4 }, tie: { role: 'familiar', d: 6 },
   },
   {
@@ -1507,44 +1507,44 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fa.elder-priest', stage: ['elder'], tags: F, jobs: ['priest', 'saint'], w: 0.7, kind: 'old',
     ja: '{name}が昔洗礼を授けた子が、自分の孫を連れて同じ泉に来た。',
-    en: 'A child {name} once baptized came to the same spring with a grandchild of their own.',
+    en: 'A child {name} had once baptized came back to the same spring, now with a grandchild in tow.',
     eff: { happy: 5, charm: 2 },
   },
   {
     id: 'fa.elder-shop', stage: ['elder'], tags: F, flag: 'shop', w: 0.7, kind: 'old',
     ja: '{name}は店先の椅子に座っているだけになった。それでも常連は、{name}に挨拶してから品を選ぶ。',
-    en: 'These days {name} only sits in the chair out front. Still, the regulars greet {name} before choosing their goods.',
+    en: 'These days {name} only sat in the chair out front. Still, the regulars greeted {him} before choosing their goods.',
     eff: { happy: 3, charm: 1 },
   },
   {
     id: 'fa.elder-smith', stage: ['elder'], tags: F, jobs: ['smith'], w: 0.7, kind: 'old',
     ja: '{name}は年に一本だけ剣を打つ。それを誰に売るかは、{name}が客の目を見て決める。',
-    en: '{name} forges only one sword a year now, and decides who may buy it by looking the customer in the eye.',
+    en: '{name} forged only one sword a year now, and decided who could buy it by looking the customer in the eye.',
     eff: { fame: 2, mind: 2 },
   },
   {
     id: 'fa.elder-farmer', stage: ['elder'], tags: ['fantasy', 'rural'], jobs: ['farmer', 'none'], w: 1, kind: 'old',
     ja: '{name}は畑の端の切り株に腰かけ、孫たちが麦を刈るのを見ていた。刈り方には、口を出さないことにしている。',
-    en: '{name} sat on a stump at the edge of the field, watching the grandchildren cut the wheat. They have decided not to comment on the technique.',
+    en: '{name} sat on a stump at the edge of the field, watching the grandchildren cut the wheat, and resolved not to comment on their technique.',
     tie: { role: 'child', d: 2 },
     eff: { happy: 3 },
   },
   {
     id: 'fa.elder-lord', stage: ['elder'], tags: F, flag: 'lord', w: 0.7, kind: 'old',
     ja: '{name}が建てた字習いの小屋から、今年は領内で初めての書記が出た。',
-    en: "This year, the letters hut {name} built produced the first scribe the fief has ever had.",
+    en: "This year, the reading hut {name} had built produced the first scribe the fief had ever had.",
     eff: { happy: 4, fame: 2 },
   },
   {
     id: 'fa.elder-hero', stage: ['elder'], tags: F, flag: 'hero', w: 0.6, kind: 'old',
     ja: '若い騎士たちが勇者の墓を探して村に来た。{name}は「まだ生きている」とだけ言って、薪を割り続けた。',
-    en: "Young knights came to the village looking for the hero's grave. {name} said only, \"Still alive,\" and went on splitting wood.",
+    en: "Young knights came to the village looking for the Hero's grave. {name} said only, \"Still alive,\" and went on splitting wood.",
     eff: { happy: 3, fame: 1 },
   },
   {
     id: 'fa.elder-saint', stage: ['elder'], tags: F, flag: 'saint', w: 0.6, kind: 'old',
     ja: '癒しの力はもうほとんど残っていない。それでも{name}の手を握りに、毎朝誰かが戸を叩く。',
-    en: "Almost none of the healing power is left. Still, every morning someone knocks to hold {name}'s hand.",
+    en: "Almost none of the healing power was left. Still, every morning someone knocked to hold {name}'s hand.",
     eff: { happy: 4, charm: 2 },
   },
   {
@@ -1556,13 +1556,13 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fa.elder-bard', stage: ['elder'], tags: F, jobs: ['bard'], w: 0.7, kind: 'old',
     ja: '{name}の歌を、今では若い吟遊詩人の方が上手に歌う。{name}はそれを聴くのが嫌いではない。',
-    en: "Young bards now sing {name}'s songs better than {name} does. {name} does not mind listening.",
+    en: "Young bards now sang {name}'s songs better than {he} did. {He} did not mind listening.",
     eff: { happy: 3, fame: 2 },
   },
   {
     id: 'fa.elder-thief', stage: ['elder'], tags: F, jobs: ['thief', 'assassin', 'none'], flag: 'branded', w: 0.6, kind: 'old',
     ja: '肩の焼き印のことを、孫に訊かれた。{name}は「若い頃の勲章だ」とだけ答えた。',
-    en: 'A grandchild asked about the brand on {name}\'s shoulder. {name} only said it was a medal from their youth.',
+    en: 'A grandchild asked about the brand on {name}\'s shoulder. {He} only said it was a medal from {his} youth.',
     tie: { role: 'child', d: 2 },
     eff: { happy: 2 },
   },
@@ -1575,19 +1575,19 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fa.elder-guild-visit', stage: ['elder'], tags: F, flag: 'guild', w: 0.6, kind: 'old',
     ja: '久しぶりにギルドに顔を出すと、若い受付は{name}の名前を知らなかった。古い台帳には、ちゃんと載っていた。',
-    en: "Visiting the guild after many years, {name} found the young receptionist did not know their name. It was there in the old ledger, though.",
+    en: "Visiting the guild after many years, {name} found that the young receptionist did not know {his} name. It was there in the old ledger, though.",
     eff: { happy: 1, mind: 1 },
   },
   {
     id: 'fa.elder-sea', stage: ['elder'], tags: ['sea'], not: NF, w: 0.7, kind: 'old',
     ja: '{name}は毎夕、港の端に座って入ってくる船の帆を数えた。帆の継ぎ方で、どこの船かわかる。',
-    en: 'Every evening {name} sat at the end of the harbor counting the sails coming in. From the patching, they could tell where each ship was from.',
+    en: 'Every evening {name} sat at the end of the pier counting the sails coming in. From the patches alone, {he} could tell where each ship was from.',
     eff: { happy: 3 },
   },
   {
     id: 'fa.elder-dark', stage: ['elder'], tags: ['dark'], not: NF, w: 0.7, kind: 'old',
     ja: 'この年まで生きた者は、{town}に{name}を入れて三人しかいない。三人は互いの戸口に毎朝塩をまく。',
-    en: 'Only three people in {town} have lived this long, {name} among them. Every morning the three scatter salt on each other\'s doorsteps.',
+    en: 'Only three people in {town} had lived this long, {name} among them. Every morning the three scattered salt on each other\'s doorsteps.',
     eff: { mind: 2, luck: 2 },
   },
   {
@@ -1600,25 +1600,25 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fa.elder-myth', stage: ['elder'], tags: ['myth'], not: NF, w: 0.6, kind: 'old',
     ja: '若い頃に助けた白い狐が、今年も{name}の家の前に木の実を三つ置いていった。',
-    en: 'The white fox {name} saved long ago left three nuts in front of the house again this year.',
+    en: 'The white fox {name} had saved long ago left three nuts in front of the house again this year.',
     eff: { happy: 4, luck: 2 },
   },
   {
     id: 'fa.elder-beast', stage: ['elder'], tags: F, races: BEASTFOLK, w: 0.6, kind: 'old',
     ja: '耳の毛がすっかり白くなった。群れの若い者たちは、{name}の前を通る時に尾を低くする。',
-    en: "The fur on {name}'s ears has gone completely white. The young ones of the pack lower their tails when they pass.",
+    en: "The fur on {name}'s ears had gone completely white. The young ones of the pack lowered their tails when they passed.",
     eff: { charm: 3, happy: 2 },
   },
   {
     id: 'fa.elder-gamey', stage: ['elder'], tags: ['gamey'], not: NF, w: 0.7, kind: 'old',
     ja: '見えている数字のうち、体力の欄だけが毎年少しずつ減っていく。{name}はもう、あまり見なくなった。',
-    en: 'Of all the numbers {name} can see, only the stamina line shrinks a little each year. {name} rarely looks anymore.',
+    en: 'Of all the numbers on {name}\'s Status screen, only stamina shrank a little each year. {He} rarely looked anymore.',
     eff: { hp: -2, mind: 2 },
   },
   {
     id: 'fa.elder-disciple-visit', stage: ['elder'], tags: F, flag: 'teacher', w: 0.7, kind: 'family',
     ja: '{disciple}が自分の弟子を三人連れて、{name}に挨拶に来た。{name}は三人の名前を一度で覚えた。',
-    en: '{disciple} came to pay respects with three apprentices of their own. {name} learned all three names on the first try.',
+    en: '{disciple} came to pay respects with three apprentices of {his:disciple} own. {name} learned all three names on the first try.',
     eff: { happy: 5 }, tie: { role: 'disciple', d: 8 },
   },
   {

@@ -1,11 +1,12 @@
 // 共有の追悼館: ほかの人が残した人生の一覧と1件の詳細、ろうそく。サーバが無い所では案内だけを出す
 import { WORLDS, RACES } from '../engine';
-import { getMemorial, listMemorial, lightCandle, memorialAvailable, type MemorialEntry } from '../net/memorial';
+import { getMemorial, listMemorial, lightCandle, memorialAvailable, reportMemorial, type MemorialEntry } from '../net/memorial';
 import { sceneHTML, paintAll } from './pixel';
 import { ROLE_NAME, ageText } from './labels';
 import { esc, load, save } from './dom';
 import { screen, type Nav } from './nav';
 import { markGifts } from './records';
+import { genWord } from './lineage';
 import { L, T, lang } from '../i18n';
 
 const LIT = 'candles-lit';
@@ -13,7 +14,7 @@ const PAGE = 12;
 const lit = (): number[] => load<number[]>(LIT, []);
 
 export const memorialOffHTML = (): string =>
-  `<p class="note memorial-off">${L('サーバーで動かすと、ほかの人の人生も読める共有の追悼館が使えます (npm run build のあと npm start)。', 'Run it on a server to use the shared memorial, where you can read other people’s lives (npm run build, then npm start).')}</p>`;
+  `<p class="note memorial-off">${L('サーバーで動かすと、ほかの人の人生も読める共有の追悼館が使えます (npm run build のあと npm start)。', 'Run it on a server to use the shared memorial, where you can read other people\'s lives (npm run build, then npm start).')}</p>`;
 
 const worldName = (e: MemorialEntry) => (WORLDS[e.world] ? T(WORLDS[e.world].name) : e.world);
 const raceName = (e: MemorialEntry) => (RACES[e.race] ? T(RACES[e.race].name) : e.race);
@@ -21,10 +22,11 @@ const scene = (e: MemorialEntry) => (e.scene ? sceneHTML(e.scene, L('墓の場�
 
 // 数はサーバから来るので、HTML に入れる前に数にしておく
 const num = (e: MemorialEntry): MemorialEntry => ({ ...e, id: Number(e.id), age: Number(e.age), candles: Number(e.candles),
+  gen: Math.max(1, Math.floor(Number(e.gen ?? 1)) || 1), lineage: Array.isArray(e.lineage) ? e.lineage.map(String) : [],
   highlights: (e.highlights ?? []).map((h) => ({ age: Number(h.age), text: String(h.text) })), lastWith: e.lastWith ?? [] });
 
 function itemHTML(e: MemorialEntry): string {
-  return `<li><button data-id="${e.id}">${scene(e)}<span><b>${esc(e.name)}</b><small>${esc(worldName(e))}${L('・', ' · ')}${L(`享年${e.age}`, `died at ${e.age}`)}</small>
+  return `<li><button data-id="${e.id}">${scene(e)}<span><b>${esc(e.name)}</b><small>${esc(worldName(e))}${L('・', ' · ')}${L(`享年${e.age}`, `died at ${e.age}`)}${e.gen && e.gen > 1 ? `${L('・', ' · ')}${esc(genWord(e.gen))}` : ''}</small>
     <small>${esc(e.causeLabel)}</small><small class="candles">${L(`ろうそく ${e.candles}`, `${e.candles} ${e.candles === 1 ? 'candle' : 'candles'}`)}</small></span></button></li>`;
 }
 
@@ -36,6 +38,7 @@ function detailHTML(e: MemorialEntry): string {
     <div class="recbody">
       <p class="kicker">${esc(worldName(e))}${L('・', ' · ')}${esc(raceName(e))}</p><h1>${esc(e.name)}</h1>
       <p class="age">${L(`享年 <b>${e.age}</b>`, `Died at <b>${e.age}</b>`)}</p>
+      ${e.gen && e.gen > 1 ? `<p class="lineage"><b>${esc(genWord(e.gen))}</b>${(e.lineage ?? []).map((n) => `<span>${esc(n)}</span>`).join('<i aria-hidden="true">→</i>')}<i aria-hidden="true">→</i><span class="me">${esc(e.name)}</span></p>` : ''}
       <div class="cause"><b>${esc(e.causeLabel)}</b><p>${esc(e.causeText)}</p>${e.why ? `<p class="why">${L('なぜ: ', 'Why: ')}${esc(e.why)}</p>` : ''}</div>
       ${e.note ? `<p class="message">${L('「', '“')}${esc(e.note)}${L('」', '”')}</p>` : ''}
       ${e.lastWith.length ? `<h3>${L('最後にそばにいた人', 'Who was there at the end')}</h3><p>${e.lastWith.map((t) => `${esc(t.name)} <small>(${esc(ROLE_NAME[t.role] ?? t.role)})</small>`).join(L('、', ', '))}</p>` : ''}
@@ -43,6 +46,7 @@ function detailHTML(e: MemorialEntry): string {
       <div class="choices"><button class="primary" data-candle="${e.id}" ${done ? 'disabled' : ''}>${done ? L('ろうそくを灯した', 'Candle lit') : L('ろうそくを灯す', 'Light a candle')} <small id="cn">${e.candles}</small></button>
         <button data-list="1">${L('一覧へ', 'Back to the list')}</button></div>
       <p class="note" id="candlemsg" role="status"></p>
+      <p class="note"><button class="quiet" data-report="${e.id}">${L('不適切な内容を報告', 'Report this entry')}</button> <span id="reportmsg" role="status"></span></p>
     </div></article>`;
 }
 
@@ -63,6 +67,11 @@ export function showMemorial(nav: Nav, id?: number): void {
     if (t.closest('[data-more]')) { offset += PAGE; return void list(false); }
     const c = t.closest<HTMLButtonElement>('[data-candle]');
     if (c && !c.disabled) void candle(c);
+    const rp = t.closest<HTMLButtonElement>('[data-report]');
+    if (rp && !rp.disabled && confirm(L('この記録を不適切な内容として報告しますか？', 'Report this entry as inappropriate?'))) {
+      rp.disabled = true;
+      void reportMemorial(Number(rp.dataset.report)).then((r) => { const m = document.getElementById('reportmsg'); if (m) m.textContent = r.ok ? L('報告しました。', 'Reported.') : L('報告できなかった。', 'Could not report.'); });
+    }
   });
   const box = document.getElementById('mem')!;
   const alive = () => document.getElementById('mem') === box;

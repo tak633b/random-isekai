@@ -248,10 +248,17 @@ export function attentionOf(h: Hero): number {
 export const total = (z: Hazards) => HAZARDS.reduce((s, k) => s + z[k], 0);
 
 // 生命表の終わり: 人間換算で世界の max に達するか、実年齢が種族の上限 (老化の遅い特典ならそのぶん延びる) に達したら必ず亡くなる
+// 老いない人の実年齢の上限 (種族の上限がこれより長ければそちら)
+export const AGELESS_MAX = 1000;
+
+// 老いない人が千年 (か種族の上限) に届いた終わりか。老いで亡くなるのはこのときだけ
+export const restEnd = (h: Hero) => agingOf(h) === 0 && h.age >= Math.max(raceOf(h.race).maxAge, AGELESS_MAX);
+
 export function mustDie(h: Hero): boolean {
   const ag = agingOf(h);
   const r = raceOf(h.race);
-  return heq(h.age, r, ag) >= h.world.max || (ag > 0 && h.age >= r.maxAge / ag);
+  // 老いない特典 (不死の体、aging 0) でも、max(種族の実年齢の上限, 1000) で必ず亡くなる (人間もエルフも1000歳)
+  return heq(h.age, r, ag) >= h.world.max || h.age >= (ag > 0 ? r.maxAge / ag : Math.max(r.maxAge, AGELESS_MAX));
 }
 
 export function deathChance(h: Hero): number {

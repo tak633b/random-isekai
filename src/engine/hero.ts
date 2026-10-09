@@ -3,16 +3,16 @@
 // 「おまかせで生まれた人生」と「その設定を固定して同じ seed で生き直した人生」がずれてしまう
 import type { Arrival, CheatId, Hero, HeroChoice, MemoryLevel, PastLife, Race, RaceId, Setup, Sex, StartAge, Stats, Status, Talent, World } from './types';
 import { clamp, makeRng, normal, pick, pickWeighted, poisson, type Rng } from './rng';
-import { resolveWorld, demonKingWorld } from './worlds';
+import { resolveWorld, demonKingWorld, worldPlace } from './worlds';
 import { raceOf } from './races';
-import { STATUS_WEALTH, statusName, statusRank, statusWeights } from './status';
+import { STATUS_WEALTH, statusBirth, statusName, statusRank, statusWeights } from './status';
 import { availableCheats, CHEATS, cheatWeight } from './cheats';
 import { personName, styleOf, withFamily, worldNames } from './names';
 import { ageOfHeq, heq } from './mortality';
 import { anchorFamily, anchorYear } from './anchor';
 import { ALLOT_KEYS, POINT_STEP, randomBuild, traitOf } from './traits';
 import { addTie, log } from './bonds';
-import { L, T } from '../i18n';
+import { L, T, cap, pron } from '../i18n';
 
 export const TALENTS: Talent[] = ['might', 'magic', 'wits', 'charm', 'luck', 'craft', 'none'];
 const ARRIVALS: [Arrival, number][] = [['reborn', 45], ['awaken', 25], ['summoned', 20], ['native', 10]];
@@ -25,7 +25,7 @@ const PAST_AGE: Record<PastLife['cause'], [number, number]> = {
 // 前世の仕事と、その仕事でありうる年齢
 const PAST_JOBS: [string, string, number, number][] = [['会社員', 'office worker', 22, 65], ['高校生', 'high school student', 15, 18], ['大学生', 'college student', 18, 24],
   ['看護師', 'nurse', 22, 65], ['料理人', 'cook', 18, 70], ['プログラマー', 'programmer', 20, 65], ['教師', 'teacher', 23, 65], ['トラック運転手', 'truck driver', 20, 65],
-  ['農家', 'farmer', 18, 95], ['研究者', 'researcher', 24, 75], ['店員', 'shop clerk', 16, 70], ['無職', 'between jobs', 15, 95], ['年金暮らし', 'retiree', 65, 95]];
+  ['農家', 'farmer', 18, 95], ['研究者', 'researcher', 24, 75], ['店員', 'shop clerk', 16, 70], ['無職', 'job seeker', 15, 95], ['年金暮らし', 'retiree', 65, 95]];
 
 // 才能が伸ばす能力
 const TALENT_STAT: Record<Talent, Partial<Stats>> = {
@@ -161,15 +161,15 @@ export function createHero(setup: Setup): Hero {
 }
 
 const PAST_CAUSE_TEXT: Record<PastLife['cause'], [string, string]> = {
-  truck: ['トラックにはねられて', 'hit by a truck'], overwork: ['働きすぎて倒れて', 'collapsed from overwork'], illness: ['病で', 'of an illness'],
-  stabbed: ['通り魔に刺されて', 'stabbed by a stranger'], accident: ['事故で', 'in an accident'], disaster: ['災害に巻き込まれて', 'in a disaster'],
-  old: ['老いて', 'of old age'], unknown: ['気づいたら', 'without knowing how'],
+  truck: ['トラックにはねられて', 'was hit by a truck'], overwork: ['働きすぎて倒れて', 'worked until collapsing'], illness: ['病で', 'died of an illness'],
+  stabbed: ['通り魔に刺されて', 'was stabbed by a stranger'], accident: ['事故で', 'died in an accident'], disaster: ['災害に巻き込まれて', 'died in a disaster'],
+  old: ['老いて', 'died of old age'], unknown: ['気づいたら', 'died without knowing how'],
 };
 
 // 召喚されて目を覚ました場所
 const WOKE: Record<ReturnType<typeof styleOf>, [string, string]> = {
-  west: ['神殿', 'a temple'], myth: ['神殿', 'a temple'], desert: ['神殿', 'a temple'], wa: ['社の拝殿', 'a shrine hall'], zh: ['宗門の祭壇', "a sect's altar"],
-  modern: ['路地裏', 'a back alley'], scifi: ['医療ポッドの中', 'a medical pod'], ruin: ['廃墟の地下室', 'a ruined cellar'],
+  west: ['神殿', 'in a temple'], myth: ['神殿', 'in a temple'], desert: ['神殿', 'in a temple'], wa: ['社の拝殿', 'in a shrine hall'], zh: ['宗門の祭壇', "at a sect's altar"],
+  modern: ['路地裏', 'in a back alley'], scifi: ['医療ポッドの中', 'in a medical pod'], ruin: ['廃墟の地下室', 'in a ruined cellar'],
 };
 
 export const sexWord = (s: Sex) => (s === 'F' ? L('女の子', 'girl') : L('男の子', 'boy'));
@@ -179,26 +179,27 @@ export function birthStory(h: Hero): string {
   const race = T(raceOf(h.race).name);
   const st = statusName(h.status, h.world);
   const w = T(h.world.name);
+  const place = T(worldPlace(h.world));
   const p = h.past;
-  const pastLine = p ? L(`前世では${p.age}歳の${T(p.job)}で、${PAST_CAUSE_TEXT[p.cause][0]}亡くなった。`, `In a past life, a ${p.age}-year-old ${T(p.job)}, died ${PAST_CAUSE_TEXT[p.cause][1]}.`) : '';
+  const pastLine = p ? L(`前世では${p.age}歳の${T(p.job)}で、${PAST_CAUSE_TEXT[p.cause][0]}亡くなった。`, `In a past life, a ${p.age}-year-old ${T(p.job).toLowerCase()} who ${PAST_CAUSE_TEXT[p.cause][1]}.`) : '';
   // 途中の年齢の体で始まる (startAge が child / teen / adult)。召喚は下の召喚の文で書く
   if (h.age > 0 && h.arrival !== 'summoned') {
     const e = heq(h.age, raceOf(h.race));
     const [bja, ben] = e < 13 ? ['子ども', 'child'] : e < 17 ? (h.sex === 'F' ? ['少女', 'girl'] : ['少年', 'boy']) : ['大人', 'adult'];
     if (h.arrival === 'native') {
-      return L(`${w}の${n.town}で、${st}の${race}の${h.age}歳の${bja}として暮らしていた。`, `A ${h.age}-year-old ${race} ${ben} of a ${st.toLowerCase()} family, living in ${n.town}, ${w}.`);
+      return L(`${w}の${n.town}で、${st}の${race}の${h.age}歳の${bja}として暮らしていた。`, `A ${h.age}-year-old ${race} ${ben}, born ${statusBirth(h.status, h.world)}, living in ${n.town} in ${place}.`);
     }
     return `${pastLine}${L(`${w}の${n.town}で、${st}の${race}の、${h.age}歳の${bja}の体で目を覚ました。${h.memory === 'none' ? '' : '前世の記憶を持ったまま。'}`,
-      ` Woke in ${n.town}, ${w}, in the body of a ${h.age}-year-old ${race} ${ben} of a ${st.toLowerCase()} family.${h.memory === 'none' ? '' : ' With memories of the past life intact.'}`)}`;
+      ` Woke up in the body of a ${h.age}-year-old ${race} ${ben}, born ${statusBirth(h.status, h.world)}, in ${n.town} in ${place}.${h.memory === 'none' ? '' : ' The memories of that life were still there.'}`)}`;
   }
   switch (h.arrival) {
     case 'summoned':
       return L(`${p?.age ?? h.age}歳の${p ? T(p.job) : ''}だった${h.given}は、光に包まれて${w}に召喚された。${n.town}の${WOKE[styleOf(h.world)][0]}で目を覚ました。`,
-        `${h.given}, a ${p?.age ?? h.age}-year-old ${p ? T(p.job) : ''}, was swallowed by light and summoned to the ${w}. They woke in ${WOKE[styleOf(h.world)][1]} in ${n.town}.`);
+        `${h.given}, a ${p?.age ?? h.age}-year-old ${p ? T(p.job).toLowerCase() : 'stranger'}, was swallowed by light and summoned to ${place}. ${cap(pron(h.sex, 'he'))} woke ${WOKE[styleOf(h.world)][1]} in ${n.town}.`);
     case 'reborn':
       return `${pastLine}${L(`${w}の${n.town}で、${st}の${race}の${sexWord(h.sex)}として生まれ直した。${h.memory === 'none' ? '' : '前世の記憶を持ったまま。'}`,
-        ` Reborn in ${n.town}, ${w}, as a ${race} ${sexWord(h.sex)} of a ${st.toLowerCase()} family.${h.memory === 'none' ? '' : ' With memories of the past life intact.'}`)}`;
+        ` Reborn as a ${race} ${sexWord(h.sex)}, born ${statusBirth(h.status, h.world)}, in ${n.town} in ${place}.${h.memory === 'none' ? '' : ' The memories of the past life were still there.'}`)}`;
     default:
-      return L(`${w}の${n.town}で、${st}の${race}の${sexWord(h.sex)}として生まれた。`, `Born in ${n.town}, ${w}, a ${race} ${sexWord(h.sex)} of a ${st.toLowerCase()} family.`);
+      return L(`${w}の${n.town}で、${st}の${race}の${sexWord(h.sex)}として生まれた。`, `A ${race} ${sexWord(h.sex)} was born ${statusBirth(h.status, h.world)} in ${n.town}, in ${place}.`);
   }
 }

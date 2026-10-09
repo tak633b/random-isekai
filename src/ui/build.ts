@@ -4,6 +4,9 @@ import type { AllotKey, Hazard, JobId, RaceId, StatKey, TraitDef, TraitKind, Wor
 import { ALLOT_KEYS, BLESSING, MAX_WEAKNESS, POINT_BUDGET, POINT_MAX, POINT_STEP, TRAIT_SLOTS, availableTraits, hazardName, makeRng, randomBuild, traitOf, validateBuild } from '../engine';
 import { KIND_NAME, STAT_NAME, jobName } from './labels';
 import { esc } from './dom';
+import type { UnlockKey } from '../meta/types';
+import { isSeen, isUnlocked, priceOf } from '../meta/unlocks';
+import { lockIcon } from './labels';
 import { L, T } from '../i18n';
 
 export interface BuildState {
@@ -27,12 +30,12 @@ const x = (v: number) => (Math.round(v * 100) / 100).toString();
 export function effectText(t: TraitDef): string {
   const out: string[] = [];
   for (const [hz, v] of Object.entries(t.mult ?? {})) out.push(L(`${hazardName(hz as Hazard)}の死 ${x(v!)}倍`, `${hazardName(hz as Hazard)} deaths ×${x(v!)}`));
-  if (t.aging !== undefined) out.push(L(`老いの速さ ${x(t.aging)}倍`, `aging ×${x(t.aging)}`));
+  if (t.aging !== undefined) out.push(L(`老いの速さ ${x(t.aging)}倍`, `Aging ×${x(t.aging)}`));
   for (const [k, v] of Object.entries(t.stats ?? {})) out.push(`${STAT_NAME[k as StatKey]} ${v! > 0 ? '+' : ''}${v}`);
   for (const [k, v] of Object.entries(t.events ?? {})) out.push(L(`${KIND_NAME[k as YearKind]}の出来事 ${x(v!)}倍`, `${KIND_NAME[k as YearKind]} events ×${x(v!)}`));
   for (const [k, v] of Object.entries(t.jobs ?? {})) out.push(L(`${jobName(k as JobId)}になりやすさ ${x(v!)}倍`, `${jobName(k as JobId)} ×${x(v!)}`));
-  if (t.fertility !== undefined) out.push(L(`子の授かりやすさ ${x(t.fertility)}倍`, `fertility ×${x(t.fertility)}`));
-  if (t.attention) out.push(L(`目立ちやすさ ${t.attention > 0 ? '+' : ''}${t.attention}`, `attention ${t.attention > 0 ? '+' : ''}${t.attention}`));
+  if (t.fertility !== undefined) out.push(L(`子の授かりやすさ ${x(t.fertility)}倍`, `Fertility ×${x(t.fertility)}`));
+  if (t.attention) out.push(L(`目立ちやすさ ${t.attention > 0 ? '+' : ''}${t.attention}`, `Attention ${t.attention > 0 ? '+' : ''}${t.attention}`));
   return out.join(L('・', ', '));
 }
 
@@ -40,7 +43,7 @@ export function effectText(t: TraitDef): string {
 export function traitTags(ids: string[], blessing = false): string {
   const tags = ids.map(traitOf).filter((t): t is TraitDef => !!t).map((t) =>
     `<details class="tag k-${t.kind}"><summary>${esc(T(t.name))}</summary><span>${esc(T(t.desc))}${effectText(t) ? `<small>${esc(effectText(t))}</small>` : ''}</span></details>`);
-  if (blessing) tags.unshift(`<details class="tag k-blessing"><summary>${L('女神の加護', 'Goddess’s blessing')}</summary><span>${L(`成人するまで、病・魔物・事故の死が ${BLESSING}倍になる。`, `Until adulthood, deaths from illness, monsters and accidents are ×${BLESSING}.`)}</span></details>`);
+  if (blessing) tags.unshift(`<details class="tag k-blessing"><summary>${L('女神の加護', "Goddess's blessing")}</summary><span>${L(`成人するまで、病・魔物・事故の死が ${BLESSING}倍になる。`, `Until adulthood, deaths from illness, monsters and accidents are ×${BLESSING}.`)}</span></details>`);
   return tags.length ? `<div class="tags">${tags.join('')}</div>` : '';
 }
 
@@ -54,7 +57,8 @@ export function prune(b: BuildState, world: World | null, race: RaceId | undefin
 }
 
 export function randomize(b: BuildState, world: World, race: RaceId): void {
-  const r = randomBuild(makeRng((Math.random() * 2 ** 32) >>> 0), world, race);
+  // 解放したものだけで組む
+  const r = randomBuild(makeRng((Math.random() * 2 ** 32) >>> 0), world, race, {}, availableTraits(world, race).filter((t) => isUnlocked(`trait:${t.id}` as UnlockKey)));
   b.traits = r.traits;
   b.points = r.points;
 }
@@ -99,7 +103,7 @@ export function listHTML(b: BuildState, world: World, race: RaceId): string {
   const shown = b.more ? hit : hit.slice(0, PAGE);
   return `<div class="tabs" role="tablist">${KINDS.map((k) => `<button type="button" role="tab" data-b="tab" data-v="${k}" class="${b.tab === k ? 'on' : ''}" aria-selected="${b.tab === k}">${TRAIT_KIND_NAME[k]} <small>${avail.filter((t) => t.kind === k).length}</small></button>`).join('')}</div>
     <label class="search"><span class="vh">${L('名前で絞り込む', 'Filter by name')}</span><input id="tq" type="search" value="${esc(b.query)}" placeholder="${L('名前や説明で絞り込む', 'Filter by name or description')}" autocomplete="off"></label>
-    <ul class="cands" id="cands">${shown.map((t) => { const on = b.traits.includes(t.id); return `<li><button type="button" data-b="add" data-v="${esc(t.id)}" class="${on ? 'on' : ''}" aria-pressed="${on}">
+    <ul class="cands" id="cands">${shown.map((t) => { const on = b.traits.includes(t.id); const key = `trait:${t.id}` as UnlockKey, locked = !isUnlocked(key); return `<li><button type="button" ${locked ? `data-unlock="${esc(key)}" data-label="${esc(T(t.name))}" class="locked"` : `data-b="add" data-v="${esc(t.id)}" class="${on ? 'on' : ''}" aria-pressed="${on}"`}>${locked ? `<span class="lockrow">${lockIcon()} <small class="price${isSeen(key) ? ' seen' : ''}">${isSeen(key) ? L('見た・', 'seen · ') : ''}${priceOf(key)}</small></span>` : ''}
       <span class="cost${t.cost < 0 ? ' neg' : ''}">${t.cost > 0 ? '+' : ''}${t.cost}</span><b>${esc(T(t.name))}</b><span class="desc">${esc(T(t.desc))}</span>${effectText(t) ? `<small>${esc(effectText(t))}</small>` : ''}</button></li>`; }).join('')
       || `<li class="note">${L('当てはまるものがない。', 'Nothing matches.')}</li>`}</ul>
     ${!b.more && hit.length > PAGE ? `<button type="button" data-b="more">${L(`残り${hit.length - PAGE}件も見る`, `Show ${hit.length - PAGE} more`)}</button>` : ''}

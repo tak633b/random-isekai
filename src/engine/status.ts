@@ -27,6 +27,19 @@ export function statusName(s: Status, w: World): string {
   return L(ja, en);
 }
 
+// 英語の文の中での生まれ (「born to commoners」「born into a merchant house」の born の後ろ)。日本語は身分の名
+const BIRTH_EN: Record<Family, string[]> = {
+  fantasy: ['into slavery', 'an orphan', 'to paupers', 'to commoners', 'into a merchant house', 'into a knightly house', 'into a noble house', 'into the royal family'],
+  eastern: ['into bondage', 'a foundling', 'to poor peasants', 'to commoners', 'into a merchant house', 'into a warrior house', 'into a great house', 'into the imperial family'],
+  industrial: ['into indenture', 'a workhouse orphan', 'in the slums', 'into a working family', 'into a merchant house', 'into the gentry', 'into a noble house', 'into the royal family'],
+  scifi: ['into contract labor', 'a ward of the state', 'in the slums', 'a citizen', 'into an affluent family', 'into an executive family', 'into a corporate dynasty', 'an heir to a conglomerate'],
+  modern: ['into debt', 'into the care system', 'into a poor family', 'into an ordinary family', 'into a family business', 'into a wealthy family', 'into old money', 'an heir to an old house'],
+  ruin: ['a slave', 'a stray', 'to drifters', 'to settlers', 'to traders', 'into a warrior clan', "into the chief's kin", 'into a self-made royal line'],
+};
+export function statusBirth(s: Status, w: World): string {
+  return L(NAMES[familyOf(w)][statusRank(s)][0], BIRTH_EN[familyOf(w)][statusRank(s)]);
+}
+
 // 生まれの身分の重み (STATUSES の順)。農民と町人は commoner、亜人の集落は人の数に入れた
 const RATIO: Record<Family, number[]> = {
   fantasy: [4, 6, 14, 56, 8, 7, 4, 1],

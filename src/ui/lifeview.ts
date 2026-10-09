@@ -13,7 +13,7 @@ import { L, T } from '../i18n';
 // 年代記の種類を、年表のドットの印で見せる
 const CHRON_ICON: Record<ChronicleKind, YearKind> = { war: 'battle', plague: 'ill', famine: 'hard', demon: 'death', reincarnator: 'arrival', hero: 'fame', realm: 'family' };
 export const CHRON_NAME: Record<ChronicleKind, string> = {
-  war: L('戦', 'War'), plague: L('疫病', 'Plague'), famine: L('飢饉', 'Famine'), demon: L('魔王', 'Demon King'),
+  war: L('戦', 'War'), plague: L('疫病', 'Plague'), famine: L('飢饉', 'Famine'), demon: L('魔王', 'Demon Lord'),
   reincarnator: L('転生者', 'Reincarnator'), hero: L('英雄', 'Heroes'), realm: L('国', 'Realm'),
 };
 
@@ -23,7 +23,7 @@ const start = (h: Hero) => h.log[0]?.age ?? 0;
 export function whenText(h: Hero, at: number): string {
   if (at < start(h)) return L(`${h.given}が生まれる${start(h) - at}年前`, `${start(h) - at} ${start(h) - at === 1 ? 'year' : 'years'} before ${h.given}`);
   if (!h.alive && at > h.age) return L(`${h.given}の死から${at - h.age}年後`, `${at - h.age} ${at - h.age === 1 ? 'year' : 'years'} after ${h.given} died`);
-  return L(`${h.given} ${at}歳`, `${h.given}, ${at}`);
+  return L(`${h.given} ${at}歳`, `${h.given} at ${at}`);
 }
 
 // 列に入れる短い言い方 (1行に収める): 誕生58年前 / 23歳 / 没後8年
@@ -79,16 +79,16 @@ export function reincarnatorsHTML(h: Hero): string {
   const known = roster.filter((p) => p.tieId !== undefined || heard.has(p.id));
   const latest = (p: Reincarnator) => [...chronicleOf(h)].reverse().find((e) => visible(h, e.at) && e.who?.includes(`r:${p.id}`));
   const rest = roster.length - known.length;
-  if (!known.length) return `<p class="note">${L(`この世界には${roster.length}人の転生者がいるらしい。まだ誰の噂も聞いていない。`, `There seem to be ${roster.length} others from other worlds here. No word of any of them yet.`)}</p>`;
+  if (!known.length) return `<p class="note">${L(`この世界には${roster.length}人の転生者がいるらしい。まだ誰の噂も聞いていない。`, `There seem to be ${roster.length} other reincarnator${roster.length === 1 ? '' : 's'} in this world. No word of any of them yet.`)}</p>`;
   const ends = pastEnds(roster);
   return `<ul class="reinc">${known.map((p) => {
     const l = latest(p);
     const end = { text: ends.get(p.id) ?? '' };
     return `<li><button data-life="r:${p.id}"><b>${esc(p.name)}</b><small>${esc(T(RACES[p.race].name))}${L('・', ' · ')}${esc(ARRIVAL_NAME[p.arrival])}${p.tieId !== undefined ? L('・会った', ' · met') : L('・噂', ' · rumor')}</small>
-      <small class="gift">〈${esc(T(CHEATS[p.cheat].name))}〉</small>
-      <small>${L(`前世: ${p.past.age}歳の${esc(T(p.past.job))}。${esc(end.text)}`, `Past life: ${esc(T(p.past.job))}, ${p.past.age}. ${esc(end.text)}`)}</small>
+      <small class="gift">${L(`〈${esc(T(CHEATS[p.cheat].name))}〉`, `"${esc(T(CHEATS[p.cheat].name))}"`)}</small>
+      <small>${L(`前世: ${p.past.age}歳の${esc(T(p.past.job))}。${esc(end.text)}`, `Past life: a ${p.past.age}-year-old ${esc(T(p.past.job))}. ${esc(end.text)}`)}</small>
       ${l ? `<small class="fate">${esc(whenText(h, l.at))}${L(': ', ': ')}${markGifts(esc(l.text))}</small>` : ''}</button></li>`;
-  }).join('')}</ul>${rest > 0 ? `<p class="note">${L(`ほかに${rest}人、まだ名も聞かない転生者がいる。`, `${rest} more whose names you have not heard.`)}</p>` : ''}`;
+  }).join('')}</ul>${rest > 0 ? `<p class="note">${L(`ほかに${rest}人、まだ名も聞かない転生者がいる。`, `And ${rest} more you have not heard of yet.`)}</p>` : ''}`;
 }
 
 // 年表の中の、その年 (記録の無い年なら、それより前でいちばん近い年。無ければ最初の年)
@@ -132,10 +132,10 @@ function lifeHTML(h: Hero, o: OtherLife): string {
   const future = h.alive && o.diedAt !== undefined && o.diedAt > h.age;
   const facts: [string, string][] = [
     [L('生まれ', 'Born'), `${statusName(o.status, h.world)}${L('・', ', ')}${T(RACES[o.race].name)}${L('・', ', ')}${SEX_NAME[o.sex]}${L(`(${whenText(h, o.bornAt)})`, ` (${whenText(h, o.bornAt)})`)}`],
-    [L('職業', 'Trade'), jobName(o.job)],
-    [L('強さ', 'Strength'), `Lv ${Math.round(o.level)}${o.rank ? L(`・ランク${o.rank}`, `, rank ${o.rank}`) : ''}`],
-    ...(o.cheat ? [[L('特典', 'Gift'), `〈${T(CHEATS[o.cheat].name)}〉`] as [string, string]] : []),
-    ...(o.past ? [[L('前世', 'Past life'), L(`${o.past.age}歳の${T(o.past.job)}。${pastText}`, `${T(o.past.job)}, ${o.past.age}. ${pastText}`)] as [string, string]] : []),
+    [L('職業', 'Job'), jobName(o.job)],
+    [L('強さ', 'Strength'), `Lv ${Math.round(o.level)}${o.rank ? L(`・ランク${o.rank}`, `, Rank ${o.rank}`) : ''}`],
+    ...(o.cheat ? [[L('特典', 'Cheat skill'), L(`〈${T(CHEATS[o.cheat].name)}〉`, `"${T(CHEATS[o.cheat].name)}"`)] as [string, string]] : []),
+    ...(o.past ? [[L('前世', 'Past life'), L(`${o.past.age}歳の${T(o.past.job)}。${pastText}`, `A ${o.past.age}-year-old ${T(o.past.job)}. ${pastText}`)] as [string, string]] : []),
     [L('享年', 'Died at'), o.ageAtDeath !== undefined && !future ? L(`${o.ageAtDeath}歳(${whenText(h, o.diedAt!)})`, `${o.ageAtDeath} (${whenText(h, o.diedAt!)})`) : L('まだ生きている', 'Still alive')],
   ];
   // 主人公の今より後の年: 主人公が亡くなっていれば区切り線の後に、生きていれば畳んだ中に

@@ -6,7 +6,7 @@ import { worldTimeline } from './others';
 import { courseOf, deedLine, demonWord, diedAtOf, reincarnatorsOf } from './reincarnators';
 import { styleOf, worldNames } from './names';
 import { isFantasy } from './mortality';
-import { isEn, L } from '../i18n';
+import { isEn, L, ordinal, pron } from '../i18n';
 
 const PLACES: Record<ReturnType<typeof styleOf>, [string, string][]> = {
   west: [['北の国境', 'the northern border'], ['東の辺境', 'the eastern marches'], ['南の港町', 'the southern ports'], ['西の山あい', 'the western hills']],
@@ -14,8 +14,8 @@ const PLACES: Record<ReturnType<typeof styleOf>, [string, string][]> = {
   desert: [['北の水場', 'the northern wells'], ['東の隊商路', 'the eastern caravan road'], ['南の砂丘', 'the southern dunes'], ['オアシスの都', 'the oasis city']],
   wa: [['北の国境', 'the northern border'], ['東の国々', 'the eastern provinces'], ['西の国々', 'the western provinces'], ['南の海辺', 'the southern coast']],
   zh: [['北の長城', 'the northern wall'], ['東の諸州', 'the eastern provinces'], ['西の山門', 'the western mountain gates'], ['南の水郷', 'the southern waterlands']],
-  modern: [['海の向こう', 'across the sea'], ['大陸の国境', 'a continental border'], ['北の海峡', 'the northern strait']],
-  scifi: [['外縁星域', 'the outer reaches'], ['隣の星系', 'a neighboring system'], ['軌道の上', 'orbit'], ['辺境の植民星', 'a frontier colony']],
+  modern: [['海の向こう', 'the lands across the sea'], ['大陸の国境', 'the continental border'], ['北の海峡', 'the northern strait']],
+  scifi: [['外縁星域', 'the outer reaches'], ['隣の星系', 'a neighboring system'], ['軌道の上', 'the orbital lanes'], ['辺境の植民星', 'a frontier colony']],
   ruin: [['北の廃都', 'the dead city to the north'], ['東の荒野', 'the eastern wastes'], ['川沿いの集落', 'the river settlements']],
 };
 
@@ -54,7 +54,7 @@ export function chronicleOf(h: Hero): ChronicleEntry[] {
     counts.set(cat, k + 1);
     const n = lines.length;
     const [ja, en] = lines[(hashAt(h.seed, cat.length * 977 + n) + k) % n];
-    return k < n ? L(ja, en) : L(`${ja}(この時代${k + 1}度目)`, `${en} (The ${k + 1}${k + 1 === 2 ? 'nd' : k + 1 === 3 ? 'rd' : 'th'} time in this age.)`);
+    return k < n ? L(ja, en) : L(`${ja}(この時代${k + 1}度目)`, `${en} (The ${ordinal(k + 1)} time in this age.)`);
   };
   const roster = reincarnatorsOf(h).map((p) => ({ p, c: courseOf(h, p) }));
   const [dj, de] = demonWord(h.world);
@@ -73,7 +73,7 @@ export function chronicleOf(h: Hero): ChronicleEntry[] {
       add(y.at, vary('war+', [
         [`${pj}で${warWord}が始まった。`, `War broke out in ${pe}.`],
         [`${pj}をめぐって国々が兵を挙げ、${warWord}が始まった。`, `Kingdoms raised armies over ${pe}, and war began.`],
-        [`${pj}の国境の小競り合いから、${warWord}が始まった。`, `A border skirmish in ${pe} grew into war.`],
+        [`${pj}の国境の小競り合いから、${warWord}が始まった。`, `A skirmish near ${pe} grew into war.`],
         [`${pj}に敵の旗が立ち、${warWord}が始まった。`, `Enemy banners rose over ${pe}. The war had begun.`],
       ]), 'war');
     }
@@ -136,6 +136,13 @@ export function chronicleOf(h: Hero): ChronicleEntry[] {
     }
   });
 
+  // ---- 前の代 (続けて遊んだ主人公の系譜) ----
+  for (const a of h.lineage?.ancestors ?? []) {
+    const off = h.lineage!.offset;
+    for (const d of a.deeds ?? []) add(d.at - off, d.text, 'hero');
+    add(a.diedAt - off, L(`${a.given}が世を去った。${a.ageAtDeath}歳だった。`, `${a.given} passed away, at ${a.ageAtDeath}.`), 'hero');
+  }
+
   // 主人公が魔王を討ったのが出来事のしるし (heroic.ts など) だけで、世界の様子に魔王の終わりが無い年も、手柄として入れる
   const slain = h.flags.demonKingSlain;
   if (slain !== undefined && !out.some((e) => e.at === slain && e.kind === 'hero')) add(slain, subj(h.given, L(`${dj}を討ち果たした。`, `Slew the ${de}.`)), 'hero');
@@ -148,20 +155,20 @@ export function chronicleOf(h: Hero): ChronicleEntry[] {
     if (p.arrival === 'summoned') add(p.bornAt, L(`異世界から${p.name}が召喚された。`, `${p.name} was summoned from another world.`), 'reincarnator', who);
     else if (notable || p.tieId !== undefined) {
       add(p.bornAt, p.arrival === 'reborn' ? L(`${p.name}が生まれた。前世の記憶を持つ子だった。`, `${p.name} was born, with memories of a past life.`)
-        : L(`${p.name}が生まれた。のちに前世を思い出す子だった。`, `${p.name} was born. In time, a past life would come back to them.`), 'reincarnator', who);
+        : L(`${p.name}が生まれた。のちに前世を思い出す子だった。`, `${p.name} was born. In time, a past life would come back to ${pron(p.sex, 'him')}.`), 'reincarnator', who);
     }
     if (c.deedAt !== undefined && c.deedAt < died) {
       const kind: ChronicleKind = p.fate === 'hero' ? 'hero' : p.fate === 'villain' || p.fate === 'retired' || p.fate === 'wanderer' ? 'reincarnator' : 'realm';
       add(c.deedAt, subj(p.name, deedLine(h, p)), kind, who);
     }
-    if (c.riseAt !== undefined && c.riseAt < died) add(c.riseAt, L(`${p.name}が${dj}を名乗った。`, `${p.name} declared themself ${de}.`), 'demon', who);
+    if (c.riseAt !== undefined && c.riseAt < died) add(c.riseAt, L(`${p.name}が${dj}を名乗った。`, `${p.name} declared ${pron(p.sex, 'himself')} ${de}.`), 'demon', who);
     if (p.tieId !== undefined) {
       const t = h.people.find((x) => x.id === p.tieId);
       if (t) add(t.since, L(`${h.given}が${p.name}と出会った。`, `${h.given} met ${p.name}.`), 'reincarnator', who);
     }
     if (!notable && p.tieId === undefined) continue;
     if (died !== c.diedAt) add(died, L(`${p.name}が亡くなった。`, `${p.name} died.`), 'reincarnator', who);
-    else if (p.fate === 'demonlord') add(died, L(`${dj}を名乗った${p.name}が討たれた。`, `${p.name}, who had claimed to be ${de}, was struck down.`), 'demon', who);
+    else if (p.fate === 'demonlord') add(died, L(`${dj}を名乗った${p.name}が討たれた。`, `${p.name}, who had claimed to be the ${de}, was struck down.`), 'demon', who);
     else if (p.fate === 'villain') add(died, L(`お尋ね者の${p.name}が捕らえられ、処刑された。`, `The outlaw ${p.name} was captured and executed.`), 'realm', who);
     else if (p.fate === 'hero') add(died, L(`${heroName}${p.name}が世を去った。`, `${heroName}${p.name} passed away.`), 'hero', who);
     else if (p.fate === 'early') add(died, L(`${p.name}が若くして世を去った。`, `${p.name} died young.`), 'reincarnator', who);
@@ -191,17 +198,17 @@ function heroDeeds(h: Hero, add: Add): void {
   const flagged = new Set<number>();
   const at = (k: string, text: string) => { const a = f[k]; if (a === undefined) return; flagged.add(a); add(a, text, 'hero'); };
   at('hero', subj(g, L(`${dj}を討つ者に選ばれた。`, `Was chosen to slay the ${de}.`)));
-  at('saint', subj(g, h.sex === 'M' ? L('聖者に選ばれた。', 'Was named the Saint.') : L('聖女に選ばれた。', 'Was named the Saint.')));
+  at('saint', subj(g, h.sex === 'M' ? L('聖者に選ばれた。', 'Was named the Saint.') : L('聖女に選ばれた。', 'Was named the Saintess.')));
   at('arc.deed', subj(g, L('大きな手柄を立て、名を上げた。', 'Won renown with a great deed.')));
   at('arc.saved', subj(g, L(`${worldNames(h).town}を魔物の群れから守り抜いた。`, `Held ${worldNames(h).town} against a horde of monsters.`)));
   at('famous', L(`${g}の名が、遠くの町でも語られるようになった。`, `${g}'s name was told in faraway towns.`));
-  at('arc.legend', L(`${g}の歌が作られ、伝説になった。`, `Songs were made of ${g}, and ${g} became a legend.`));
+  at('arc.legend', L(`${g}の歌が作られ、伝説になった。`, `Songs were sung of ${g}, and the songs became legend.`));
   if (f.demonKingSlain !== undefined) flagged.add(f.demonKingSlain); // 魔王の討伐は世界の欄で書く
   const famous = f.famous;
   if (famous === undefined) return;
   // 名が知られた後の名声の記録 (主人公自身のもの。輪の人や転生者の行は who を持つので外れる)
   for (const e of h.log) {
     if (e.age < famous || e.kind !== 'fame' || !e.big || e.who?.length || flagged.has(e.age)) continue;
-    add(e.age, L(`${g}は、${e.text}`, `${g}: ${lowerFirst(e.text)}`), 'hero');
+    add(e.age, L(`${g}は、${e.text}`, e.text.startsWith(g) ? e.text : `${g}: ${e.text}`), 'hero');
   }
 }

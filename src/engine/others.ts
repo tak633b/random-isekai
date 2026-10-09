@@ -40,6 +40,15 @@ const hash = (...xs: (number | string)[]) => {
   return x >>> 0;
 };
 
+// 亡くなった後 (か今より後): 最後の年の様子から、横の乱数で世界の確率に従って延ばす
+function extend(h: Hero, last: WorldYear, after: number): WorldYear[] {
+  const r2 = makeRng(hash(h.seed, 'after'));
+  const t: Sim = { war: last.war ? 1 : 0, plague: 0, famine: 0, demonKing: last.demonKing };
+  const later: WorldYear[] = [];
+  for (let at = last.at + 1; at <= last.at + after; at++) { simYear(r2, h, t); later.push(yearOf(at, t)); }
+  return later;
+}
+
 // 主人公が生きた年の世界の様子。年ごとの記録 (Hero.worldHist) があればそれを、古いセーブなら同じ設定で辿り直して得る
 function livedYears(h: Hero): { start: number; hist: string } {
   const start = h.log[0]?.age ?? 0;
@@ -60,6 +69,14 @@ export function worldTimeline(h: Hero, before = 60, after = 60): WorldYear[] {
   if (hit?.key === key) return hit.years;
   const lived = [...hist].map((c, i) => decode(start + i, c));
   const first = lived[0] ?? decode(start, '0');
+  if (h.lineage) {
+    // 続けた主人公: 生まれる前は前の代までの記録 (系譜の hist。最初の主人公の年齢から、この主人公の年齢に直す)
+    const L0 = h.lineage;
+    const past = [...L0.hist].map((c, i) => decode(L0.histStart + i - L0.offset, c)).filter((y) => y.at < start);
+    const years = [...past, ...lived, ...extend(h, lived[lived.length - 1] ?? first, after)];
+    timelines.set(h, { key, years });
+    return years;
+  }
   // 生まれる前: 平時から before 年ぶん進め、最後の年を生まれた年の様子につなぐ (魔王が健在なら、その治世はしばらく前から)
   const r = makeRng(hash(h.seed, 'past'));
   const s: Sim = { war: 0, plague: 0, famine: 0, demonKing: false };
@@ -70,12 +87,7 @@ export function worldTimeline(h: Hero, before = 60, after = 60): WorldYear[] {
     for (let i = Math.max(0, past.length - reign); i < past.length; i++) past[i].demonKing = first.demonKing;
   }
   // 亡くなった後: 最後の年の様子から続ける
-  const last = lived[lived.length - 1] ?? first;
-  const r2 = makeRng(hash(h.seed, 'after'));
-  const t: Sim = { war: last.war ? 1 : 0, plague: 0, famine: 0, demonKing: last.demonKing };
-  const later: WorldYear[] = [];
-  for (let at = last.at + 1; at <= last.at + after; at++) { simYear(r2, h, t); later.push(yearOf(at, t)); }
-  const years = [...past, ...(lived.length ? lived : [first]), ...later];
+  const years = [...past, ...(lived.length ? lived : [first]), ...extend(h, lived[lived.length - 1] ?? first, after)];
   timelines.set(h, { key, years });
   return years;
 }

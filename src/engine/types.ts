@@ -363,7 +363,8 @@ export interface Hero {
   auto: boolean;
   policy: Policy;
   used: string[];       // 一生に一度の出来事の id
-  reinc?: ReincState;   // ほかの転生者との関わり (engine/reincarnators.ts)。古いセーブには無い
+  reinc?: ReincState;
+  lineage?: Lineage;    // 続けて遊んだ主人公 (engine/lineage.ts の continueAs)。最初の主人公には無い   // ほかの転生者との関わり (engine/reincarnators.ts)。古いセーブには無い
   worldHist?: string;   // 各年の世界の様子 (年齢ごとに1文字。16進で 1 戦争 / 2 大疫病 / 4 飢饉 / 8 魔王)。古いセーブには無い
   recent?: Record<string, number>; // 何度も起きる出来事が最後に起きた年齢 (id → 年齢。続けて起きないように)
   peopleLog?: { n: number; wait: LogEntry[] }; // 人物像が年表に足した件数と、翌年に差し込む行 (engine/people.ts。保存に残す)
@@ -446,6 +447,7 @@ export interface DeathDef {
   races?: RaceId[];
   sex?: Sex;
   w: number;
+  rest?: boolean;             // true: 老いない人が千年の上限に届いたときだけ (自分で選んだ終わり)。省略: その死では選ばない
   label: Text;                // 集計の短い名前 (例: 魔物に襲われた)
   ja: string;                 // 死亡の記録の文 (置き換えは EventDef と同じ。{age} も使える)
   en: string;
@@ -508,6 +510,30 @@ export interface OtherLife {
 }
 
 // ほかの転生者・召喚者・目覚めた者
+// 系譜: 死亡記録から輪の人を選んで続けた主人公 (engine/lineage.ts)。時間は最初の主人公の年齢で数える (root time)
+export interface Ancestor {
+  name: string; given: string; race: RaceId; sex: Sex;
+  key: string;            // その人を選んだ鍵 ('root' / 't:<id>' / 'r:<id>')
+  bornAt: number;         // 生まれた年 (最初の主人公の年齢)
+  diedAt: number;         // 亡くなった年 (最初の主人公の年齢)
+  ageAtDeath: number;
+  cause?: string;         // 死因の短い名 (今の言語)
+  job?: JobId | null;
+  deeds?: { at: number; text: string }[]; // その代の手柄 (年代記に載せる。at は最初の主人公の年齢)
+}
+export interface Lineage {
+  gen: number;            // 何代目か (最初の主人公 = 1、続けた人 = 2, 3, …)
+  rootSeed: number;       // 最初の主人公の seed (世界の固有名・転生者の名簿の基準)
+  root: { given: string; race: RaceId; start: number }; // 名簿を作り直すための、最初の主人公の手がかり
+  key: string;            // この主人公を選んだ鍵 ('t:<id>' / 'r:<id>')
+  self?: number;          // この主人公自身が転生者の名簿の誰かなら、その番号 (自分には会わない)
+  offset: number;         // この主人公が生まれた年 (最初の主人公の年齢)。この主人公の年齢 + offset = 最初の主人公の年齢
+  startAge: number;       // 続けて遊び始めた時のこの主人公の年齢 (それより前の年表は、錨の付いた一生から写した過去)
+  histStart: number;      // hist の最初の年 (最初の主人公の年齢)
+  hist: string;           // 前の代までの世界の様子 (Hero.worldHist と同じ1年1文字。histStart から前の主人公の死の年まで)
+  ancestors: Ancestor[];  // 前の代の人たち (古い順)
+}
+
 // 主人公とほかの転生者の関わり (Hero.reinc)。保存と再開にそのまま乗る
 export interface ReincFight { id: number; at: number; result: 'win' | 'hurt' | 'flee' } // id は Reincarnator.id、at は主人公の年齢
 export interface ReincState {

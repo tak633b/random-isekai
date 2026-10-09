@@ -66,7 +66,7 @@ export function showTrials(setup: Setup, nav: Nav): void {
   const f = h.setup;
   const e0 = h.race === 'human' && !h.cheat && h.status === 'commoner' ? TABLE_E0[h.world.id] : undefined;
   let n = 100;
-  const line = [T(h.world.name), T(raceOf(h.race).name), statusName(h.status, h.world), h.cheat ? T(CHEATS[h.cheat].name) : L('特典なし', 'no gift'), ARRIVAL_NAME[h.arrival], POLICY_NAME[h.policy]].join(L('・', ' · '));
+  const line = [T(h.world.name), T(raceOf(h.race).name), statusName(h.status, h.world), h.cheat ? T(CHEATS[h.cheat].name) : L('特典なし', 'no cheat skill'), ARRIVAL_NAME[h.arrival], POLICY_NAME[h.policy]].join(L('・', ' · '));
   screen(`
   <main class="page trials">
     <button class="back" data-go="title">${L('← タイトルへ', '← Back to title')}</button>

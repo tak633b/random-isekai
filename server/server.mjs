@@ -6,103 +6,11 @@ import { mkdirSync } from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
 import { dirname, extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { ENUMS, Invalid, LINEAGE_MAX, LIST_MAX, MAX_BODY, SETS, validEntry } from './validate.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
-// ---- 値の一覧 (src/engine/types.ts と同じ。ずれは server.test.mjs が見つける) ----
-export const ENUMS = {
-  world: ['medieval', 'dark', 'game', 'academy', 'wa', 'xianxia', 'steampunk', 'cyberpunk', 'space', 'modern', 'postapoc', 'ocean', 'desert', 'beast', 'myth', 'frontier'],
-  race: ['human', 'elf', 'half_elf', 'dark_elf', 'dwarf', 'halfling', 'beast_dog', 'beast_cat', 'beast_rabbit', 'beast_fox', 'beast_wolf',
-    'dragonkin', 'demon', 'vampire', 'oni', 'goblin', 'orc', 'lizardfolk', 'merfolk', 'winged', 'fairy', 'slime', 'homunculus', 'android', 'cyborg', 'mutant', 'alien'],
-  sex: ['F', 'M'],
-  status: ['slave', 'orphan', 'poor', 'commoner', 'merchant', 'gentry', 'noble', 'royal'],
-  hazard: ['infant', 'disease', 'monster', 'violence', 'war', 'accident', 'childbirth', 'magic', 'execution', 'famine', 'plague', 'age'],
-  role: ['mother', 'father', 'sibling', 'spouse', 'child', 'lover', 'fiance', 'friend', 'companion', 'mentor', 'rival', 'nemesis', 'familiar', 'master', 'servant', 'disciple'],
-  job: ['farmer', 'merchant', 'smith', 'alchemist', 'herbalist', 'priest', 'knight', 'soldier', 'mercenary', 'adventurer', 'mage', 'scholar', 'bard', 'thief', 'tamer', 'cook',
-    'lord', 'servant', 'hunter', 'sailor', 'miner', 'assassin', 'necromancer', 'hero', 'saint', 'samurai', 'onmyoji', 'cultivator', 'ninja', 'engineer', 'factory', 'airship',
-    'corp', 'hacker', 'pilot', 'medic', 'researcher', 'office', 'explorer', 'police', 'scavenger', 'raider'],
-  stage: ['infant', 'child', 'teen', 'adult', 'middle', 'elder'],
-  place: ['home', 'field', 'town', 'guild', 'dungeon', 'battle', 'academy', 'temple', 'shop', 'forge', 'lab', 'castle', 'ship', 'wild', 'city', 'grave'],
-  home: ['hovel', 'house', 'manor', 'castle'],
-  tod: ['morning', 'day', 'dusk', 'night'],
-  lang: ['ja', 'en'],
-};
-const SETS = Object.fromEntries(Object.entries(ENUMS).map(([k, v]) => [k, new Set(v)]));
-
-export const MAX_BODY = 16 * 1024;
-const LIST_MAX = 50;
-
-// ---- 入力の検証 -------------------------------------------------------------
-// 制御文字 (改行も) と、文字の向きを入れ替える書式文字を取り除く
-const CTRL = /[\u0000-\u001F\u007F-\u009F‎‏‪-‮⁦-⁩]/g;
-
-class Invalid extends Error {}
-const fail = (what) => { throw new Invalid(what); };
-const oneOf = (v, set, what) => (SETS[set].has(v) ? v : fail(what));
-const int = (v, min, max, what) => (Number.isInteger(v) && v >= min && v <= max ? v : fail(what));
-// 文字数はコードポイントで数える。長すぎるものは切らずに弾く
-function text(v, max, what, { optional = false } = {}) {
-  if (v === undefined || v === null) return optional ? '' : fail(what);
-  if (typeof v !== 'string') fail(what);
-  const s = v.replace(CTRL, '').trim();
-  if ([...s].length > max) fail(`${what} too long`);
-  if (!s && !optional) fail(what);
-  return s;
-}
-const list = (v, max, what) => (Array.isArray(v) && v.length <= max ? v : fail(what));
-const isObj = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
-
-// 場面の材料。形が違えば捨てる (記録そのものは受け取る)
-function scene(v) {
-  try {
-    if (!isObj(v)) return null;
-    const figures = list(v.figures, 5, 'figures').map((f) => {
-      if (!isObj(f)) fail('figure');
-      return {
-        seed: int(f.seed, 0, 0xffffffff, 'seed'), race: oneOf(f.race, 'race', 'race'), sex: oneOf(f.sex, 'sex', 'sex'),
-        stage: oneOf(f.stage, 'stage', 'stage'), job: f.job === null ? null : oneOf(f.job, 'job', 'job'), status: oneOf(f.status, 'status', 'status'),
-        ...(typeof f.me === 'boolean' ? { me: f.me } : {}), ...(typeof f.dead === 'boolean' ? { dead: f.dead } : {}),
-      };
-    });
-    return {
-      seed: int(v.seed, 0, 0xffffffff, 'seed'), world: oneOf(v.world, 'world', 'world'), place: oneOf(v.place, 'place', 'place'),
-      home: oneOf(v.home, 'home', 'home'), tod: oneOf(v.tod, 'tod', 'tod'), season: int(v.season, 0, 3, 'season'), figures,
-      ...(typeof v.dead === 'boolean' ? { dead: v.dead } : {}),
-    };
-  } catch (e) {
-    if (e instanceof Invalid) return null;
-    throw e;
-  }
-}
-
-// 送られた記録を、保存する形に作り直す。だめなら Invalid を投げる
-export function validEntry(b) {
-  if (!isObj(b)) fail('body');
-  return {
-    seed: int(b.seed, 0, Number.MAX_SAFE_INTEGER, 'seed'),
-    world: oneOf(b.world, 'world', 'world'),
-    name: text(b.name, 60, 'name'),
-    race: oneOf(b.race, 'race', 'race'),
-    sex: oneOf(b.sex, 'sex', 'sex'),
-    status: oneOf(b.status, 'status', 'status'),
-    age: int(b.age, 0, 100000, 'age'),
-    hazard: oneOf(b.hazard, 'hazard', 'hazard'),
-    causeLabel: text(b.causeLabel, 60, 'causeLabel'),
-    causeText: text(b.causeText, 400, 'causeText'),
-    why: text(b.why, 200, 'why', { optional: true }),
-    highlights: list(b.highlights ?? [], 12, 'highlights').map((e) => {
-      if (!isObj(e)) fail('highlight');
-      return { age: int(e.age, 0, 100000, 'highlight age'), text: text(e.text, 200, 'highlight') };
-    }),
-    lastWith: list(b.lastWith ?? [], 3, 'lastWith').map((t) => {
-      if (!isObj(t)) fail('lastWith');
-      return { name: text(t.name, 60, 'lastWith name'), role: oneOf(t.role, 'role', 'role') };
-    }),
-    note: text(b.note, 140, 'note', { optional: true }),
-    scene: scene(b.scene),
-    lang: oneOf(b.lang ?? 'ja', 'lang', 'lang'),
-  };
-}
+export { ENUMS, LINEAGE_MAX, MAX_BODY, validEntry };
 
 // ---- 送信量の制限 (メモリ内のトークンバケット。IP は保存もログ出力もしない) ----
 // ponytail: 1プロセスのメモリだけ。複数台で動かすなら共有の置き場へ
@@ -150,8 +58,8 @@ async function readJson(req) {
 }
 
 const COLS = `id, seed, world, name, race, sex, status, age, hazard, cause_label AS causeLabel, cause_text AS causeText, why,
-  highlights, last_with AS lastWith, note, scene, lang, candles, created_at AS createdAt`;
-const rowOut = (r) => ({ ...r, highlights: JSON.parse(r.highlights), lastWith: JSON.parse(r.lastWith), scene: r.scene ? JSON.parse(r.scene) : null });
+  highlights, last_with AS lastWith, note, scene, lang, gen, lineage, candles, created_at AS createdAt`;
+const rowOut = (r) => ({ ...r, highlights: JSON.parse(r.highlights), lastWith: JSON.parse(r.lastWith), lineage: JSON.parse(r.lineage ?? '[]'), scene: r.scene ? JSON.parse(r.scene) : null });
 
 /** サーバを起動する。port 0 なら空いているポート。戻り値の close() で止まる */
 export function startServer({ port = Number(process.env.PORT ?? 8790), dbPath = join(ROOT, 'data', 'memorial.db'), distDir = join(ROOT, 'dist'), host } = {}) {
@@ -177,11 +85,17 @@ export function startServer({ port = Number(process.env.PORT ?? 8790), dbPath = 
     lang TEXT NOT NULL DEFAULT 'ja',
     candles INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+    gen INTEGER NOT NULL DEFAULT 1,
+    lineage TEXT NOT NULL DEFAULT '[]',
     UNIQUE (seed, world)
   )`);
+  // 系譜の欄の無い古い db に足す
+  const cols = new Set(db.prepare('PRAGMA table_info(memorial)').all().map((c) => c.name));
+  if (!cols.has('gen')) db.exec('ALTER TABLE memorial ADD COLUMN gen INTEGER NOT NULL DEFAULT 1');
+  if (!cols.has('lineage')) db.exec("ALTER TABLE memorial ADD COLUMN lineage TEXT NOT NULL DEFAULT '[]'");
   const q = {
-    insert: db.prepare(`INSERT INTO memorial (seed, world, name, race, sex, status, age, hazard, cause_label, cause_text, why, highlights, last_with, note, scene, lang)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT (seed, world) DO NOTHING`),
+    insert: db.prepare(`INSERT INTO memorial (seed, world, name, race, sex, status, age, hazard, cause_label, cause_text, why, highlights, last_with, note, scene, lang, gen, lineage)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT (seed, world) DO NOTHING`),
     dup: db.prepare('SELECT id FROM memorial WHERE seed = ? AND world = ?'),
     list: db.prepare(`SELECT ${COLS} FROM memorial ORDER BY id DESC LIMIT ? OFFSET ?`),
     listLang: db.prepare(`SELECT ${COLS} FROM memorial WHERE lang = ? ORDER BY id DESC LIMIT ? OFFSET ?`),
@@ -233,7 +147,7 @@ export function startServer({ port = Number(process.env.PORT ?? 8790), dbPath = 
       if (dup) return send(res, 409, { success: false, error: 'duplicate', data: { id: dup.id } });
       if (!postMin.take(ip) || !postDay.take(ip)) return send(res, 429, { success: false, error: 'too many requests' });
       const r = q.insert.run(e.seed, e.world, e.name, e.race, e.sex, e.status, e.age, e.hazard, e.causeLabel, e.causeText, e.why,
-        JSON.stringify(e.highlights), JSON.stringify(e.lastWith), e.note, e.scene ? JSON.stringify(e.scene) : null, e.lang);
+        JSON.stringify(e.highlights), JSON.stringify(e.lastWith), e.note, e.scene ? JSON.stringify(e.scene) : null, e.lang, e.gen, JSON.stringify(e.lineage));
       if (!r.changes) return send(res, 409, { success: false, error: 'duplicate', data: { id: q.dup.get(e.seed, e.world)?.id } });
       return send(res, 201, { success: true, data: { id: Number(r.lastInsertRowid) } });
     }

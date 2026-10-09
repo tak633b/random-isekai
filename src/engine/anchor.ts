@@ -105,7 +105,7 @@ export function anchorYear(h: Hero): void {
   for (const c of a.children ?? []) {
     if (c.age !== h.age) continue;
     const t = addTie(h, { name: c.name, role: 'child', race: h.race, sex: c.sex, age: 0, bond: 78 });
-    const ce = log(h, L(`子の${c.name}が生まれた。`, `A child, ${c.name}, was born.`), 'family', true, [t.id]);
+    const ce = log(h, L(`子の${c.name}が生まれた。`, `A ${c.sex === 'F' ? 'daughter' : 'son'}, ${c.name}, was born.`), 'family', true, [t.id]);
     ce.join = [t.id];
     if (c.withHero) ce.shared = true;
   }

@@ -17,4 +17,5 @@ export { availableTraits, validateBuild, randomBuild, POINT_BUDGET, TRAIT_SLOTS,
 export { BLESSING, attentionOf } from './mortality';
 export { heqToAge } from './hero';
 export { worldTimeline, lifeOfTie, lifeOfSpec, type LifeSpec } from './others';
+export { continueAs, lineageOf, heirsOf, type LineageEntry } from './lineage';
 export { runTrials, trialStart, trialAdd, trialFinish, trialSeed, REACH_AGES, TRIAL_MAX_YEARS, type TrialResult, type TrialState } from './trials';

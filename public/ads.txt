@@ -1,0 +1,2 @@
+# AdSense の承認後、pub-0000000000000000 を自分のサイト運営者 ID (ca-pub- の後ろの pub-…) に置き換える。docs/DEPLOY.md の 8.
+google.com, pub-0000000000000000, DIRECT, f08c47fec0942fa0

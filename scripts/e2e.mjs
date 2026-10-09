@@ -146,7 +146,7 @@ async function autoplayChecks(page, lang) {
 // kind: 'fight' は次の年に戦いがある所、'party' は仲間が2人以上いる所で止めた人生を保存する
 async function plant(page, kind) {
   return page.evaluate(async (kind) => {
-    const E = await import('/src/engine/index.ts');
+    const E = await window.__imp('/src/engine/index.ts');
     const PARTY = ['companion', 'mentor', 'spouse', 'lover', 'fiance', 'familiar', 'disciple', 'servant', 'master'];
     for (let seed = 1; seed < 400; seed++) {
       const setup = { seed, world: { preset: 'medieval' }, hero: { race: 'human', arrival: 'reborn', blessing: true }, auto: true, policy: 'bold' };
@@ -224,6 +224,7 @@ async function stageChecks(page, lang, browser) {
   // reduced-motion では止まる
   const ctx2 = await browser.newContext({ viewport: { width: 1280, height: 900 }, reducedMotion: 'reduce' });
   await ctx2.addInitScript((l) => { try { localStorage.setItem('lang', l); } catch {} }, lang);
+  await ctx2.addInitScript(IMP);
   const r = await ctx2.newPage();
   r.on('pageerror', (e) => errors.push(`[${lang}] reduced pageerror: ${e.message}`));
   await r.goto(BASE);
@@ -307,10 +308,243 @@ async function othersChecks(page, lang, sfx) {
   await page.evaluate(() => window.scrollTo(0, 0));
 }
 
+// 系譜: 死亡記録から「この人で続ける」→ 引き継ぎ → 第2代が進む → 中断と続きから → 亡くなる → 第3代 → 系譜が死亡記録・年代記・追悼館に出る
+async function lineageChecks(page, lang, sfx) {
+  const heirs = page.locator('.heirs [data-heir]');
+  if (!(await heirs.count())) { notes.push(`[${lang}] lineage: no one left to continue as`); return; }
+  await page.evaluate(() => document.querySelector('.heirs')?.scrollIntoView({ block: 'center' }));
+  await widths(page, `${lang} continue`);
+  await shot(page, `continue${sfx}.png`, false);
+  for (let gen = 2; gen <= 3; gen++) {
+    const h = page.locator('.heirs [data-heir]').first();
+    if (!(await h.count())) { notes.push(`[${lang}] lineage: stopped at generation ${gen - 1} (no heirs)`); return; }
+    const who = await h.getAttribute('data-name');
+    await h.click();
+    const ask = await page.locator('#heirask p').innerText();
+    await page.click('#heirask [data-heirgo]');
+    await page.waitForSelector('.handover [data-go=live]');
+    notes.push(`[${lang}] gen ${gen}: "${ask}" → ${await page.locator('.handover .story').innerText()}`);
+    await widths(page, `${lang} handover`);
+    await page.click('.handover [data-go=live]');
+    await page.waitForSelector('#scenecv');
+    const line = await page.locator('#wholine').innerText();
+    if (!/第\d+代|Generation \d+/.test(line)) errors.push(`[${lang}] gen ${gen}: no generation in the header (${line})`);
+    if (!line.includes(who.split(/[・ ]/)[0])) notes.push(`[${lang}] gen ${gen}: header "${line}" (chose ${who})`);
+    // 年が進む (自動再生・8×、自動で決める)
+    if (!(await page.locator('#autobtn.on').count())) await page.click('#autobtn').catch(() => {});
+    await page.click('[data-act=speed][data-v="8"]').catch(() => {});
+    if ((await pressed(page, '#pausebtn')) === 'true') await page.click('#pausebtn').catch(() => {});
+    const a0 = await ageOf(page).catch(() => -1);
+    await page.waitForTimeout(2500);
+    if (await page.locator('#scenecv').count()) {
+      const a1 = await ageOf(page).catch(() => -1);
+      if (a1 >= 0 && a1 <= a0) errors.push(`[${lang}] gen ${gen}: age did not move (${a0} -> ${a1})`);
+      await pause(page);
+      if (gen === 2) {
+        await widths(page, `${lang} gen2 life`);
+        if (lang === 'ja') await shot(page, 'gen2-life.png', false);
+        // 中断 → 続きから: 第2代が再開できる
+        const before = await ageOf(page);
+        await page.click('[data-act=exit]');
+        await page.click('[data-go=resume]');
+        await page.waitForSelector('#scenecv');
+        const l2 = await page.locator('#wholine').innerText();
+        if (!/第2代|Generation 2/.test(l2) || await ageOf(page) !== before) errors.push(`[${lang}] gen 2 resume failed (${l2})`);
+        else notes.push(`[${lang}] gen 2 resumed at ${before}`);
+      }
+    }
+    await finish(page);
+  }
+  // 第3代の死亡記録: 系譜・年代記
+  const lin = await page.locator('.record .lineage').innerText().catch(() => '');
+  if (!/第3代|Generation 3/.test(lin)) errors.push(`[${lang}] gen 3 record: no lineage (${lin})`);
+  else notes.push(`[${lang}] lineage: ${lin.replace(/\s+/g, ' ')}, links ${await page.locator('.record .lineage [data-record]').count()}`);
+  if ((await page.locator('.record .lineage [data-record]').count()) < 2) errors.push(`[${lang}] lineage: earlier generations are not linked to their records`);
+  await page.evaluate(() => document.querySelector('.record .rechead')?.scrollIntoView({ block: 'start' }));
+  await widths(page, `${lang} lineage`);
+  if (lang === 'ja') {
+    await shot(page, 'lineage.png', false);
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.evaluate(() => document.querySelector('.record .rechead')?.scrollIntoView({ block: 'start' }));
+    await page.waitForTimeout(80);
+    await shot(page, 'lineage-mobile.png', false);
+    await page.setViewportSize({ width: 1280, height: 900 });
+  }
+  await page.evaluate(() => document.querySelector('.chronbox')?.setAttribute('open', ''));
+  notes.push(`[${lang}] gen 3 chronicle: ${await page.locator('.chronbox .chronicle li').count()} entries, ${await page.locator('.chronbox .chronicle li').filter({ hasText: /誕生|before birth/ }).count()} before birth`);
+  // 追悼館に残すと代と系譜が出る
+  if (await page.locator('#postbtn').count()) {
+    await page.click('#postbtn');
+    await page.click('#postmsg [data-mem]');
+    await page.waitForSelector('[data-candle]');
+    const ml = await page.locator('.memorial .lineage').innerText().catch(() => '');
+    if (!/第3代|Generation 3/.test(ml)) errors.push(`[${lang}] memorial: no lineage (${ml})`);
+    else notes.push(`[${lang}] memorial lineage: ${ml.replace(/\s+/g, ' ')}`);
+    await page.click('[data-go=title]');
+  } else await page.click('[data-go=title]');
+  // 過去の人生で系譜がまとまる
+  await page.click('[data-go=past]');
+  const fam = await page.locator('.pastlist .family').count();
+  notes.push(`[${lang}] past lives grouped by line: ${fam}`);
+  if (!fam) errors.push(`[${lang}] past lives: lineage not grouped`);
+  await widths(page, `${lang} past (lineage)`);
+  // 過去の人生の画面のまま戻る (続きの流れは「タイトルへ」から始まる)
+}
+
+// 画面と同じモジュールを読み込む。vite はファイルが変わると ?t= を付けた URL で読み直すので、
+// 画面が実際に読んだ URL (いちばん新しいもの) を使う (別の URL だと別の実体になり、記録や一覧を共有しない)
+const IMP = () => {
+  window.__imp = (path) => {
+    const seen = performance.getEntriesByType('resource').map((e) => e.name).filter((n) => new URL(n).pathname === path);
+    return import(seen.length ? seen[seen.length - 1] : path);
+  };
+};
+
+// 開発ビルドの部品を直接読み込んで使う (画面と同じモジュール)。ほかの流れのために全部解放しておく
+async function unlockAll(page) {
+  await page.evaluate(async () => {
+    const S = await window.__imp('/src/meta/store.ts');
+    const U = await window.__imp('/src/meta/unlocks.ts');
+    S.devGrant(100000);
+    for (const k of U.ALL_UNLOCKS) U.unlock(k);
+  });
+}
+const tickets = (page) => page.evaluate(() => window.__ri.progress().tickets);
+
+// チケットと解放・図鑑・実績・知らせ (新しい記録から)
+async function metaChecks(page, lang, sfx, browser) {
+  // 1. 閉じた「設定して転生」(0/10)
+  await page.waitForSelector('.logo');
+  if (!(await page.evaluate(() => !!window.__ri))) errors.push(`[${lang}] dev: window.__ri missing in the dev build`);
+  const lockTxt = await page.locator('.title [data-go=setup].locked').innerText().catch(() => '');
+  if (!/0\/10/.test(lockTxt)) errors.push(`[${lang}] locked: setup button "${lockTxt}"`);
+  await widths(page, `${lang} locked title`);
+  await shot(page, `locked${sfx}.png`, false);
+  await page.click('[data-go=setup]');
+  if (!(await page.locator('#unlockask:not([hidden])').count())) errors.push(`[${lang}] locked: no explanation when clicking the locked button`);
+  // 2. おまかせで最後まで → チケットが増え、内訳が出る
+  const t0 = await tickets(page);
+  await page.click('[data-go=random]');
+  await enterLife(page);
+  await finish(page);
+  const t1 = await tickets(page);
+  const parts = await page.locator('.grant .parts li').count();
+  if (t1 <= t0 || !parts) errors.push(`[${lang}] tickets: ${t0} -> ${t1}, ${parts} parts`);
+  notes.push(`[${lang}] tickets: ${t0} -> ${t1}; ${(await page.locator('.grant .parts').innerText().catch(() => '')).replace(/\s+/g, ' ')}; achievements ${await page.locator('.grant .newach li').count()}`);
+  await page.evaluate(() => document.querySelector('.grant')?.scrollIntoView({ block: 'start' }));
+  await widths(page, `${lang} tickets`);
+  if (lang === 'ja') await shot(page, 'tickets.png', false);
+  // 3. 同じ人生は二度数えない (死亡記録が使う grantLife を同じ人生で2回) と、過去の人生を開いても増えない
+  const twice = await page.evaluate(async () => {
+    const E = await window.__imp('/src/engine/index.ts');
+    const M = await window.__imp('/src/meta/tickets.ts');
+    const h = E.liveOut(E.createHero({ seed: 424242, world: { preset: 'random' }, hero: {}, auto: true }));
+    const a = M.grantLife(h, true), b = M.grantLife(h, true);
+    return { first: a.already, second: b.already, same: a.ticketsNow === b.ticketsNow };
+  });
+  if (twice.first || !twice.second || !twice.same) errors.push(`[${lang}] grant twice: ${JSON.stringify(twice)}`);
+  const t2 = await tickets(page);
+  await page.click('[data-go=title]');
+  await page.click('[data-go=past]');
+  await page.click('.pastlist [data-i="0"]');
+  if (await tickets(page) !== t2) errors.push(`[${lang}] tickets changed on reopening a record`);
+  await page.click('[data-go=title]');
+  // 4. 10枚にして「設定して転生」を開ける
+  await page.evaluate((n) => window.__ri.grant(n), Math.max(0, 10 - t2) + 6);
+  await page.goto(BASE);
+  await page.click('[data-go=setup]');
+  await page.click('[data-go=opencustom]');
+  await page.waitForSelector('.setup #worlds');
+  const afterOpen = await tickets(page);
+  notes.push(`[${lang}] custom opened, tickets now ${afterOpen}`);
+  // 5. 1つ解放する (剣と魔法の中世のエルフ。見ていれば値引き)
+  await page.click('[data-world=medieval]');
+  await page.waitForSelector('[data-unlock="race:elf"]');
+  await page.evaluate(() => document.querySelector('[data-unlock="race:elf"]')?.scrollIntoView({ block: 'center' }));
+  await widths(page, `${lang} unlock`);
+  await shot(page, `unlock${sfx}.png`, false);
+  const price = Number((await page.locator('[data-unlock="race:elf"] .price').innerText()).replace(/\D/g, ''));
+  await page.click('[data-unlock="race:elf"]');
+  await page.click('[data-unlockyes="race:elf"]');
+  const afterUnlock = await tickets(page);
+  if (afterUnlock !== afterOpen - price || !(await page.locator('[data-k=race][data-v=elf]').count())) errors.push(`[${lang}] unlock: ${afterOpen} - ${price} != ${afterUnlock}`);
+  else notes.push(`[${lang}] unlocked elf for ${price}: ${afterOpen} -> ${afterUnlock}`);
+  // 6. 設定した人生を最後まで → チケットは増えない (実績の報酬だけは増えうる)
+  await page.click('[data-k=race][data-v=elf]');
+  await page.click('[data-go=start]');
+  await enterLife(page);
+  // 年ごとの実績の知らせ: いまのデータには年ごとの実績が無いので、確かめる用に1つ足して、知らせが出るのを見る
+  await page.evaluate(async () => {
+    const A = await window.__imp('/src/meta/achievements.ts');
+    A.useAchievements([...A.allAchievements(), { id: 'e2e.year', category: 'feat', name: { ja: '一年を越えた', en: 'One Year On' }, desc: { ja: '確かめる用', en: 'Test only' }, cond: { fact: 'age', gte: 0 }, when: 'year' }]);
+  });
+  const yearToast = page.locator('.toast', { hasText: /一年を越えた|One Year On/ });
+  for (let i = 0; i < 4 && !(await yearToast.count()) && await page.locator('#b1').count(); i++) {
+    await chooseIfAny(page);
+    if (await page.locator('#b1').isEnabled()) await page.click('#b1').catch(() => {});
+    await page.waitForTimeout(150);
+  }
+  const toasted = await yearToast.waitFor({ timeout: 3000 }).then(() => true).catch(() => false);
+  if (!toasted && !(await page.locator('#b1').count())) notes.push(`[${lang}] toast: the hero died before a year passed`);
+  if (!toasted && await page.locator('#b1').count()) errors.push(`[${lang}] toast: no toast for a year achievement`);
+  else if (lang === 'ja') await shot(page, 'toast.png', false);
+  notes.push(`[${lang}] year check ms: ${await page.locator('#app').getAttribute('data-check-ms')}`);
+  const t3 = afterUnlock; // 設定した人生を始める前の枚数 (途中で亡くなって死亡記録が先に出ても比べられるように)
+  await finish(page);
+  const t4 = await tickets(page);
+  // 実際に足された実績の報酬 (1つの人生の上限の後)。画面の各実績の +N は上限の前の値なので使わない
+  const bonus = Number(await page.locator('.grant').getAttribute('data-bonus').catch(() => '0') ?? 0);
+  if (t4 - t3 !== bonus || (await page.locator('.grant .parts li').count())) errors.push(`[${lang}] custom life: tickets ${t3} -> ${t4} (achievement bonus ${bonus})`);
+  else notes.push(`[${lang}] custom life: no tickets (achievement bonus ${bonus})`);
+  // 7. 図鑑と実績
+  await page.click('[data-go=collection]');
+  await page.waitForSelector('#bestiary');
+  notes.push(`[${lang}] bestiary met ${await page.locator('#bestiary li.met').count()}/${await page.locator('#bestiary li').count()}, encounters ${await page.locator('#encounters li.met').count()}`);
+  await widths(page, `${lang} collection`);
+  await page.evaluate(() => document.getElementById('bestiary')?.scrollIntoView({ block: 'start' }));
+  await shot(page, `bestiary${sfx}.png`, false);
+  if (lang === 'ja') {
+    await page.evaluate(() => document.getElementById('encounters')?.scrollIntoView({ block: 'start' }));
+    await shot(page, 'encounters.png', false);
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.evaluate(() => document.getElementById('bestiary')?.scrollIntoView({ block: 'start' }));
+    await page.waitForTimeout(80);
+    await shot(page, 'collection-mobile.png', false);
+    await page.setViewportSize({ width: 1280, height: 900 });
+  }
+  await page.selectOption('#bworld', 'medieval');
+  await page.click('[data-go=achievements]');
+  const got = await page.locator('.ach li.got').count();
+  if (!got) errors.push(`[${lang}] achievements: none unlocked`);
+  notes.push(`[${lang}] achievements unlocked: ${got}/${await page.locator('.ach li').count()}`);
+  await widths(page, `${lang} achievements`);
+  await shot(page, `achievements${sfx}.png`, false);
+  await page.click('[data-go=title]');
+  // 8. ストレージが使えない状態でも遊べる
+  const ctx3 = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  await ctx3.addInitScript(() => { Object.defineProperty(window, 'localStorage', { get() { throw new Error('storage blocked'); } }); });
+  const q = await ctx3.newPage();
+  const qerr = [];
+  q.on('pageerror', (e) => qerr.push(e.message));
+  q.on('console', (m) => { if (m.type() === 'error') qerr.push(m.text()); });
+  await q.goto(BASE);
+  await q.click('[data-go=random]');
+  await enterLife(q);
+  await finish(q);
+  await q.click('[data-go=collection]');
+  await q.waitForSelector('#bestiary');
+  await q.click('[data-go=achievements]');
+  await q.waitForSelector('.ach');
+  await ctx3.close();
+  if (qerr.length) errors.push(`[${lang}] no-storage: ${qerr[0]}`);
+  else notes.push(`[${lang}] no-storage: played to the end, collection and achievements opened`);
+}
+
 async function run(lang) {
   const browser = await chromium.launch();
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
   await ctx.addInitScript((l) => { try { localStorage.setItem('lang', l); } catch {} }, lang);
+  await ctx.addInitScript(IMP);
   const page = await ctx.newPage();
   current = page;
   page.on('console', (m) => {
@@ -340,6 +574,10 @@ async function run(lang) {
     await browser.close();
     return;
   }
+
+  await metaChecks(page, lang, sfx, browser);
+  await unlockAll(page);
+  await page.goto(BASE);
 
   // A: 完全ランダム
   await page.waitForSelector('.logo');
@@ -461,7 +699,8 @@ async function run(lang) {
   await finish(page);
 
   // C: README 用の life.png。剣と魔法の中世の人間で、30年ほど生きた年表
-  for (let tries = 0; tries < 8; tries++) {
+  let cDone = false;
+  for (let tries = 0; tries < 12 && !cDone; tries++) {
     await page.click('[data-go=title]');
     await page.click('[data-go=setup]');
     await page.click('[data-go=reset]');
@@ -482,7 +721,7 @@ async function run(lang) {
     if (await page.locator('.death').count()) { await page.waitForSelector('.page.death'); continue; }
     const people = await page.locator('.ring [data-act=tie]').count();
     const years = await page.locator('.timeline li.yr').count();
-    if ((people < 3 || years < 15) && tries < 7) continue;
+    if ((people < 3 || years < 15) && tries < 11) continue;
     // 人物の欄: 仲間や友がいればその人を、いなければ最初の人を開く
     const pick = page.locator('.ring [data-act=tie]').filter({ hasText: /仲間|友|師|Companion|Friend|Mentor/ }).first();
     await ((await pick.count()) ? pick : page.locator('.ring [data-act=tie]').first()).click();
@@ -527,8 +766,13 @@ async function run(lang) {
     await gridRows(page, `${lang} death full log`);
     await page.evaluate(() => document.querySelector('.fulllog')?.removeAttribute('open'));
     await shot(page, `death${sfx}.png`);
+    await lineageChecks(page, lang, sfx);
+    cDone = true;
     break;
   }
+
+  // 人物・一生・年代記・系譜の流れは、30歳まで生きた人生が要る。12回とも早く亡くなったら、確かめられなかったことを失敗にする
+  if (!cDone) errors.push(`[${lang}] flow C: no life reached 30 in 12 tries; person/lineage checks did not run`);
 
   // 過去の人生
   await page.click('[data-go=title]');

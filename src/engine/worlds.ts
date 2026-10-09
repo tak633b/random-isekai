@@ -75,6 +75,16 @@ export const WORLDS: Record<WorldId, World> = Object.fromEntries(WORLD_IDS.map((
   return [id, { id, name: { ja, en }, tags, tech, magic, powers, danger, war, medicine, law, q0, q5, ch, c, a30, b, max, races }];
 })) as Record<WorldId, World>;
 
+// 英語の文の中での世界の呼び方 (「Born in Ulruwick, in the Cultivation Realm」)。世界の名はジャンルの名なので、場所として読める形にする。
+// 日本語は世界の名そのまま
+const PLACE_EN: Record<WorldId, string> = {
+  medieval: 'the Sword-and-Sorcery Kingdom', dark: 'a grim, dark-fantasy realm', game: 'a world of Status screens', academy: 'a kingdom of nobles and academies',
+  wa: 'the Land of the Rising Sun', xianxia: 'the Cultivation Realm', steampunk: 'a city of steam and arcana', cyberpunk: 'a neon megacity',
+  space: 'the Galactic Empire', modern: 'a modern Japan with dungeons', postapoc: 'a world after the fall', ocean: 'the Archipelago',
+  desert: 'the Desert of Nomads', beast: 'the Beastfolk Wilds', myth: 'the Age of Myth', frontier: 'the frontier',
+};
+export const worldPlace = (w: World): { ja: string; en: string } => ({ ja: w.name.ja, en: PLACE_EN[w.id] ?? w.name.en });
+
 // research/03 の 5-3節に載っている、表の値で計算した平均寿命 (e0)。テストで比べる相手
 export const TABLE_E0: Record<WorldId, number> = {
   medieval: 31.6, dark: 20.4, game: 38.3, academy: 43.6, wa: 35.5, xianxia: 32.7, steampunk: 40.8, cyberpunk: 70.6,

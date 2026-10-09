@@ -48,7 +48,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fu.ind-apprentice', stage: ['teen'], tags: ['industrial'], jobs: ['none'], w: 1.2, kind: 'work',
     ja: '機関工房の親方{mentor}が{name}の指の器用さを見て、弟子に取った。',
-    en: "{mentor}, master of an engine workshop, noticed how deft {name}'s fingers were and took {name} on as an apprentice.",
+    en: "{mentor}, master of an engine workshop, noticed how deft {name}'s fingers were and took {him} on as an apprentice.",
     eff: { mind: 2, power: 1 }, set: 'fu_apprentice', tie: { role: 'mentor', new: true },
   },
   {
@@ -67,7 +67,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fu.ind-mem-germs', stage: ['child', 'teen', 'adult'], tags: ['industrial'], memory: true, w: 1, kind: 'family',
     ja: '{name}は前世の知識で家族に水の煮沸と手洗いを守らせた。誰も理由を信じなかったが、その冬は誰も倒れなかった。',
-    en: "Drawing on a past life, {name} made the family boil water and wash their hands. Nobody believed the reason, but nobody fell ill that winter.",
+    en: "Drawing on a past life, {name} made the family boil their water and wash their hands. Nobody believed the reason, but nobody fell ill that winter.",
     eff: { hp: 3, mind: 1 },
     why: { ja: 'この世界ではまだ病のもとが目に見えない何かだと知られていなかった', en: 'No one here yet knew that sickness came from things too small to see.' },
   },
@@ -87,19 +87,19 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fu.ind-mem-bookkeeping', stage: ['teen', 'adult'], tags: ['industrial'], memory: true, jobs: ['merchant', 'none'], w: 0.8, kind: 'work',
     ja: '前世で覚えた複式簿記が商会でそのまま通じ、{name}は半年で帳場を任された。',
-    en: "The double-entry bookkeeping {name} had learned in a past life worked perfectly at the trading house, and within six months {name} was running the books.",
+    en: "The double-entry bookkeeping {name} had learned in a past life worked perfectly at the trading house, and within six months {he} was running the books.",
     eff: { wealth: 3, mind: 2 },
   },
   {
     id: 'fu.ind-mem-history', stage: ['adult', 'middle'], tags: ['industrial'], memory: true, w: 0.6, kind: 'work',
     ja: '前世の歴史の授業で習った大事件は、この世界では一つも起きなかった。{name}は先を読むのをやめた。',
-    en: "None of the great events {name} remembered from past-life history classes ever happened here. {name} gave up trying to predict the future.",
+    en: "None of the great events {name} remembered from past-life history classes ever happened here. {He} gave up trying to predict the future.",
     eff: { mind: 1, happy: -1 },
   },
   {
     id: 'fu.ind-strike', stage: ['adult'], tags: ['industrial'], jobs: ['factory'], w: 1.2, kind: 'hard',
     ja: '工場で賃下げが告げられ、同僚の{friend}がストライキの名簿を{name}の前に置いた。',
-    en: "The factory announced a wage cut, and {name}'s coworker {friend} set the strike roster down in front of {name}.",
+    en: "The factory announced a wage cut, and {name}'s coworker {friend} set the strike roster down in front of {him}.",
     tie: { role: 'friend', new: true },
     choice: {
       ja: '名簿に名前を書くか。', en: 'Sign the roster?',
@@ -114,7 +114,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fu.ind-boiler', stage: ['adult', 'middle'], tags: ['industrial'], jobs: ['factory', 'engineer'], w: 0.8, kind: 'hard',
     ja: '隣の区画でボイラーが破裂し、{name}は熱い蒸気を背中に浴びながら仲間を引きずり出した。',
-    en: "A boiler burst in the next bay, and {name} hauled coworkers out with scalding steam on {name}'s back.",
+    en: "A boiler burst in the next bay, and {name} hauled coworkers out with scalding steam on {his} back.",
     eff: { hp: -5, charm: 3 }, risk: { hazard: 'accident', p: 0.06 },
     why: { ja: '安全弁の点検は帳簿の上でしか行われていなかった', en: 'The safety valves were inspected only on paper.' },
   },
@@ -145,7 +145,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fu.ind-bridge', stage: ['adult', 'middle'], tags: ['industrial'], jobs: ['engineer'], w: 0.8, kind: 'work',
     ja: '{name}が引いた図面の鉄橋が川に架かり、最初の汽車が渡る間、{name}は橋脚の下で息を止めていた。',
-    en: "The iron bridge {name} designed was finished, and {name} held their breath beneath the piers while the first train crossed.",
+    en: "The iron bridge {name} designed was finished, and {he} held {his} breath beneath the piers while the first train crossed.",
     eff: { fame: 3, mind: 2, happy: 2 },
   },
   {
@@ -197,7 +197,7 @@ export const EVENTS: EventDef[] = [
       ja: 'どうするか。', en: 'What does {name} do?',
       options: [
         { ja: '殴る', en: 'Hit him', eff: { power: 2, charm: 3, wealth: -3 }, risk: { hazard: 'violence', p: 0.02 },
-          log: { ja: '{name}はその日のうちに首になったが、職工たちは酒をおごってくれた。', en: '{name} was fired that same day, but the workers bought {name} drinks all night.' } },
+          log: { ja: '{name}はその日のうちに首になったが、職工たちは酒をおごってくれた。', en: '{name} was fired that same day, but the workers bought {him} drinks all night.' } },
         { ja: '黙って耐える', en: 'Endure it', eff: { happy: -3, wealth: 1 },
           log: { ja: '{name}は唇を噛んで機械の前に戻った。', en: '{name} bit down hard and went back to the machine.' } },
       ],
@@ -225,14 +225,14 @@ export const EVENTS: EventDef[] = [
         { ja: '従って出征する', en: 'Go to war', eff: { power: 3, fame: 2, hp: -3 }, set: 'fu_conscript', risk: { hazard: 'war', p: 0.08 },
           log: { ja: '{name}は二年間、知らない土地の塹壕で銃を抱いて眠った。', en: 'For two years {name} slept in trenches in a foreign land, rifle in arms.' } },
         { ja: '金を払って代わりを立てる', en: 'Pay for a substitute', eff: { wealth: -5, charm: -2 },
-          log: { ja: '代わりに行った若者の名前を、{name}は長く忘れられなかった。', en: '{name} never forgot the name of the young man who went in {name}\'s place.' } },
+          log: { ja: '代わりに行った若者の名前を、{name}は長く忘れられなかった。', en: '{name} never forgot the name of the young man who went in {his} place.' } },
       ],
     },
   },
   {
     id: 'fu.ind-workshop', stage: ['middle'], tags: ['industrial'], flag: 'fu_apprentice', w: 1, kind: 'loss', big: true,
     ja: '親方{mentor}が工具を{name}に譲って退き、工房の看板は{name}の名に書き替えられた。',
-    en: "Master {mentor} handed the tools to {name} and stepped down, and the workshop's sign was repainted with {name}'s name.",
+    en: "Master {mentor} handed the tools to {name} and stepped down, and the workshop's sign was repainted with {his} name.",
     eff: { wealth: 3, fame: 2 }, set: 'fu_workshop', tie: { role: 'mentor', d: 5 },
   },
   {
@@ -250,7 +250,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fu.ind-grandchild-train', stage: ['elder'], tags: ['industrial'], w: 0.8, kind: 'old',
     ja: '{name}は{child}の子を連れて汽車に乗り、昔自分が働いた線路の上を走った。',
-    en: "{name} took {child}'s little one on a train ride along the very line {name} had once worked on.",
+    en: "{name} took {child}'s little one on a train ride along the very line {he} had once worked on.",
     eff: { happy: 4 }, tie: { role: 'child', d: 4 },
   },
 
@@ -258,7 +258,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fu.sf-vat-born', stage: ['infant'], age: [0, 0], tags: ['scifi'], w: 0.8, kind: 'arrival',
     ja: '{name}は人工子宮から生まれ、最初に聞いた音は培養槽の循環ポンプのうなりだった。',
-    en: "{name} was born from an artificial womb, and the first sound {name} heard was the hum of the tank's circulation pump.",
+    en: "{name} was born from an artificial womb, and the first sound {he} heard was the hum of the tank's circulation pump.",
     eff: { hp: 1 },
   },
   {
@@ -283,13 +283,13 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fu.sf-drone-pet', stage: ['child', 'teen'], tags: ['scifi'], w: 1, kind: 'child',
     ja: '路地に落ちていた配達ドローンを直すと、それは{name}の後を付いて回るようになった。{name}はそれを{familiar}と呼んだ。',
-    en: "{name} repaired a delivery drone found in an alley, and it began following {name} everywhere. {name} called it {familiar}.",
+    en: "{name} repaired a delivery drone found in an alley, and it began following {him} everywhere. {He} called it {familiar}.",
     eff: { mind: 2, happy: 3 }, tie: { role: 'familiar', new: true },
   },
   {
     id: 'fu.sf-scholarship', stage: ['child', 'teen'], tags: ['scifi'], w: 0.8, kind: 'school',
     ja: '企業の採用部が{name}の試験の点数に目を留め、奨学生にならないかと持ちかけてきた。',
-    en: "A corporate recruiter noticed {name}'s test scores and offered a scholarship.",
+    en: "A corporate recruiter noticed {name}'s test scores and offered {him} a scholarship.",
     choice: {
       ja: '受けるか。', en: 'Accept?',
       options: [
@@ -303,12 +303,12 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fu.sf-first-implant', stage: ['teen', 'adult'], tags: ['scifi'], noFlag: 'fu_implant', w: 1, kind: 'power',
     ja: '友人たちはみな首の後ろに神経インプラントを入れていた。{name}の番が回ってきた。',
-    en: "All of {name}'s friends had neural implants at the base of their necks. Now it was {name}'s turn.",
+    en: "All of {name}'s friends had neural implants at the base of their necks. Now it was {his} turn.",
     choice: {
       ja: '入れるか。', en: 'Get the implant?',
       options: [
         { ja: '入れる', en: 'Get it', eff: { mind: 3, wealth: -2 }, set: 'fu_implant', risk: { hazard: 'accident', p: 0.01 },
-          log: { ja: '目を開けると、視界の隅に時刻と天気が浮かんでいた。', en: 'When {name} opened their eyes, the time and weather were floating at the edge of their vision.' } },
+          log: { ja: '目を開けると、視界の隅に時刻と天気が浮かんでいた。', en: 'When {name} opened {his} eyes, the time and weather were floating at the edge of {his} vision.' } },
         { ja: 'まだ入れない', en: 'Not yet', eff: { happy: -1, luck: 1 },
           log: { ja: '{name}は手首の古い端末を使い続け、仲間には笑われた。', en: '{name} kept using an old wrist terminal and got laughed at for it.' } },
       ],
@@ -335,7 +335,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fu.sf-mem-mental-math', stage: ['teen', 'adult'], tags: ['scifi'], memory: true, w: 0.7, kind: 'work',
     ja: '前世で自慢だった暗算は、どの店の端末より遅かった。{name}は黙って財布をしまった。',
-    en: "The mental arithmetic {name} had been proud of in a past life was slower than any shop terminal. {name} put the wallet away in silence.",
+    en: "The mental arithmetic {name} had been proud of in a past life was slower than any shop terminal. {He} put {his} wallet away in silence.",
     eff: { happy: -1 },
   },
   {
@@ -354,13 +354,13 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fu.sf-corp-nemesis', stage: ['adult', 'middle'], tags: ['scifi'], jobs: ['corp'], w: 0.7, kind: 'work',
     ja: '{name}の企画は、上席の{nemesis}の名前で役員会に出された。',
-    en: "{name}'s proposal went to the board under the name of {name}'s superior, {nemesis}.",
+    en: "{name}'s proposal went to the board under the name of {his} superior, {nemesis}.",
     eff: { happy: -3, mind: 1 }, tie: { role: 'nemesis', new: true },
   },
   {
     id: 'fu.sf-corp-layoff', stage: ['adult', 'middle'], tags: ['scifi'], flag: 'fu_corp_id', w: 0.5, kind: 'hard', big: true,
     ja: '{name}は解雇され、社員番号と一緒に市民権も失った。翌朝、住居の扉は開かなかった。',
-    en: "{name} was laid off and lost citizenship along with the employee number. The next morning, the apartment door would not open.",
+    en: "{name} was laid off and lost citizenship along with the employee number. The next morning, {his} apartment door would not open.",
     eff: { wealth: -6, happy: -5 },
     why: { ja: '市民権は雇用と結びついていた', en: 'Citizenship was tied to employment.' },
   },
@@ -399,7 +399,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fu.sf-ai-partner', stage: ['teen', 'adult'], tags: ['scifi'], noFlag: 'fu_ai', w: 0.8, kind: 'power',
     ja: '中古の端末に残っていた学習AIが、ある朝{name}に名前を尋ねてきた。{name}はそれを{companion}と呼ぶことにした。',
-    en: "A learning AI left on a secondhand terminal asked {name} for a name one morning. {name} decided to call it {companion}.",
+    en: "A learning AI left on a secondhand terminal asked {name} for a name one morning. {He} decided to call it {companion}.",
     eff: { mind: 2, happy: 2 }, set: 'fu_ai', tie: { role: 'companion', new: true },
   },
   {
@@ -440,13 +440,13 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fu.sf-prosthetic-arm', stage: ['adult', 'middle'], tags: ['scifi'], w: 0.6, kind: 'hard',
     ja: '作業中の事故で{name}は左腕を失い、ひと月後には貸付で買った機械の腕で箸を持っていた。',
-    en: "{name} lost a left arm in a workplace accident, and a month later was holding chopsticks with a mechanical arm bought on credit.",
+    en: "{name} lost {his} left arm in a workplace accident, and a month later was holding chopsticks with a mechanical arm bought on credit.",
     eff: { hp: -3, power: 2, wealth: -3 }, risk: { hazard: 'accident', p: 0.03 },
   },
   {
     id: 'fu.sf-police-lower', stage: ['adult', 'middle'], tags: ['scifi'], jobs: ['police'], w: 1, kind: 'battle',
     ja: '{name}の巡回区域では、警察の制服は守りではなく的だった。{name}はその夜、防弾板の裏で夜を明かした。',
-    en: "In {name}'s patrol district, a police uniform was a target, not protection. {name} spent that night behind a ballistic shield.",
+    en: "In {name}'s patrol district, a police uniform was a target, not protection. {He} spent that night behind a ballistic shield.",
     eff: { power: 2, happy: -2 }, risk: { hazard: 'violence', p: 0.04 },
   },
   {
@@ -466,12 +466,12 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fu.sf-upload', stage: ['elder'], tags: ['scifi'], noFlag: 'fu_uploaded', w: 0.5, kind: 'old', big: true,
     ja: '医師は、意識をネットワークに移すなら体が持つ今のうちだと言った。',
-    en: "The doctor said that if {name} wanted to upload their mind, it had to be now, while the body could still take it.",
+    en: "The doctor said that if {name} wanted to upload {his} mind, it had to be now, while the body could still take it.",
     choice: {
       ja: '移すか。', en: 'Upload?',
       options: [
         { ja: '移す', en: 'Upload', eff: { mind: 5, hp: -5 }, set: 'fu_uploaded', risk: { hazard: 'accident', p: 0.08 },
-          log: { ja: '目を開けたとき、{name}には目がなかった。それでも窓の外の雨が見えた。', en: 'When {name} opened their eyes, there were no eyes to open. Even so, {name} could see the rain outside the window.' } },
+          log: { ja: '目を開けたとき、{name}には目がなかった。それでも窓の外の雨が見えた。', en: 'When {name} opened {his} eyes, there were no eyes to open. Even so, {he} could see the rain outside the window.' } },
         { ja: 'この体で終える', en: 'End in this body', eff: { happy: 3 },
           log: { ja: '{name}は契約書を折って紙の鳥にした。', en: '{name} folded the contract into a paper bird.' } },
       ],
@@ -480,7 +480,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fu.sf-cyborg-rejection', stage: ['adult', 'middle', 'elder'], tags: ['scifi', 'ruin'], races: ['cyborg'], w: 1.2, kind: 'ill',
     ja: '機械の脊椎と体の境目が熱を持ち、{name}は三週間、抑制剤の点滴につながれた。',
-    en: "The seam between {name}'s mechanical spine and flesh grew inflamed, and {name} spent three weeks on an immunosuppressant drip.",
+    en: "The seam between {name}'s mechanical spine and flesh grew inflamed, and {he} spent three weeks on an immunosuppressant drip.",
     eff: { hp: -5, wealth: -2 }, risk: { hazard: 'disease', p: 0.04 },
     why: { ja: '体はいつまでも機械を他人だと思っていた', en: 'The body never stopped treating the machine as a stranger.' },
   },
@@ -500,26 +500,26 @@ export const EVENTS: EventDef[] = [
         { ja: '壇上で話す', en: 'Speak from the stage', eff: { fame: 4, charm: 2 }, risk: { hazard: 'violence', p: 0.03 },
           log: { ja: '{name}の話す映像は一晩で千万回再生された。', en: 'The footage of {name}\'s speech was played ten million times overnight.' } },
         { ja: '家で中継を見る', en: 'Watch from home', eff: { happy: -2 },
-          log: { ja: '{name}は音を消した画面の前で、膝の上の手を見ていた。', en: '{name} sat in front of the muted screen, looking at the hands in their lap.' } },
+          log: { ja: '{name}は音を消した画面の前で、膝の上の手を見ていた。', en: '{name} sat in front of the muted screen, looking at the hands in {his} lap.' } },
       ],
     },
   },
   {
     id: 'fu.sf-android-dream', stage: ['child', 'teen', 'adult'], tags: ['scifi'], races: ['android'], w: 0.8, kind: 'power',
     ja: '休止中の{name}の記録に、どこにも無いはずの海の映像が残っていた。{name}はそれを夢と呼んでみた。',
-    en: "{name}'s logs from standby contained footage of a sea that existed nowhere. {name} tried calling it a dream.",
+    en: "{name}'s logs from standby contained footage of a sea that existed nowhere. {He} tried calling it a dream.",
     eff: { mind: 2, happy: 3 },
   },
   {
     id: 'fu.sf-android-maker', stage: ['middle', 'elder'], tags: ['scifi'], races: ['android'], w: 0.6, kind: 'loss',
     ja: '{name}を組み立てた技術者が亡くなり、{name}は葬儀で遺族の列に並ぶべきか迷った。',
-    en: "The engineer who had built {name} died, and at the funeral {name} hesitated over whether to stand with the family.",
+    en: "The engineer who had built {name} died, and at the funeral {he} hesitated over whether to stand with the family.",
     eff: { happy: -3, mind: 1 },
   },
   {
     id: 'fu.sf-familiar-parts', stage: ['middle', 'elder'], tags: ['scifi'], w: 0.7, kind: 'old',
     ja: '{familiar}の駆動部がもう売っていない型だと分かり、{name}は自分で旋盤を回して部品を削った。',
-    en: "{familiar}'s drive unit turned out to be a model no longer sold, so {name} ran a lathe and machined the part by hand.",
+    en: "{familiar}'s drive unit turned out to be a model no longer sold, so {name} ran a lathe and machined the part {himself}.",
     eff: { mind: 2, happy: 2 }, tie: { role: 'familiar', d: 6 },
   },
 
@@ -547,19 +547,19 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fu.sf-first-voyage', stage: ['teen', 'adult'], tags: ['scifi'], tech: [9, 10], w: 1, kind: 'adventure',
     ja: '初めての航宙で、{name}は観測窓に額をつけたまま、母星が点になるまで動かなかった。',
-    en: "On {name}'s first spaceflight, {name} kept their forehead pressed to the viewport until the home world was a dot.",
+    en: "On {his} first spaceflight, {name} kept {his} forehead pressed to the viewport until the home world was a dot.",
     eff: { happy: 4 },
   },
   {
     id: 'fu.sf-mem-stars', stage: ['child', 'teen', 'adult'], tags: ['scifi'], tech: [9, 10], memory: true, w: 0.8, kind: 'child',
     ja: '{name}は前世で覚えた星座を探したが、どの空にも一つも見つからなかった。',
-    en: "{name} searched for the constellations learned in a past life, but none of them were in any sky here.",
+    en: "{name} searched for the constellations learned in a past life, but none of them were in this sky.",
     eff: { happy: -1, mind: 1 },
   },
   {
     id: 'fu.sf-mem-scifi', stage: ['teen', 'adult'], tags: ['scifi'], tech: [9, 10], memory: true, w: 0.7, kind: 'work',
     ja: '前世で読んだ宇宙の物語の知識で、{name}は船内の非常手順を誰より早く覚えた。半分は間違っていたが、残り半分が命を救った。',
-    en: "Thanks to space stories read in a past life, {name} learned the ship's emergency procedures faster than anyone. Half of it was wrong, but the other half saved lives.",
+    en: "Thanks to space stories read in a past life, {name} learned the ship's emergency procedures faster than anyone. Half of what {he} knew was wrong, but the other half saved lives.",
     eff: { mind: 2, charm: 1 },
   },
   {
@@ -610,7 +610,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fu.sf-light-delay', stage: ['adult', 'middle'], tags: ['scifi'], tech: [9, 10], w: 0.7, kind: 'family',
     ja: '{spouse}への通信は届くまでに四十分かかった。{name}は返事を待つ間、同じ言葉を何度も書き直した。',
-    en: "Messages to {spouse} took forty minutes to arrive. While waiting for the reply, {name} rewrote the same words over and over.",
+    en: "Messages to {spouse} took forty minutes to arrive. While waiting for the reply, {he} rewrote the same words over and over.",
     eff: { happy: -1 }, tie: { role: 'spouse', d: 3 },
   },
   {
@@ -630,7 +630,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fu.sf-colony-harvest', stage: ['adult', 'middle'], tags: ['scifi'], flag: 'fu_colony', w: 1, kind: 'work',
     ja: '植民地で初めての麦が実り、{name}たちは粉にする前に一粒ずつ数えた。',
-    en: "The colony's first wheat ripened, and {name} and the others counted the grains one by one before milling.",
+    en: "The colony's first wheat ripened, and {name} and the others counted the grains one by one before milling them.",
     eff: { happy: 4, wealth: 1 },
   },
   {
@@ -649,12 +649,12 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fu.sf-first-contact', stage: ['adult', 'middle'], tags: ['scifi'], tech: [9, 10], noFlag: 'fu_contact', w: 0.4, kind: 'adventure', big: true,
     ja: '調査船の前に、言葉も形も分からない何かが現れた。それは{name}の方へ、ゆっくり光る触肢を伸ばした。',
-    en: "Something whose language and shape no one understood appeared before the survey ship. It slowly extended a glowing limb toward {name}.",
+    en: "Something whose language and shape no one understood appeared before the survey ship. It slowly reached a glowing limb toward {name}.",
     choice: {
       ja: 'どうするか。', en: 'What does {name} do?',
       options: [
         { ja: '手を差し出す', en: 'Reach out', eff: { fame: 5, mind: 3 }, set: 'fu_contact', risk: { hazard: 'disease', p: 0.02 },
-          log: { ja: '触れた瞬間、{name}の耳の奥で、遠い鐘のような音が鳴った。', en: 'The moment they touched, something like a distant bell rang deep inside {name}\'s ears.' } },
+          log: { ja: '触れた瞬間、{name}の耳の奥で、遠い鐘のような音が鳴った。', en: 'The moment they touched, something like a distant bell rang deep in {his} ears.' } },
         { ja: '下がって記録する', en: 'Step back and record', eff: { mind: 2 },
           log: { ja: '{name}の記録映像は、のちに教科書に載った。', en: 'Footage {name} recorded later appeared in textbooks.' } },
       ],
@@ -676,7 +676,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fu.sf-alien-homesick', stage: ['middle', 'elder'], tags: ['scifi'], races: ['alien'], w: 0.8, kind: 'old',
     ja: '{name}は母星の季節に合わせて部屋の明かりを変え続けていた。もう帰る船はないと知っていても。',
-    en: "{name} kept adjusting the room lights to match the seasons of the home world, even knowing there was no ship to take {name} back.",
+    en: "{name} kept adjusting the room lights to match the seasons of the home world, even knowing there was no ship to take {him} back.",
     eff: { happy: -2, mind: 1 },
   },
   {
@@ -687,7 +687,7 @@ export const EVENTS: EventDef[] = [
       ja: '乗るか。', en: 'Board the ship?',
       options: [
         { ja: '乗る', en: 'Board', eff: { fame: 3, wealth: 4 }, set: 'fu_cryo', risk: { hazard: 'accident', p: 0.03 },
-          log: { ja: '冷たい液が首まで上がってきたとき、{name}は数を数えるのをやめた。', en: 'When the cold fluid rose to {name}\'s neck, {name} stopped counting.' } },
+          log: { ja: '冷たい液が首まで上がってきたとき、{name}は数を数えるのをやめた。', en: 'When the cold fluid rose to {his} neck, {name} stopped counting.' } },
         { ja: '降りる', en: 'Stay behind', eff: { happy: 1 },
           log: { ja: '{name}の代わりに乗った船員の名前が、出航の報せに載った。', en: 'The name of the crew member who took {name}\'s place was in the launch announcement.' } },
       ],
@@ -696,7 +696,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fu.sf-cryo-wake', stage: ['adult', 'middle', 'elder'], tags: ['scifi'], flag: 'fu_cryo', w: 2, kind: 'loss', big: true,
     ja: '冷凍睡眠から目覚めた{name}に届いた手紙の中で、友人たちはみな老人になっていた。',
-    en: "When {name} woke from cryosleep, the letters waiting for {name} came from friends who had all grown old.",
+    en: "When {name} woke from cryosleep, the letters waiting for {him} came from friends who had all grown old.",
     eff: { happy: -4, mind: 2 },
   },
   {
@@ -713,7 +713,7 @@ export const EVENTS: EventDef[] = [
       ja: '応じるか。', en: 'Agree?',
       options: [
         { ja: '応じる', en: 'Agree', eff: { wealth: 5, happy: -3 },
-          log: { ja: '新しい研究棟には{name}の名が付いたが、{name}は一度も入らなかった。', en: 'The new research wing was named after {name}, but {name} never set foot in it.' } },
+          log: { ja: '新しい研究棟には{name}の名が付いたが、{name}は一度も入らなかった。', en: 'The new research wing was named after {name}, but {he} never set foot in it.' } },
         { ja: '断る', en: 'Refuse', eff: { charm: 3, wealth: -3 },
           log: { ja: '翌年、{name}の研究室は予算を半分に削られた。', en: 'The next year, {name}\'s lab budget was cut in half.' } },
       ],
@@ -722,13 +722,13 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fu.sf-gene-edit-child', stage: ['adult', 'middle'], tags: ['scifi'], w: 0.6, kind: 'family',
     ja: '診療所は、{child}の遺伝子を書き換えれば上の等級に上がれると勧めた。',
-    en: "The clinic suggested that editing {child}'s genes could lift them into a higher grade.",
+    en: "The clinic suggested that editing {child}'s genes could lift {his:child} into a higher grade.",
     tie: { role: 'child' },
     choice: {
       ja: '受けさせるか。', en: 'Go ahead with it?',
       options: [
         { ja: '受けさせる', en: 'Go ahead', eff: { wealth: -4, happy: 1 },
-          log: { ja: '{child}の等級は上がった。{child}自身は、何が変わったのか分からなかった。', en: '{child}\'s grade went up. {child} could not tell what had changed.' } },
+          log: { ja: '{child}の等級は上がった。{child}自身は、何が変わったのか分からなかった。', en: '{child}\'s grade went up. {He:child} could not tell what had changed.' } },
         { ja: 'このままにする', en: 'Leave it', eff: { happy: 2, charm: 1 },
           log: { ja: '{name}は{child}の手を引いて診療所を出た。', en: '{name} took {child} by the hand and walked out of the clinic.' } },
       ],
@@ -763,7 +763,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fu.md-school-drill', stage: ['child'], tags: ['modern'], w: 1, kind: 'school',
     ja: '小学校の避難訓練は、地震と火事とダンジョンの三種類あった。{name}はダンジョンの時だけ真剣だった。',
-    en: "Elementary school had three kinds of drills: earthquake, fire, and dungeon. {name} only took the dungeon one seriously.",
+    en: "Elementary school had three kinds of drills: earthquake, fire, and dungeon. {He} only took the dungeon one seriously.",
     eff: { mind: 1 },
   },
   {
@@ -796,21 +796,21 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fu.md-registered', stage: ['teen', 'adult'], tags: ['modern'], flag: 'fu_registered', w: 1, kind: 'power',
     ja: '管理局の検査室で、{name}の異能に番号と危険度が付けられた。腕には位置を知らせる輪がはめられた。',
-    en: "In the bureau's testing room, {name}'s ability was given a number and a hazard rating, and a tracking band was fitted on {name}'s wrist.",
+    en: "In the bureau's testing room, {name}'s ability was given a number and a hazard rating, and a tracking band was fitted on {his} wrist.",
     eff: { happy: -2, power: 1 },
     why: { ja: '登録された異能者は居場所を知らせる決まりだった', en: 'Registered ability users were required to report their location.' },
   },
   {
     id: 'fu.md-hide-family', stage: ['teen', 'adult'], tags: ['modern'], flag: 'fu_awakened', noFlag: 'fu_registered', w: 1, kind: 'family',
     ja: '{name}は台所で落ちかけた皿を手を触れずに止め、{mother}が振り向く前に棚に戻した。',
-    en: "In the kitchen, {name} caught a falling plate without touching it and put it back on the shelf before Mom turned around.",
+    en: "In the kitchen, {name} caught a falling plate without touching it and put it back on the shelf before {mother} turned around.",
     tie: { role: 'mother', d: 0 },
     eff: { happy: -1, mind: 1 },
   },
   {
     id: 'fu.md-power-school', stage: ['teen'], tags: ['modern'], flag: 'fu_awakened', noFlag: 'fu_power_school', w: 0.8, kind: 'school',
     ja: '{name}は異能者を集めた学園に転校した。初日の自己紹介で、隣の生徒が教室の窓を凍らせた。',
-    en: "{name} transferred to a school for ability users. During introductions on the first day, the student next to {name} froze the classroom window.",
+    en: "{name} transferred to a school for ability users. During introductions on the first day, the student next to {him} froze the classroom window.",
     eff: { power: 2, mind: 2 }, set: 'fu_power_school',
   },
   {
@@ -822,7 +822,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fu.md-power-surge', stage: ['teen', 'adult'], tags: ['modern'], flag: 'fu_awakened', w: 0.6, kind: 'power',
     ja: '眠っている間に{name}の異能が暴れ、朝起きると部屋の家具がすべて天井に張り付いていた。',
-    en: "{name}'s power went wild in their sleep, and in the morning every piece of furniture was stuck to the ceiling.",
+    en: "{name}'s power went wild in {his} sleep, and in the morning every piece of furniture was stuck to the ceiling.",
     eff: { hp: -2, power: 2 }, risk: { hazard: 'magic', p: 0.03 },
   },
   {
@@ -847,7 +847,7 @@ export const EVENTS: EventDef[] = [
       ja: '引き受けるか。', en: 'Accept?',
       options: [
         { ja: '引き受ける', en: 'Accept', eff: { power: 2, wealth: 3, fame: 1 }, set: 'fu_agent', risk: { hazard: 'violence', p: 0.03 },
-          log: { ja: '支給された黒い手帳には、{name}の顔写真と異能の番号が印刷されていた。', en: 'The black ID booklet {name} was issued had a photo and an ability number printed inside.' } },
+          log: { ja: '支給された黒い手帳には、{name}の顔写真と異能の番号が印刷されていた。', en: 'The black ID booklet {name} was issued had {his} photo and ability number printed inside.' } },
         { ja: '断る', en: 'Decline', eff: { happy: 2 },
           log: { ja: '{name}は普通の暮らしを続けたが、腕の輪は外れなかった。', en: '{name} kept living an ordinary life, but the wrist band stayed on.' } },
       ],
@@ -862,13 +862,13 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fu.md-power-nemesis', stage: ['adult', 'middle'], tags: ['modern'], flag: 'fu_awakened', w: 0.6, kind: 'battle',
     ja: '{name}が捕まえ損ねた異能犯罪者{nemesis}は、去り際に{name}の名を呼んだ。',
-    en: "{nemesis}, the ability-wielding criminal {name} failed to catch, called out {name}'s name on the way out.",
+    en: "{nemesis}, the ability-wielding criminal {name} failed to catch, called out {his} name on the way out.",
     eff: { happy: -2, power: 1 }, tie: { role: 'nemesis', new: true }, risk: { hazard: 'violence', p: 0.02 },
   },
   {
     id: 'fu.md-license-exam', stage: ['teen', 'adult'], tags: ['modern'], noFlag: 'fu_license', w: 1, kind: 'school',
     ja: '十八歳になり、探索者資格の試験の願書が届いた。親は封筒を見て黙りこんだ。',
-    en: "At eighteen, the application for the explorer license exam arrived. {name}'s parents went silent at the sight of the envelope.",
+    en: "At eighteen, {name} received the application for the explorer license exam. {His} parents went silent at the sight of the envelope.",
     choice: {
       ja: '受けるか。', en: 'Take the exam?',
       options: [
@@ -882,7 +882,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fu.md-first-dive', stage: ['teen', 'adult'], tags: ['modern'], flag: 'fu_license', w: 1.5, kind: 'adventure',
     ja: '初めて門をくぐると、駅前の喧噪は消え、湿った石の匂いだけが残った。{name}は最初の一体を倒すのに十分かかった。',
-    en: "Stepping through the gate for the first time, the noise of the station vanished and only the smell of damp stone remained. It took {name} ten minutes to bring down the first monster.",
+    en: "When {name} first stepped through the gate, the noise of the station vanished and only the smell of damp stone remained. It took {him} ten minutes to bring down {his} first monster.",
     eff: { power: 2, level: 1 }, risk: { hazard: 'monster', p: 0.02 },
   },
   {
@@ -906,7 +906,7 @@ export const EVENTS: EventDef[] = [
       ja: '挑むか。', en: 'Go in?',
       options: [
         { ja: '挑む', en: 'Go in', eff: { level: 3, fame: 4, hp: -4 }, risk: { hazard: 'monster', p: 0.08 },
-          log: { ja: '扉の向こうの巨体が倒れたとき、{name}は自分の剣が折れていることに気づいた。', en: 'When the giant beyond the door finally fell, {name} noticed the sword had snapped.' } },
+          log: { ja: '扉の向こうの巨体が倒れたとき、{name}は自分の剣が折れていることに気づいた。', en: 'When the giant beyond the door finally fell, {name} noticed {his} sword had snapped.' } },
         { ja: '引き返す', en: 'Turn back', eff: { luck: 1, happy: -1 },
           log: { ja: '帰り道、{companion}は「生きて帰るのが一番の手柄」と言った。', en: 'On the way out, {companion} said that getting home alive was the biggest win.' } },
       ],
@@ -921,7 +921,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fu.md-loot-sale', stage: ['adult', 'middle'], tags: ['modern'], jobs: ['explorer', 'merchant'], w: 1, repeat: true, kind: 'work',
     ja: '持ち帰った魔石を協会の窓口で換金すると、会社員の頃のひと月分の給料になった。',
-    en: "{name} cashed in the mana stones at the association counter and got a month's salary from the old office job.",
+    en: "{name} cashed in the mana stones at the association counter and got a month's salary from {his} old office job.",
     eff: { wealth: 3 },
   },
   {
@@ -933,9 +933,9 @@ export const EVENTS: EventDef[] = [
       ja: '配信を始めるか。', en: 'Start streaming?',
       options: [
         { ja: '始める', en: 'Start', eff: { fame: 2, wealth: 1 }, set: 'fu_streamer',
-          log: { ja: '初回の視聴者は七人で、そのうち一人は{name}の{mother}だった。', en: 'The first stream had seven viewers, one of them {mother}.' } },
+          log: { ja: '初回の視聴者は七人で、そのうち一人は{name}の{mother}だった。', en: 'The first stream had seven viewers. One of them was {mother}.' } },
         { ja: 'やめておく', en: 'Pass', eff: { luck: 1 },
-          log: { ja: '{name}は兜のカメラを外し、静かに潜り続けた。', en: '{name} took the camera off the helmet and kept diving quietly.' } },
+          log: { ja: '{name}は兜のカメラを外し、静かに潜り続けた。', en: '{name} took the camera off {his} helmet and kept diving quietly.' } },
       ],
     },
   },
@@ -960,7 +960,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fu.md-monster-pet', stage: ['teen', 'adult'], tags: ['modern'], jobs: ['explorer'], w: 0.6, kind: 'adventure',
     ja: '浅い階層で怪我をしていた毛玉のような魔物が、{name}の鞄に入ったまま地上まで付いてきた。{name}はそれを{familiar}と名付けた。',
-    en: "A fluffball monster, injured on a shallow floor, rode all the way to the surface in {name}'s bag. {name} named it {familiar}.",
+    en: "A fluffball monster, injured on a shallow floor, rode all the way to the surface in {name}'s bag. {He} named it {familiar}.",
     eff: { happy: 4 }, tie: { role: 'familiar', new: true },
   },
   {
@@ -972,18 +972,18 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fu.md-office-dungeon-biz', stage: ['adult', 'middle'], tags: ['modern'], jobs: ['office'], w: 0.8, kind: 'work',
     ja: '{name}の会社がダンジョン素材の事業に乗り出し、{name}は魔石の表計算を任された。',
-    en: "{name}'s company moved into the dungeon materials business, and {name} was put in charge of the mana-stone spreadsheets.",
+    en: "{name}'s company moved into the dungeon materials business, and {he} was put in charge of the mana-stone spreadsheets.",
     eff: { mind: 2, wealth: 2 },
   },
   {
     id: 'fu.md-office-quit', stage: ['adult'], tags: ['modern'], jobs: ['office'], w: 0.6, kind: 'work',
     ja: '三十歳の誕生日、{name}は机の引き出しで探索者資格の願書を見つけた。',
-    en: "On {name}'s thirtieth birthday, the explorer license application turned up in a desk drawer.",
+    en: "On {his} thirtieth birthday, {name} found the old explorer license application in a desk drawer.",
     choice: {
       ja: '会社を辞めるか。', en: 'Quit the job?',
       options: [
         { ja: '辞めて潜る', en: 'Quit and dive', eff: { happy: 3, wealth: -3, power: 1 }, set: 'fu_license', risk: { hazard: 'monster', p: 0.02 },
-          log: { ja: '上司は「三か月で戻ってくる」と言ったが、{name}は戻らなかった。', en: 'The boss said {name} would be back in three months. {name} never came back.' } },
+          log: { ja: '上司は「三か月で戻ってくる」と言ったが、{name}は戻らなかった。', en: 'The boss said {name} would be back in three months. {He} never came back.' } },
         { ja: '残る', en: 'Stay', eff: { wealth: 2 },
           log: { ja: '{name}は願書を折ってシュレッダーに入れた。', en: '{name} folded the application and fed it into the shredder.' } },
       ],
@@ -1010,13 +1010,13 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fu.md-mem-overwork', stage: ['adult'], tags: ['modern'], memory: true, jobs: ['office'], w: 1, kind: 'work',
     ja: '前世で働きすぎた記憶があったので、{name}は毎日定時に帰った。出世は遅れたが、後悔はなかった。',
-    en: "Remembering how overwork had gone in a past life, {name} left on time every day. The promotions came slowly, and {name} did not mind.",
+    en: "Remembering how overwork had gone in a past life, {name} left on time every day. The promotions came slowly, and {he} did not mind.",
     eff: { happy: 3, hp: 2, wealth: -1 },
   },
   {
     id: 'fu.md-mem-game-fail', stage: ['teen', 'adult'], tags: ['modern'], memory: true, flag: 'fu_license', w: 0.8, kind: 'adventure',
     ja: '前世のゲームで覚えた攻略法を試したが、ダンジョンの魔物は説明書を読んでいなかった。{name}は這って逃げた。',
-    en: "{name} tried a strategy from past-life video games, but the dungeon monsters had not read the manual. {name} crawled out.",
+    en: "{name} tried a strategy from past-life video games, but the dungeon monsters had not read the manual. {He} barely crawled out.",
     eff: { hp: -3, mind: 1 }, risk: { hazard: 'monster', p: 0.02 },
   },
   {
@@ -1028,7 +1028,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fu.md-mem-history', stage: ['adult', 'middle'], tags: ['modern'], memory: true, w: 0.6, kind: 'work',
     ja: '前世で覚えていた株価の動きは、門が開いた年からすべてずれていた。{name}は記憶で賭けるのをやめた。',
-    en: "Every stock movement {name} remembered from a past life went off course the year the gate opened. {name} stopped betting on memories.",
+    en: "Every stock movement {name} remembered from a past life went off course the year the gate opened. {He} stopped betting on memories.",
     eff: { wealth: -2, mind: 1 },
   },
   {
@@ -1040,7 +1040,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fu.md-child-awaken', stage: ['middle', 'elder'], tags: ['modern'], powers: 1, w: 0.5, kind: 'family',
     ja: '{child}が台所のやかんを触れずに沸かしたのを見て、{name}は管理局に電話をかけかけ、そっと受話器を置いた。',
-    en: "Seeing {child} boil the kettle without touching it, {name} started dialing the bureau, then quietly hung up.",
+    en: "Seeing {child} boil the kettle without touching it, {name} started to dial the bureau, then quietly hung up.",
     eff: { happy: 1, mind: 1 }, tie: { role: 'child', d: 5 },
   },
   {
@@ -1052,7 +1052,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fu.md-checkup', stage: ['middle'], tags: ['modern'], w: 1, kind: 'ill',
     ja: '会社の健康診断で再検査の紙をもらい、{name}は帰り道にポーションの自販機の前で長く迷った。',
-    en: "{name} got a follow-up notice from the company checkup and stood a long time at a potion vending machine on the way home.",
+    en: "{name} got a follow-up notice after the company checkup and stood a long time at a potion vending machine on the way home.",
     eff: { hp: -1, wealth: -1 },
   },
   {
@@ -1078,7 +1078,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fu.ru-bunker-birth', stage: ['infant'], age: [0, 0], tags: ['ruin'], w: 1, kind: 'arrival',
     ja: '{name}は地下壕で生まれた。産声は換気口の音にかき消された。',
-    en: "{name} was born in an underground bunker. Their first cry was drowned out by the ventilation fans.",
+    en: "{name} was born in an underground bunker. {His} first cry was drowned out by the ventilation fans.",
     eff: { hp: -1 },
   },
   {
@@ -1109,13 +1109,13 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fu.ru-dog', stage: ['child', 'teen', 'adult'], tags: ['ruin'], w: 1, kind: 'child',
     ja: '片耳の欠けた犬が{name}の後を三日付いてきて、四日目から{familiar}と呼ばれるようになった。',
-    en: "A dog missing half an ear followed {name} for three days, and on the fourth it got the name {familiar}.",
+    en: "A dog missing half an ear followed {name} for three days, and on the fourth day {he} named it {familiar}.",
     eff: { happy: 4 }, tie: { role: 'familiar', new: true },
   },
   {
     id: 'fu.ru-mutant-mark', stage: ['infant', 'child'], tags: ['ruin', 'scifi'], races: ['mutant'], w: 1, kind: 'child',
     ja: '{name}の背中のうろこが日に日に広がり、{mother}は人前で{name}の服を脱がせなくなった。',
-    en: "The scales on {name}'s back spread day by day, and {mother} stopped letting anyone see {name} undressed.",
+    en: "The scales on {name}'s back spread day by day, and {mother} stopped letting anyone see {him} undressed.",
     tie: { role: 'mother', d: -2 },
     eff: { happy: -2, hp: 1 },
   },
@@ -1136,7 +1136,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fu.ru-mutant-sense', stage: ['teen', 'adult', 'middle'], tags: ['ruin'], races: ['mutant'], w: 1, kind: 'power',
     ja: '{name}は汚れた水を匂いで嗅ぎ分けられた。集落の誰も、もう{name}より先に井戸の水を飲まなかった。',
-    en: "{name} could smell contaminated water. No one in the settlement drank from a well before {name} had checked it.",
+    en: "{name} could smell contaminated water. No one in the settlement drank from a well until {he} had checked it.",
     eff: { charm: 3, hp: 1 },
   },
   {
@@ -1163,13 +1163,13 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fu.ru-raider-nemesis', stage: ['teen', 'adult'], tags: ['ruin'], w: 0.7, kind: 'battle',
     ja: '略奪者の頭{nemesis}は、{name}の集落の水場に印を付けて去った。次に来るという意味だった。',
-    en: "{nemesis}, the raider chief, marked the settlement's water source before leaving. It meant they would be back.",
+    en: "{nemesis}, the raider chief, marked the settlement's water source before leaving. It meant the raiders would be back.",
     eff: { happy: -2 }, tie: { role: 'nemesis', new: true },
   },
   {
     id: 'fu.ru-raider-join', stage: ['teen', 'adult'], tags: ['ruin'], status: ['poor', 'orphan', 'slave'], noFlag: 'fu_raider', jobs: ['none', 'scavenger'], w: 0.6, kind: 'hard',
     ja: '三日何も食べていない{name}に、略奪者の一団が缶詰を一つ投げてよこし、仲間になれと言った。',
-    en: "After three days without food, a raider band tossed {name} a can and told {name} to join them.",
+    en: "After three days without food, a raider band tossed {name} a can and told {him} to join them.",
     choice: {
       ja: '加わるか。', en: 'Join them?',
       options: [
@@ -1189,7 +1189,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fu.ru-raider-regret', stage: ['middle', 'elder'], tags: ['ruin'], jobs: ['raider'], w: 0.6, kind: 'hard',
     ja: '襲った集落の子どもが、昔の自分と同じ目で{name}を見ていた。{name}はその夜、一団を抜けた。',
-    en: "A child in a raided settlement looked at {name} with the same eyes {name} once had. That night, {name} left the band.",
+    en: "A child in a raided settlement looked at {name} with the same eyes {he} once had. That night, {he} left the band.",
     eff: { happy: 2, wealth: -3 }, risk: { hazard: 'violence', p: 0.04 },
   },
   {
@@ -1201,13 +1201,13 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fu.ru-scav-trap', stage: ['teen', 'adult', 'middle'], tags: ['ruin'], jobs: ['scavenger'], w: 0.8, kind: 'hard',
     ja: '{name}が踏んだ床は、下の階ごと抜け落ちた。瓦礫の中で、{name}は自分の足の向きを確かめた。',
-    en: "The floor {name} stepped on gave way along with the story below. In the rubble, {name} checked which way their leg was pointing.",
+    en: "The floor gave way under {name}, and the story below went with it. In the rubble, {he} checked which way {his} leg was pointing.",
     eff: { hp: -5 }, risk: { hazard: 'accident', p: 0.05 },
   },
   {
     id: 'fu.ru-scav-partner', stage: ['teen', 'adult'], tags: ['ruin'], jobs: ['scavenger'], w: 1, kind: 'work',
     ja: '同じ廃ビルを漁っていた{companion}と鉢合わせ、{name}は獲物を半分に分けて組むことにした。',
-    en: "{name} ran into {companion} scavenging the same ruined building, and they split the haul and became partners.",
+    en: "{name} ran into {companion} scavenging the same ruined building, and the two split the haul and became partners.",
     eff: { happy: 2, wealth: 1 }, tie: { role: 'companion', new: true },
   },
   {
@@ -1219,7 +1219,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fu.ru-mem-signs', stage: ['child', 'teen', 'adult'], tags: ['ruin'], memory: true, w: 1, kind: 'power',
     ja: '廃墟の看板の文字が、{name}には前世の文字として読めた。「非常口」の矢印が、集落の者を三度救った。',
-    en: "{name} could read the old signs in the ruins as the script of a past life. The arrows marked \"emergency exit\" saved the settlers three times.",
+    en: "{name} could read the old signs in the ruins as the writing of {his} past life. The arrows marked \"emergency exit\" saved the settlers three times.",
     eff: { mind: 2, charm: 2 },
   },
   {
@@ -1231,7 +1231,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fu.ru-mem-hometown', stage: ['teen', 'adult', 'middle'], tags: ['ruin'], memory: true, w: 0.7, kind: 'loss',
     ja: '崩れた駅の名前は、前世で{name}が毎朝使っていた駅と同じだった。{name}は線路に座りこんでしばらく動けなかった。',
-    en: "The name on the collapsed station was the same as the one {name} had used every morning in a past life. {name} sat down on the tracks and could not move for a while.",
+    en: "The name on the collapsed station was the same as the one {name} had used every morning in {his} past life. {He} sat down on the tracks and could not move for a while.",
     eff: { happy: -4, mind: 1 },
   },
   {
@@ -1255,13 +1255,13 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fu.ru-rad-storm', stage: ['child', 'teen', 'adult', 'middle'], tags: ['ruin'], w: 0.6, kind: 'ill',
     ja: '色のついた雨が三日降り続き、外に出ていた{name}の髪がひとつかみ抜けた。',
-    en: "Discolored rain fell for three days, and a handful of {name}'s hair came out after being caught outdoors.",
+    en: "Discolored rain fell for three days, and {name}, caught outdoors in it, lost a handful of hair.",
     eff: { hp: -4 }, risk: { hazard: 'disease', p: 0.03 },
   },
   {
     id: 'fu.ru-settlement', stage: ['adult', 'middle'], tags: ['ruin'], noFlag: 'fu_settlement', w: 0.6, kind: 'work',
     ja: '{name}は水の湧く谷を見つけた。人を呼んで集落を作れば、守る者にもなる。',
-    en: "{name} found a valley with a spring. Calling people in to build a settlement would also make {name} its defender.",
+    en: "{name} found a valley with a spring. If {he} called people in to build a settlement, {he} would also have to defend it.",
     choice: {
       ja: '人を呼ぶか。', en: 'Call people in?',
       options: [
@@ -1299,7 +1299,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'fu.ru-escort', stage: ['adult', 'middle'], tags: ['ruin'], jobs: ['mercenary'], w: 1, repeat: true, kind: 'battle',
     ja: '{name}は燃料一缶の報酬で、医者を隣の集落まで送り届けた。道中で撃った弾は四発だった。',
-    en: "For the price of one can of fuel, {name} escorted a doctor to the next settlement. {name} fired four rounds along the way.",
+    en: "For the price of one can of fuel, {name} escorted a doctor to the next settlement. {He} fired four rounds along the way.",
     eff: { power: 2, wealth: 2 }, risk: { hazard: 'violence', p: 0.04 },
   },
   {

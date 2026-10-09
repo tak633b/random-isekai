@@ -25,6 +25,17 @@ export const L = (ja: string, en: string): string => (isEn ? an(en) : ja);
 export interface Text { ja: string; en: string }
 export const T = (t: Text): string => (isEn ? an(t.en) : t.ja);
 
+// 英語の代名詞。性別の分かる人は she / he で呼ぶ (they は性別の分からない人だけ)。英語の側の文でだけ使う
+export type Pronoun = 'he' | 'him' | 'his' | 'himself';
+const PRONOUNS: Record<'F' | 'M', Record<Pronoun, string>> = {
+  F: { he: 'she', him: 'her', his: 'her', himself: 'herself' },
+  M: { he: 'he', him: 'him', his: 'his', himself: 'himself' },
+};
+export const pron = (sex: 'F' | 'M' | undefined, p: Pronoun): string => (sex ? PRONOUNS[sex][p] : { he: 'they', him: 'them', his: 'their', himself: 'themselves' }[p]);
+export const cap = (s: string): string => s.charAt(0).toUpperCase() + s.slice(1);
+// 英語の序数 (1st 2nd 3rd 4th … 11th 12th 13th 21st)
+export const ordinal = (k: number): string => `${k}${k % 10 === 1 && k % 100 !== 11 ? 'st' : k % 10 === 2 && k % 100 !== 12 ? 'nd' : k % 10 === 3 && k % 100 !== 13 ? 'rd' : 'th'}`;
+
 export function setLang(next: Lang): void {
   try { localStorage.setItem('lang', next); } catch { /* 保存できなくても今回だけは切り替える */ }
   location.reload();

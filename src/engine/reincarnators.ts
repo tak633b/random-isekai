@@ -7,7 +7,7 @@
 import type { Arrival, Foe, Hero, LogEntry, ReincFight, ReincState, OtherLife, PastLife, Reincarnator, ReincarnatorFate, Role, Sex, Status, Tie, World, YearKind } from './types';
 import { makeRng, pick, pickWeighted, poisson, type Rng } from './rng';
 import { availableCheats, CHEATS, cheatWeight } from './cheats';
-import { personName, styleOf, beastName } from './names';
+import { personName, plural, styleOf, beastName } from './names';
 import { statusWeights } from './status';
 import { raceOf } from './races';
 import { demonKingWorld, hasTag, WORLDS } from './worlds';
@@ -15,8 +15,8 @@ import { heq, heqOf, isFantasy } from './mortality';
 import { heqToAge } from './hero';
 import { addTie, callName, mourn } from './bonds';
 import { fightOf } from './fight';
-import { lifeOfSpec } from './others';
-import { L, T } from '../i18n';
+import { lifeOfSpec, type LifeSpec } from './others';
+import { L, T, cap, ordinal, pron } from '../i18n';
 
 // テスト用のスイッチ。on = false で reincarnatorYear は何もしない。meet = false で噂と訃報だけ (輪に人を足さない)
 export const REINC = { on: true, meet: true };
@@ -66,18 +66,24 @@ const PAST_AGE: Record<PastLife['cause'], [number, number]> = {
 };
 const PAST_JOBS: [string, string, number, number][] = [['会社員', 'office worker', 22, 65], ['高校生', 'high school student', 15, 18], ['大学生', 'college student', 18, 24],
   ['看護師', 'nurse', 22, 65], ['料理人', 'cook', 18, 70], ['プログラマー', 'programmer', 20, 65], ['教師', 'teacher', 23, 65], ['トラック運転手', 'truck driver', 20, 65],
-  ['農家', 'farmer', 18, 95], ['研究者', 'researcher', 24, 75], ['店員', 'shop clerk', 16, 70], ['無職', 'between jobs', 15, 95], ['年金暮らし', 'retiree', 65, 95]];
+  ['農家', 'farmer', 18, 95], ['研究者', 'researcher', 24, 75], ['店員', 'shop clerk', 16, 70], ['無職', 'job seeker', 15, 95], ['年金暮らし', 'retiree', 65, 95]];
 
 // ---- 名簿 -------------------------------------------------------------------
 
 const startOf = (h: Hero) => (h.log.length ? h.log[0].age : h.age);
+
+// 名簿の基準: 系譜 (Hero.lineage) があれば最初の主人公 (同じ世界の同じ人たち)、無ければその主人公
+interface Base { seed: number; world: World; given: string; race: Hero['race']; start: number; offset: number }
+const baseOf = (h: Hero): Base => h.lineage
+  ? { seed: h.lineage.rootSeed, world: h.world, given: h.lineage.root.given, race: h.lineage.root.race, start: h.lineage.root.start, offset: h.lineage.offset }
+  : { seed: h.seed, world: h.world, given: h.given, race: h.race, start: startOf(h), offset: 0 };
 // 名簿の範囲: 主人公の生まれる60年前から、主人公の種族の寿命 (長くて400年) の20年後まで
 export const BEFORE = 60;
-const windowOf = (h: Hero): [number, number] => [-BEFORE, startOf(h) + Math.min(raceOf(h.race).maxAge, 400) + 20];
+const windowOf = (b: Base): [number, number] => [-BEFORE, b.start + Math.min(raceOf(b.race).maxAge, 400) + 20];
 
 const cache = new Map<string, Reincarnator[]>();
 
-function makeRoster(h: Hero): Reincarnator[] {
+function makeRoster(h: Base): Reincarnator[] {
   const w = h.world;
   const [lo, hi] = windowOf(h);
   const r = makeRng(mix(h.seed, K_ROSTER, w.magic, w.powers));
@@ -133,16 +139,18 @@ function earthName(x: Rng, sex: Sex): string {
 
 // その世界にいるほかの転生者の名簿 (生まれた/来た順)。会った人には tieId が付く
 export function reincarnatorsOf(h: Hero): Reincarnator[] {
+  const b = baseOf(h);
   const w = h.world;
-  const key = `${h.seed}|${w.id}|${w.magic}|${w.powers}|${w.tech}|${h.race}|${startOf(h)}|${h.given}`;
+  const key = `${b.seed}|${w.id}|${w.magic}|${w.powers}|${w.tech}|${b.race}|${b.start}|${b.given}`;
   let roster = cache.get(key);
   if (!roster) {
-    roster = makeRoster(h);
+    roster = makeRoster(b);
     if (cache.size > 500) cache.clear();
     cache.set(key, roster);
   }
+  // 名簿の年 (bornAt) は基準の主人公の年齢。今の主人公の年齢に直す (系譜の2代目以降は生まれた年ぶんずれる)
   const met = new Map(stateOf(h).met);
-  return roster.map((p) => (met.has(p.id) ? { ...p, tieId: met.get(p.id) } : { ...p }));
+  return roster.map((p) => ({ ...p, bornAt: p.bornAt - b.offset, ...(met.has(p.id) ? { tieId: met.get(p.id) } : {}) }));
 }
 
 // ---- 一生の筋 -----------------------------------------------------------------
@@ -248,7 +256,7 @@ function flush(h: Hero): void {
 const gift = (p: Reincarnator) => T(CHEATS[p.cheat].name);
 const heroWord = (w: World): [string, string] => (isFantasy(w) ? ['勇者', 'the Hero'] : ['英雄', 'the hero']);
 const DEMON: Record<ReturnType<typeof styleOf>, [string, string]> = {
-  west: ['魔王', 'Demon Lord'], myth: ['魔王', 'Demon Lord'], desert: ['魔王', 'Demon Lord'], wa: ['鬼の王', 'King of Oni'], zh: ['魔尊', 'Demon Sovereign'],
+  west: ['魔王', 'Demon Lord'], myth: ['魔王', 'Demon Lord'], desert: ['魔王', 'Demon Lord'], wa: ['鬼の王', 'King of the Oni'], zh: ['魔尊', 'Demon Sovereign'],
   modern: ['魔王', 'Demon Lord'], scifi: ['魔王', 'Demon Lord'], ruin: ['魔王', 'Demon Lord'],
 };
 export const demonWord = (w: World) => DEMON[styleOf(w)];
@@ -264,15 +272,15 @@ function deedRumor(h: Hero, p: Reincarnator): [string, string] {
   const n = p.name, g = gift(p);
   switch (p.fate) {
     case 'hero': { const [hj, he] = heroWord(h.world); return [`異世界から来た${hj}、${n}の噂を聞いた。〈${g}〉の使い手だという。`, `Heard tales of ${n}, ${he} from another world, who wielded "${g}".`]; }
-    case 'ruler': { const [rj, re] = rulerWord(h.world); return [`${n}という転生者が${rj}と聞いた。`, `Heard that a reincarnated soul named ${n} had ${re}.`]; }
+    case 'ruler': { const [rj, re] = rulerWord(h.world); return [`${n}という転生者が${rj}と聞いた。`, `Heard that a reincarnator named ${n} ${re}.`]; }
     case 'merchant': return [`${n}の商会の品が、町にも届くようになった。異世界の知恵で作ったものだという。`, `Goods from ${n}'s trading house reached town. Made with otherworldly know-how, people said.`];
-    case 'villain': return [`${n}という転生者が、罪を重ねてお尋ね者になったと聞いた。`, `Heard that a reincarnated soul named ${n} had turned to crime and was now wanted.`];
-    default: return [`この世界にもほかに転生者がいるという噂を聞いた。${n}という名だった。`, `Heard a rumor of another soul from another world here. The name was ${n}.`];
+    case 'villain': return [`${n}という転生者が、罪を重ねてお尋ね者になったと聞いた。`, `Heard that a reincarnator named ${n} had turned to crime and was now a wanted outlaw.`];
+    default: return [`この世界にもほかに転生者がいるという噂を聞いた。${n}という名だった。`, `Heard a rumor that another reincarnator lived in this world, one named ${n}.`];
   }
 }
 
-const memoryLine = (h: Hero, first: boolean): [string, string] => (!h.past || !h.memoryAwake
-  ? ['別の世界から来たのだと、打ち明けられた。', 'They confided that they had come from another world.']
+const memoryLine = (h: Hero, first: boolean, sex: Sex): [string, string] => (!h.past || !h.memoryAwake
+  ? ['別の世界から来たのだと、打ち明けられた。', `${cap(pron(sex, 'he'))} confided that ${pron(sex, 'he')} had come from another world.`]
   : first ? ['前の世界の話が通じる、はじめての相手だった。', 'The first person who understood talk of the old world.']
     : ['前の世界の話が、ここでも通じた。', 'Talk of the old world, understood once again.']);
 
@@ -297,6 +305,7 @@ export function reincarnatorYear(h: Hero): void {
   if (me < 8) return;
   for (const p of reincarnatorsOf(h)) {
     if (p.bornAt > a) break;
+    if (p.id === h.lineage?.self) continue; // 続けて遊んでいる主人公自身が転生者なら、自分には会わない
     const c = courseOf(h, p);
     const x = makeRng(mix(h.seed, K_YEAR, a, p.id));
     const s = stateOf(h);
@@ -318,7 +327,7 @@ export function reincarnatorYear(h: Hero): void {
     if (!heard && !tie && me >= 10 && s.heard.length < 3) {
       if (c.riseAt !== undefined && a === c.riseAt) {
         const [dj, de] = demonWord(h.world);
-        if (queue(h, L(`異世界から来た${p.name}という者が、${dj}を名乗ったという。`, `Word came that ${p.name}, one from another world, had declared themself ${de}.`), 'family')) setState(h, { heard: [...s.heard, p.id] });
+        if (queue(h, L(`異世界から来た${p.name}という者が、${dj}を名乗ったという。`, `Word came that ${p.name}, a reincarnator from another world, had declared ${pron(p.sex, 'himself')} ${de}.`), 'family')) setState(h, { heard: [...s.heard, p.id] });
         continue;
       }
       const pr = c.deedAt !== undefined && a >= c.deedAt ? (a === c.deedAt ? 0.35 : 0.03) : 0.004;
@@ -340,7 +349,7 @@ function meet(h: Hero, p: Reincarnator, c: Course, x: Rng): void {
   const role = roleFor(x, p);
   const t = addTie(h, { name: p.name, role, race: p.race, sex: p.sex, age: ageOfAt(p, c, h.age) });
   setState(h, { met: [...s.met, [p.id, t.id]], heard: s.heard.includes(p.id) ? s.heard : [...s.heard, p.id] });
-  const [mj, me] = memoryLine(h, s.met.length === 0);
+  const [mj, me] = memoryLine(h, s.met.length === 0, p.sex);
   const how: [string, string] = role === 'nemesis' ? [`〈${gift(p)}〉を振るう${p.name}と、敵として出会った。`, `Met ${p.name}, wielder of "${gift(p)}", as an enemy.`]
     : role === 'rival' ? [`〈${gift(p)}〉を持つ${p.name}と出会い、張り合うようになった。`, `Met ${p.name}, who held "${gift(p)}", and a rivalry began.`]
       : [`〈${gift(p)}〉を持つ${p.name}と出会った。`, `Met ${p.name}, who held "${gift(p)}".`];
@@ -354,13 +363,13 @@ function afterMeeting(h: Hero, p: Reincarnator, c: Course, t: Tie, x: Rng): void
   const s = stateOf(h);
   if ((t.role === 'friend' || t.role === 'companion') && !s.allied.includes(p.id) && x() < 0.06) {
     setState(h, { allied: [...s.allied, p.id] });
-    queue(h, L(`${p.name}と手を組んだ。同じように別の世界から来た者どうしだった。`, `Joined forces with ${p.name}. Two souls from another world.`), 'family', { who: [t.id] }, true);
+    queue(h, L(`${p.name}と手を組んだ。同じように別の世界から来た者どうしだった。`, `Joined forces with ${p.name}. Both of them had come from another world.`), 'family', { who: [t.id] }, true);
     return;
   }
   if (t.role === 'rival' && !s.foes.includes(p.id) && x() < 0.04) {
     t.role = 'nemesis';
     setState(h, { foes: [...s.foes, p.id] });
-    queue(h, L(`${p.name}と敵対するようになった。同じ世界から来た者どうしでも、道は分かれた。`, `${p.name} became an enemy. Even souls from the same world can part ways.`), 'hard', { who: [t.id] }, true);
+    queue(h, L(`${p.name}と敵対するようになった。同じ世界から来た者どうしでも、道は分かれた。`, `${p.name} became an enemy. Even people from the same world could go separate ways.`), 'hard', { who: [t.id] }, true);
     return;
   }
   if (t.role === 'nemesis' && s.fights.length < MAX_FIGHTS && heqOf(h) < 60 && x() < 0.08) {
@@ -381,6 +390,11 @@ function afterMeeting(h: Hero, p: Reincarnator, c: Course, t: Tie, x: Rng): void
 
 // その人の一生 (others.ts の lifeOfSpec)。fate に沿うよう、死ぬ年と手柄を錨で合わせる。会った・戦った年はその人の年表にも入れる
 export function reincarnatorLife(h: Hero, id: number): OtherLife {
+  return lifeOfSpec(h, reincarnatorSpec(h, id));
+}
+
+// その人の一生を作る仕様と錨 (continueAs がその人として続けるときにも使う)
+export function reincarnatorSpec(h: Hero, id: number): LifeSpec {
   const p = reincarnatorsOf(h).find((x) => x.id === id);
   if (!p) throw new Error(`reincarnator ${id} not found`);
   const c = courseOf(h, p);
@@ -391,11 +405,11 @@ export function reincarnatorLife(h: Hero, id: number): OtherLife {
   if (c.deedAt !== undefined && c.deedAt < died) shared.push({ age: at(c.deedAt), text: deedLine(h, p), kind: p.fate === 'villain' ? 'hard' : 'fame' });
   if (c.riseAt !== undefined) {
     const [dj, de] = demonWord(h.world);
-    shared.push({ age: at(c.riseAt), text: L(`〈${g}〉の力で魔物を従え、${dj}を名乗った。`, `Bent the monsters to "${g}" and declared themself ${de}.`), kind: 'hard' });
+    shared.push({ age: at(c.riseAt), text: L(`〈${g}〉の力で魔物を従え、${dj}を名乗った。`, `Bent the monsters to "${g}" and declared ${pron(p.sex, 'himself')} ${de}.`), kind: 'hard' });
   }
   const tie = p.tieId !== undefined ? h.people.find((t) => t.id === p.tieId) : undefined;
   if (tie) {
-    shared.push({ age: at(tie.since), text: L(`${h.given}と出会った。同じく別の世界から来た者だった。`, `Met ${h.given}, another soul from another world.`), kind: 'arrival', who: 'me' });
+    shared.push({ age: at(tie.since), text: L(`${h.given}と出会った。同じく別の世界から来た者だった。`, `Met ${h.given}, who had also come from another world.`), kind: 'arrival', who: 'me' });
     for (const f of fightsWith(h, id)) {
       const r: Record<FightRec['result'], [string, string]> = {
         win: [`${h.given}と戦い、退けられた。`, `Fought ${h.given}, and was driven off.`],
@@ -417,8 +431,8 @@ export function reincarnatorLife(h: Hero, id: number): OtherLife {
   const anchors = deathAt.hazard === 'age' ? { noDeathBefore: ageAtDeath, shared } : { deathAt, shared };
   const job = p.fate === 'hero' && isFantasy(h.world) ? 'hero' as const : p.fate === 'merchant' ? 'merchant' as const : p.fate === 'ruler' && isFantasy(h.world) ? 'lord' as const : undefined;
   // 召喚された人は、来た時の年齢 (arriveAge) から年表を始める。生まれたのは来た時の年齢ぶん前 (年齢の数え方は 0歳から生きた人と同じ)
-  return lifeOfSpec(h, { key: `r:${id}`, seed: p.seed, name: p.name, race: p.race, sex: p.sex, status: c.status, bornAt: p.bornAt - c.arriveAge, ...(c.arriveAge ? { arriveAge: c.arriveAge } : {}), cheat: p.cheat, arrival: p.arrival, past: p.past,
-    anchors: job ? { ...anchors, job } : anchors });
+  return { key: `r:${id}`, seed: p.seed, name: p.name, race: p.race, sex: p.sex, status: c.status, bornAt: p.bornAt - c.arriveAge, ...(c.arriveAge ? { arriveAge: c.arriveAge } : {}), cheat: p.cheat, arrival: p.arrival, past: p.past,
+    anchors: job ? { ...anchors, job } : anchors };
 }
 
 // 名高い手柄の一文 (その人の年表と年代記で使う。主語なし)
@@ -428,7 +442,7 @@ type Deed = (g: string, beast: string, w: World) => [string, string];
 const DEEDS: Partial<Record<ReincarnatorFate, { noun: [string, string]; lines: Deed[] }>> = {
   hero: { noun: ['勇者', 'hero'], lines: [
     (g, b, w) => [`〈${g}〉で${b}を討ち、${heroWord(w)[0]}と呼ばれるようになった。`, `Slew a ${b} with "${g}" and came to be called ${heroWord(w)[1]}.`],
-    (g, b) => [`都に押し寄せた${b}の群れを〈${g}〉で退け、救国の英雄と呼ばれた。`, `Drove a horde of ${b} back from the capital with "${g}", and was hailed as the realm's savior.`],
+    (g, b) => [`都に押し寄せた${b}の群れを〈${g}〉で退け、救国の英雄と呼ばれた。`, `Drove a horde of ${plural(b)} back from the capital with "${g}", and was hailed as the realm's savior.`],
     (g, b) => [`古い遺跡の底に眠る${b}を〈${g}〉で封じた。`, `Sealed away the ${b} sleeping beneath the old ruins with "${g}".`],
     (g) => [`国境の砦の包囲を〈${g}〉で破り、名を上げた。`, `Broke the siege of the border fort with "${g}" and made a name.`],
     (g, b) => [`誰も戻らなかった迷宮を踏破し、最奥の${b}を倒した。`, `Cleared the labyrinth no one had returned from, and felled the ${b} at its heart.`],
@@ -436,13 +450,13 @@ const DEEDS: Partial<Record<ReincarnatorFate, { noun: [string, string]; lines: D
   ] },
   ruler: { noun: ['為政者', 'ruler'], lines: [
     (g, b, w) => [`${rulerWord(w)[0]}。`, `${rulerWord(w)[1][0].toUpperCase()}${rulerWord(w)[1].slice(1)}.`],
-    () => ['前の世界の学び舎を真似た学校を開き、読み書きを国じゅうに広めた改革者になった。', 'Founded schools modeled on another world, and became the reformer who taught the land to read.'],
+    () => ['前の世界の学び舎を真似た学校を開き、読み書きを国じゅうに広めた改革者になった。', 'Founded schools modeled on those of the old world, and became the reformer who taught the land to read.'],
     () => ['荒れ地に用水路を引き、新しい町を拓いた。', 'Dug canals across the wasteland and founded a new town.'],
     () => ['重い年貢を改め、民に慕われる宰相になった。', 'Reformed the crushing taxes and became a chancellor the people loved.'],
     () => ['争う諸侯を説き伏せ、長い和議を結ばせた。', 'Talked the feuding lords into a long-lasting peace.'],
   ] },
   merchant: { noun: ['商人', 'merchant'], lines: [
-    () => ['前の世界の知恵で興した商会が、この地でいちばんの商会になった。', 'The trading house built on old-world know-how became the greatest in the land.'],
+    () => ['前の世界の知恵で興した商会が、この地でいちばんの商会になった。', 'Built a trading house on old-world know-how, and it grew into the greatest in the land.'],
     (g) => [`前の世界の道具を〈${g}〉で作り、発明家として名を残した。`, `Recreated old-world devices with "${g}" and was remembered as an inventor.`],
     () => ['街道を整え、隊商の道を大陸の端までつないだ。', 'Built roads and linked the caravan routes to the far end of the continent.'],
     () => ['両替と貸し付けの店を開き、王家にまで金を貸すようになった。', 'Opened a house of exchange and lending, and came to lend even to the crown.'],
@@ -481,5 +495,4 @@ export function deedLine(h: Hero, p: Reincarnator): string {
   // 言い回しを使い切ったら、何人目かを添えて別の文にする
   return L(`${ja}この時代${rank + 1}人目の${d.noun[0]}だった。`, `${en} The ${ordinal(rank + 1)} ${d.noun[1]} of the age.`);
 }
-const ordinal = (k: number) => `${k}${k % 10 === 1 && k % 100 !== 11 ? 'st' : k % 10 === 2 && k % 100 !== 12 ? 'nd' : k % 10 === 3 && k % 100 !== 13 ? 'rd' : 'th'}`;
 

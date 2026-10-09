@@ -10,7 +10,7 @@ export const TALENT_NAME: Record<Talent, string> = {
 };
 
 export const ARRIVAL_NAME: Record<Arrival, string> = {
-  reborn: L('赤ちゃんから', 'Reborn as a baby'), awaken: L('途中で思い出す', 'Remembers later'),
+  reborn: L('赤ちゃんから', 'Reborn as a baby'), awaken: L('途中で思い出す', 'Awakened later'),
   summoned: L('召喚', 'Summoned'), native: L('現地の生まれ', 'Native-born'),
 };
 
@@ -75,8 +75,12 @@ const SUMMON_LINES: [string, string][] = [
   ['神社の鈴を鳴らした瞬間、音ごとこちらへ運ばれた', 'Rang a shrine bell and was carried here along with the sound'],
 ];
 export function pastEnd(cause: PastLife['cause'], summoned: boolean, seed: number, avoid: Set<number> = new Set()): { text: string; i: number } {
-  if (!summoned && cause !== 'unknown') return { text: PAST_CAUSE_NAME[cause], i: -1 };
+  // 英語は文として句点を付ける (日本語は「。」を付けない並べ方)
+  if (!summoned && cause !== 'unknown') return { text: L(PAST_CAUSE_NAME[cause], `${PAST_CAUSE_NAME[cause]}.`), i: -1 };
   let i = (seed >>> 0) % SUMMON_LINES.length;
   for (let k = 0; k < SUMMON_LINES.length && avoid.has(i); k++) i = (i + 1) % SUMMON_LINES.length;
-  return { text: L(...SUMMON_LINES[i]), i };
+  return { text: L(SUMMON_LINES[i][0], `${SUMMON_LINES[i][1]}.`), i };
 }
+
+// 鍵のしるし (まだ解放していないもの)
+export const lockIcon = (): string => '<svg class="lock" viewBox="0 0 7 8" aria-hidden="true"><path d="M2 3V2a1.5 1.5 0 0 1 3 0v1h1v5H1V3zm1 0h1V2a.5.5 0 0 0-1 0z"/></svg>';

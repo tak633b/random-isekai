@@ -25,7 +25,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'ne.n.cradle-crest', stage: ['infant'], tags: N, status: ['noble', 'royal'], w: 2, kind: 'child',
     ja: '{name}の揺りかごには家の紋章が刺繍されていた。最初に握ったのは、その金糸の端だった。',
-    en: "{name}'s cradle was embroidered with the family crest. The first thing {name} ever grabbed was a loose end of its gold thread.",
+    en: "{name}'s cradle was embroidered with the family crest. The first thing {he} ever grabbed was a loose end of its gold thread.",
     eff: { happy: 2 },
   },
   {
@@ -63,13 +63,13 @@ export const EVENTS: EventDef[] = [
     id: 'ne.n.mob-relief', stage: ['child', 'teen'], tags: N, memory: true, arrival: ['reborn', 'awaken'],
     status: ['gentry', 'merchant', 'commoner'], noFlag: 'ne.doomed', w: 1.5, kind: 'arrival',
     ja: '{name}はこの国が前世のゲームの舞台だと気づいたが、自分の名前はどこにも出てこなかった。名もない脇役なら、断罪とは無縁だ。',
-    en: "{name} realized this kingdom was the setting of a game from a past life, but {name}'s own name never appeared in it. A nameless extra is safe from the climactic trial.",
+    en: "{name} realized this kingdom was the setting of a game from a past life, but {his} own name never appeared in it. A nameless extra is safe from the climactic trial.",
     set: 'ne.mob', eff: { happy: 4 },
   },
   {
     id: 'ne.n.betrothal', stage: ['child'], tags: N, status: ['noble', 'royal'], noFlag: 'engaged', w: 2, kind: 'family', big: true,
     ja: '{father}の書斎に呼ばれた{name}は、会ったこともない相手との婚約が決まったと告げられた。家同士の取り決めだった。',
-    en: "Called into {father}'s study, {name} was told of an engagement to someone {name} had never met. It had been settled between the two houses.",
+    en: "Called into {father}'s study, {name} was told of an engagement to someone {he} had never met. It had been settled between the two houses.",
     set: 'engaged', tie: { role: 'fiance', new: true, d: 0 },
     why: { ja: '貴族の婚約は幼いうちに家同士で決まる', en: 'Noble engagements are arranged between houses while the children are young' },
   },
@@ -96,7 +96,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'ne.n.etiquette', stage: ['child'], tags: N, status: ['noble', 'royal', 'gentry'], w: 2, kind: 'school',
     ja: '本を頭に載せて廊下を歩く稽古が始まった。{name}が端まで落とさずに歩けたのは、ひと冬が過ぎてからだった。',
-    en: "Etiquette lessons began with walking the hall with a book balanced on the head. {name} made it to the end without dropping it only after a whole winter.",
+    en: "Etiquette lessons began with walking the hall with a book balanced on {his} head. It took a whole winter before {he} made it to the end without dropping it.",
     eff: { charm: 3 },
   },
   {
@@ -146,7 +146,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'ne.n.manor-garden', stage: ['child'], tags: N, status: ['noble', 'royal', 'gentry'], w: 1.5, kind: 'child',
     ja: '{name}は温室の奥に、庭師も知らない小さな隠れ場所を作った。そこでは誰の娘でも息子でもなかった。',
-    en: "{name} made a hiding place deep in the greenhouse that even the gardener didn't know about. In there, {name} was nobody's heir.",
+    en: "{name} made a hiding place deep in the greenhouse that even the gardener didn't know about. In there, {he} was nobody's heir.",
     eff: { happy: 3 },
   },
   {
@@ -175,7 +175,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'ne.n.scholarship', stage: ['teen'], tags: N, status: ['poor', 'commoner', 'merchant'], noFlag: 'academy', w: 1.5, kind: 'school', big: true,
     ja: '{name}は平民でただ一人の特待生として学園に入った。初日に制服の古さを笑ったのは、伯爵家の{rival}だった。',
-    en: "{name} entered the academy as the only commoner on scholarship. On the first day, {rival} of an earl's house laughed at {name}'s secondhand uniform.",
+    en: "{name} entered the academy as the only commoner on scholarship. On the first day, {rival} of an earl's house laughed at {his} secondhand uniform.",
     set: 'academy', eff: { mind: 4, fame: 2, happy: -1 }, tie: { role: 'rival', new: true, d: -10 },
   },
   {
@@ -228,7 +228,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'ne.n.fiance-drift', stage: ['teen'], tags: N, flag: 'engaged', status: ['noble', 'royal'], w: 2, kind: 'love',
     ja: '婚約者は、昼休みを別の令嬢と中庭で過ごすようになった。{name}は窓の内側からそれを見ていた。',
-    en: "{name}'s fiance began spending lunch breaks in the courtyard with another young lady. {name} watched from behind the window.",
+    en: "{name}'s fiancé began spending lunch breaks in the courtyard with another young lady. {He} watched from behind the window.",
     eff: { happy: -3 }, tie: { role: 'fiance', d: -10 },
   },
   {
@@ -253,7 +253,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'ne.n.debut', stage: ['teen'], tags: N, status: ['noble', 'royal', 'gentry'], noFlag: 'ne.debut', w: 4, kind: 'fame', big: true,
     ja: '{name}は社交界にデビューした。大広間の階段を下りる間、何百もの視線の重さを数えないようにした。',
-    en: '{name} made a debut in society. Descending the grand staircase of the ballroom, {name} tried not to count the hundreds of eyes.',
+    en: '{name} made {his} debut in society. Descending the grand staircase of the ballroom, {he} tried not to count the hundreds of eyes.',
     set: 'ne.debut', eff: { charm: 3, fame: 3 },
   },
   {
@@ -266,7 +266,7 @@ export const EVENTS: EventDef[] = [
     id: 'ne.n.broken-engagement', stage: ['teen', 'adult'], tags: N, flag: 'engaged', sex: 'F', status: ['noble', 'royal'],
     noFlag: 'ne.broken', w: 1.5, kind: 'loss', big: true,
     ja: '卒業パーティの最中、婚約者が楽団を止めさせ、皆の前で{name}との婚約破棄を宣言した。',
-    en: "In the middle of the graduation ball, {name}'s fiance stopped the orchestra and announced, before everyone, that the engagement was broken.",
+    en: "In the middle of the graduation ball, {name}'s fiancé stopped the orchestra and announced, before everyone, that the engagement was broken.",
     set: 'ne.broken', eff: { happy: -6, fame: -4 }, tie: { role: 'fiance', d: -30 },
     why: { ja: '公の場での婚約破棄は、相手の家の名誉を最も深く傷つける', en: 'A public breakup is the deepest wound to the honor of the other house' },
   },
@@ -290,14 +290,14 @@ export const EVENTS: EventDef[] = [
   {
     id: 'ne.n.condemnation', stage: ['teen', 'adult'], tags: N, flag: 'ne.broken', w: 3, kind: 'hard', big: true,
     ja: '{name}は覚えのない罪で裁きの場に引き出された。判決文は、裁判が始まる前から書き上がっていたらしい。',
-    en: '{name} was hauled before a tribunal on charges {name} knew nothing of. The verdict, it seemed, had been written before the hearing began.',
+    en: '{name} was hauled before a tribunal on charges {he} knew nothing of. The verdict, it seemed, had been written before the hearing began.',
     choice: {
       ja: '判決にどう向き合う?', en: 'How do you meet the verdict?',
       options: [
         { ja: '罪を認めて修道院に入る', en: 'Admit guilt and enter a convent', set: 'ne.convent', eff: { fame: -3, happy: -2 } },
         { ja: '国外追放を受け入れる', en: 'Accept exile from the kingdom', set: 'exiled', eff: { wealth: -6 } },
         { ja: '最後まで無実を訴える', en: 'Insist on your innocence to the end', eff: { fame: 3 }, risk: { hazard: 'execution', p: 0.15 },
-          log: { ja: '{name}は一度も目を伏せなかった。', en: '{name} never once lowered their eyes.' } },
+          log: { ja: '{name}は一度も目を伏せなかった。', en: '{name} never once lowered {his} eyes.' } },
       ],
     },
     why: { ja: '断罪は名誉の問題として裁かれ、身分が高いほど見せしめになる', en: 'Condemnation is judged as a matter of honor, and the higher the rank the greater the example' },
@@ -311,14 +311,14 @@ export const EVENTS: EventDef[] = [
   {
     id: 'ne.n.exile-bloom', stage: ['teen', 'adult'], tags: N, flag: 'exiled', w: 3, kind: 'love',
     ja: '追放先の隣国で、{name}は小さな薬草園を開いた。毎朝それを買いに来る{lover}が、実はこの国の王族だと知ったのは秋だった。',
-    en: "In exile across the border, {name} opened a small herb garden. Only in autumn did {name} learn that {lover}, who came by every morning, was of that country's royal family.",
+    en: "In exile across the border, {name} opened a small herb garden. Only in autumn did {he} learn that {lover}, who came by every morning, was of that country's royal family.",
     eff: { happy: 6, wealth: 2 }, tie: { role: 'lover', new: true, d: 20 },
     why: { ja: '追放の後の方が自由になる、というのはこの手の筋書きの定番の裏返しだ', en: 'Being freer after exile is the classic twist of this kind of story' },
   },
   {
     id: 'ne.n.convent', stage: ['teen', 'adult', 'middle'], tags: N, flag: 'ne.convent', w: 3, kind: 'old',
     ja: '修道院の朝は鐘で始まり、鐘で終わった。{name}は写本の余白に、誰にも読めない前世の字で日記をつけた。',
-    en: "Mornings at the convent began and ended with bells. In the margins of the manuscripts {name} copied, {name} kept a diary in a script no one there could read.",
+    en: "Mornings at the convent began and ended with bells. In the margins of the manuscripts {he} copied, {he} kept a diary in a script no one there could read.",
     eff: { happy: 2, mind: 2 },
   },
   {
@@ -371,7 +371,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'ne.n.succession', stage: ['adult', 'middle'], tags: N, status: ['noble', 'royal'], w: 1.5, kind: 'hard',
     ja: '{father}が倒れると、屋敷は二つに割れた。{name}を推す者と、{name}の兄弟を推す者に。',
-    en: "When {father} fell ill, the household split in two: those who backed {name}, and those who backed {name}'s sibling.",
+    en: "When {father} fell ill, the household split in two: those who backed {name}, and those who backed {his} sibling.",
     tie: { role: 'sibling', d: -10 },
     choice: {
       ja: '家督をどうする?', en: 'What about the succession?',
@@ -425,13 +425,13 @@ export const EVENTS: EventDef[] = [
   {
     id: 'ne.n.butler', stage: ['adult'], tags: N, status: ['noble', 'royal'], w: 1.5, kind: 'work',
     ja: '先代から仕える老執事が引退し、新しい執事が来た。初日に{name}の紅茶の好みを、何も聞かずに当てた。',
-    en: "The old butler who had served the previous head retired, and a new one arrived. On the first day, he guessed exactly how {name} took tea without asking.",
+    en: "The old butler who had served the previous head retired, and a new one arrived. On his first day, he guessed exactly how {name} took {his} tea without asking.",
     eff: { happy: 2 }, tie: { role: 'servant', new: true, d: 8 },
   },
   {
     id: 'ne.n.maid-poison', stage: ['teen', 'adult', 'middle'], tags: N, status: ['noble', 'royal'], w: 1, kind: 'hard',
     ja: '侍女が{name}の手から茶器を払い落とした。茶の香りがいつもと違う、と。床の茶は銀の匙を黒く変えた。',
-    en: "{name}'s maid knocked the teacup out of {name}'s hand, saying the tea smelled wrong. The spilled tea turned a silver spoon black.",
+    en: "{name}'s maid knocked the teacup out of {his} hand, saying the tea smelled wrong. The spilled tea turned a silver spoon black.",
     eff: { hp: -1, happy: -2 }, tie: { role: 'servant', d: 15 },
     why: { ja: '貴族の死因として毒は剣より多い', en: 'Among nobles, poison kills more often than the sword' },
   },
@@ -456,7 +456,7 @@ export const EVENTS: EventDef[] = [
       options: [
         { ja: '何も見なかったことにする', en: 'Pretend you saw nothing', eff: { happy: -1 } },
         { ja: '相手の派閥に売る', en: 'Sell it to the other faction', eff: { wealth: 6 }, risk: { hazard: 'violence', p: 0.04 },
-          log: { ja: '{name}の懐は重くなったが、それから夜道を一人で歩かなくなった。', en: "{name}'s purse grew heavy, and {name} stopped walking alone at night." } },
+          log: { ja: '{name}の懐は重くなったが、それから夜道を一人で歩かなくなった。', en: "{name}'s purse grew heavy, and {he} stopped walking alone at night." } },
       ],
     },
   },
@@ -475,7 +475,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'ne.n.knight-oath', stage: ['teen', 'adult'], tags: N, jobs: ['knight'], w: 2, kind: 'work', big: true,
     ja: '{name}は{master}の前にひざまずき、剣を捧げた。肩に置かれた刃は、思っていたよりずっと冷たかった。',
-    en: "{name} knelt before {master} and pledged a sword. The blade laid on {name}'s shoulder was much colder than expected.",
+    en: "{name} knelt before {master} and pledged {his} sword. The blade laid on {his} shoulder was much colder than expected.",
     eff: { fame: 3 }, tie: { role: 'master', new: true, d: 10 },
   },
   {
@@ -493,7 +493,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'ne.n.court-chaplain', stage: ['adult', 'middle'], tags: N, jobs: ['priest'], w: 1.5, kind: 'work',
     ja: '{name}は宮廷の礼拝堂付きの司祭になった。懺悔室では、昼の舞踏会よりも多くの秘密を聞いた。',
-    en: "{name} became chaplain of the palace chapel. In the confessional, {name} heard more secrets than any ballroom ever could.",
+    en: "{name} became chaplain of the palace chapel. In the confessional, {he} heard more secrets than any ballroom ever could.",
     eff: { mind: 2, fame: 2 },
   },
   {
@@ -531,7 +531,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'ne.n.child-match', stage: ['middle'], tags: N, status: ['noble', 'royal', 'gentry'], w: 1.5, kind: 'family',
     ja: '{name}は{child}の婚約話をまとめた。かつて自分が座らされた椅子に、今度は我が子を座らせていた。',
-    en: "{name} arranged an engagement for {child}, seating the child in the very chair {name} had once been made to sit in.",
+    en: "{name} arranged an engagement for {child}, seating the child in the very chair {he} had once been made to sit in.",
     eff: { wealth: 2, happy: -1 }, tie: { role: 'child', d: -3 },
   },
   {
@@ -549,7 +549,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'ne.n.fall-of-house', stage: ['adult', 'middle'], tags: N, status: ['noble', 'gentry'], w: 0.8, kind: 'loss',
     ja: '父の代からの借財が表に出て、{name}の家は屋敷を手放した。肖像画だけは、馬車に積めるだけ持ち出した。',
-    en: "Debts going back to father's time came to light, and {name}'s family had to give up the manor. They took as many of the portraits as the carriage would hold.",
+    en: "Debts going back to {his} father's time came to light, and {name}'s family had to give up the manor. They took as many of the portraits as the carriage would hold.",
     eff: { wealth: -8, happy: -4, fame: -2 },
   },
   {
@@ -575,14 +575,14 @@ export const EVENTS: EventDef[] = [
   {
     id: 'ne.n.past-the-end', stage: ['adult', 'middle'], tags: N, flag: 'ne.doomed', w: 3, kind: 'old',
     ja: '筋書きで{name}が破滅するはずだった年が、何事もなく過ぎた。その夜、{name}は前世のノートを暖炉にくべた。',
-    en: "The year {name} was supposed to meet ruin came and went without incident. That night, {name} fed the old notebook to the fire.",
+    en: "The year {name} was supposed to meet ruin came and went without incident. That night, {he} fed the old notebook to the fire.",
     eff: { happy: 6 },
     why: { ja: 'ゲームの筋書きは、卒業の年から先を描いていなかった', en: 'The game script never covered anything past graduation' },
   },
   {
     id: 'ne.n.dowager', stage: ['elder'], tags: N, status: ['noble', 'royal'], w: 2, kind: 'old',
     ja: '家督を譲った{name}は、屋敷の東の棟に移った。若い当主は困ると、決まって午後の茶の時間に相談に来た。',
-    en: "Having handed over the house, {name} moved into the east wing. Whenever the young head of the family was in trouble, they turned up at afternoon tea.",
+    en: "Having handed over the house, {name} moved into the east wing. Whenever the young head of the family was in trouble, {he} turned up at afternoon tea.",
     set: 'retired', eff: { happy: 3 },
   },
   {
@@ -618,7 +618,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'ne.e.first-shrine', stage: ['infant'], age: [0, 0], tags: JP, w: 2, kind: 'child',
     ja: '生まれて間もない{name}は、村はずれの社に連れて行かれた。神主の振る鈴の音で、ぴたりと泣きやんだ。',
-    en: "Soon after birth, {name} was carried to the shrine at the edge of the village. At the sound of the priest's bells, {name} stopped crying at once.",
+    en: "Soon after birth, {name} was carried to the shrine at the edge of the village. At the sound of the priest's bells, {he} stopped crying at once.",
     eff: { luck: 2 },
   },
   {
@@ -631,7 +631,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'ne.e.smallpox', stage: ['infant', 'child'], tags: JP, w: 1.2, kind: 'ill',
     ja: '村に疱瘡が流行り、{name}も高い熱を出した。{mother}は赤い紙の人形を枕元に吊るして、夜通し祈った。',
-    en: "Smallpox swept through the village and {name} burned with fever. {mother} hung a red paper charm by the pillow and prayed all night.",
+    en: "Smallpox swept through the village and {name} burned with fever. {mother} hung a red paper charm by {his} pillow and prayed all night.",
     tie: { role: 'mother', d: 3 },
     eff: { hp: -4 }, risk: { hazard: 'disease', p: 0.04 },
     why: { ja: '疱瘡や麻疹は、この時代の子どもの死因の大きな一つ', en: 'Smallpox and measles were among the great killers of children in this era' },
@@ -641,7 +641,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'ne.e.terakoya', stage: ['child'], tags: JP, status: ['poor', 'commoner', 'merchant'], w: 2, kind: 'school',
     ja: '{name}は寺の手習い所に通い始めた。墨で顔まで黒くして帰り、{mother}に笑われた。',
-    en: "{name} started at the temple writing school, where children learned to read and write. {name} came home with ink all over the face, and {mother} laughed.",
+    en: "{name} started at the temple writing school, where children learned to read and write. {He} came home with ink all over {his} face, and {mother} laughed.",
     tie: { role: 'mother', d: 1 },
     eff: { mind: 3 },
   },
@@ -674,7 +674,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'ne.e.stubborn-gate', stage: ['child', 'teen'], tags: CU, flag: 'ne.stubborn', w: 3, kind: 'hard',
     ja: '霊根のない{name}は、山門の前に三日三晩座り続けた。四日目の朝、通りがかった老人が「水汲みならさせてやる」と言った。',
-    en: "With no spiritual root, {name} sat before the sect's gate for three days and nights. On the fourth morning, a passing old man said {name} could at least haul water.",
+    en: "With no spiritual root, {name} sat before the sect's gate for three days and nights. On the fourth morning, a passing old man said {he} could at least haul water.",
     set: 'ne.sect', eff: { power: 2, hp: -2 }, tie: { role: 'mentor', new: true, d: 5 },
   },
   {
@@ -704,7 +704,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'ne.e.kappa', stage: ['child'], tags: JP, magic: 1, w: 1, kind: 'adventure',
     ja: '川で泳いでいた{name}の足を、水の中から何かが引いた。きゅうりを投げると、手はすっと離れた。',
-    en: "While {name} was swimming in the river, something pulled at {name}'s leg from below. When {name} threw it a cucumber, the hand let go. It was a kappa, the river imp.",
+    en: "While {name} was swimming in the river, something pulled at {his} leg from below. When {he} threw it a cucumber, the hand let go. It was a kappa, the river imp.",
     eff: { luck: 2 }, risk: { hazard: 'accident', p: 0.02 },
   },
   {
@@ -739,7 +739,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'ne.e.qi-refining', stage: ['teen', 'adult'], tags: CU, flag: 'ne.sect', noFlag: 'ne.qi', w: 3, kind: 'power', big: true,
     ja: '冷たい滝に打たれて百日目、{name}は丹田に小さな熱が灯るのを感じた。気を練る、最初の段に足をかけた。',
-    en: "On the hundredth day of meditating under an icy waterfall, {name} felt a small warmth kindle in the belly. It was the first stage of cultivation: refining qi, the body's vital energy.",
+    en: "On the hundredth day of meditating under an icy waterfall, {name} felt a small warmth kindle in {his} belly. It was the first stage of cultivation: refining qi, the body's vital energy.",
     set: 'ne.qi', eff: { level: 2, mind: 2, power: 2 }, risk: { hazard: 'magic', p: 0.01 },
   },
   {
@@ -757,7 +757,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'ne.e.tengu', stage: ['teen'], tags: JP, magic: 2, w: 0.8, kind: 'adventure',
     ja: '山で迷った{name}に、赤い顔の大男が「剣を握る手がなっておらん」と言った。それから七晩、{mentor}は山の上で剣を教えた。',
-    en: "When {name} got lost in the mountains, a towering red-faced figure, a tengu of mountain lore, grumbled that {name} held a sword all wrong. For seven nights after, {mentor} taught swordplay on the peak.",
+    en: "When {name} got lost in the mountains, a towering red-faced figure, a tengu of mountain lore, grumbled that {he} held {his} sword all wrong. For seven nights after, {mentor} taught swordplay on the peak.",
     eff: { power: 4 }, tie: { role: 'mentor', new: true, d: 10 },
   },
   {
@@ -769,7 +769,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'ne.e.festival-love', stage: ['teen', 'adult'], tags: JP, w: 1.5, kind: 'love',
     ja: '祭りの人混みで、{name}は{lover}とはぐれないように袖をつかんだ。花火が終わっても、その手は離さなかった。',
-    en: "In the festival crowd, {name} held onto {lover}'s sleeve so as not to get separated. When the fireworks ended, {name} still did not let go.",
+    en: "In the festival crowd, {name} held onto {lover}'s sleeve so as not to get separated. When the fireworks ended, {he} still did not let go.",
     eff: { happy: 5 }, tie: { role: 'lover', new: true, d: 15 },
   },
   {
@@ -811,12 +811,12 @@ export const EVENTS: EventDef[] = [
   {
     id: 'ne.e.golden-core', stage: ['adult', 'middle'], tags: CU, flag: 'ne.foundation', noFlag: 'ne.core', w: 2, kind: 'power', big: true,
     ja: '{name}は洞府に籠もり、気を一点に押し固めて金丹を結ぼうとした。',
-    en: "{name} sealed themselves in a mountain cave to compress all their qi into a single point and form a Golden Core.",
+    en: "{name} sealed {himself} in a mountain cave to compress all {his} qi into a single point and form a Golden Core.",
     choice: {
       ja: '結丹を急ぐ?', en: 'Rush the Golden Core?',
       options: [
         { ja: '今、結ぶ', en: 'Form it now', set: 'ne.core', eff: { level: 4, mind: 2 }, risk: { hazard: 'magic', p: 0.12 },
-          log: { ja: '三年後、洞府から出てきた{name}の目には、金の光が宿っていた。', en: "Three years later, {name} emerged from the cave with a glint of gold in the eyes." } },
+          log: { ja: '三年後、洞府から出てきた{name}の目には、金の光が宿っていた。', en: "Three years later, {name} emerged from the cave with a glint of gold in {his} eyes." } },
         { ja: 'あと十年、土台を磨く', en: 'Polish the foundation for another ten years', eff: { level: 1, mind: 1 } },
       ],
     },
@@ -844,7 +844,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'ne.e.qi-deviation', stage: ['teen', 'adult', 'middle'], tags: CU, flag: 'ne.qi', w: 1, repeat: true, kind: 'ill',
     ja: '修行中、{name}の気が逆流した。目の前が赤く染まり、気がつくと吐いた血で衣が濡れていた。',
-    en: "During meditation, {name}'s qi flowed backward, the dreaded qi deviation. The world turned red, and {name} came to with robes soaked in coughed-up blood.",
+    en: "During meditation, {name}'s qi flowed backward, the dreaded qi deviation. The world turned red, and {he} came to with {his} robes soaked in coughed-up blood.",
     eff: { hp: -5, mind: -2 }, risk: { hazard: 'magic', p: 0.03 },
     why: { ja: '気の流れを誤ると、修行者は自分の力に焼かれる', en: 'Misdirected qi lets a cultivator be burned by their own power' },
   },
@@ -892,10 +892,10 @@ export const EVENTS: EventDef[] = [
     en: "Word came that {disciple} had fled to a rival sect, taking {name}'s secret manual.",
     tie: { role: 'disciple', d: -30 },
     choice: {
-      ja: '追う?', en: 'Go after them?',
+      ja: '追う?', en: 'Go after {him:disciple}?',
       options: [
-        { ja: '追って連れ戻す', en: 'Chase them down and bring them back', eff: { power: 1, happy: -2 }, risk: { hazard: 'violence', p: 0.04 } },
-        { ja: '行かせる', en: 'Let them go', eff: { happy: -4, mind: 2 },
+        { ja: '追って連れ戻す', en: 'Chase {him:disciple} down and bring {him:disciple} back', eff: { power: 1, happy: -2 }, risk: { hazard: 'violence', p: 0.04 } },
+        { ja: '行かせる', en: 'Let {him:disciple} go', eff: { happy: -4, mind: 2 },
           log: { ja: '{name}は書の写しを火にくべた。教えたことは、誰にも盗めない。', en: '{name} burned the copy of the manual. What had been taught could not be stolen.' } },
       ],
     },
@@ -903,7 +903,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'ne.e.mortal-family', stage: ['adult', 'middle'], tags: CU, flag: 'ne.qi', w: 1.5, kind: 'family',
     ja: '二十年ぶりに山を下りた{name}は、家の前で腰の曲がった老人に会った。それが自分の弟だと分かるまで、少しかかった。',
-    en: "Coming down the mountain after twenty years, {name} met a stooped old man outside the family home. It took a moment to recognize him as {name}'s younger brother.",
+    en: "Coming down the mountain after twenty years, {name} met a stooped old man outside the family home. It took a moment to recognize him as {his} younger brother.",
     eff: { happy: -4 },
     choice: {
       ja: 'どうする?', en: 'What do you do?',
@@ -922,7 +922,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'ne.e.outlive', stage: ['elder'], tags: CU, flag: 'ne.core', w: 3, kind: 'old',
     ja: '{name}は、子どもの頃に一緒に川で遊んだ{friend}の葬儀に出た。{name}の髪は、まだ黒いままだった。',
-    en: "{name} attended the funeral of {friend}, a childhood playmate from the river. {name}'s hair was still black.",
+    en: "{name} attended the funeral of {friend}, a childhood playmate from the river. {His} hair was still black.",
     eff: { happy: -4, mind: 1 }, tie: { role: 'friend', d: 5 },
     why: { ja: '修行者は凡人の友より何十年も長く生きる', en: 'Cultivators outlive their mortal friends by decades' },
   },
@@ -947,13 +947,13 @@ export const EVENTS: EventDef[] = [
   {
     id: 'ne.e.exam-pass', stage: ['teen', 'adult', 'middle'], tags: CU, flag: 'ne.studied', noFlag: 'ne.exam', w: 1.5, kind: 'fame', big: true,
     ja: '合格者の名を記した掲示に、{name}の名があった。帰郷の日、村の入口で太鼓が鳴らされた。',
-    en: "{name}'s name was on the posted list of those who passed the imperial examination. On the day {name} returned home, drums sounded at the village gate.",
+    en: "{name}'s name was on the posted list of those who passed the imperial examination. On the day {he} returned home, drums sounded at the village gate.",
     set: 'ne.exam', eff: { fame: 6, wealth: 3, happy: 4 },
   },
   {
     id: 'ne.e.exam-fail', stage: ['teen', 'adult', 'middle'], tags: CU, flag: 'ne.studied', noFlag: 'ne.exam', w: 1.5, repeat: true, kind: 'hard',
     ja: '掲示の端から端まで探しても、{name}の名はなかった。次の試験は三年後だ。',
-    en: "{name} searched the examination list from end to end, but the name was not there. The next exam was three years away.",
+    en: "{name} searched the examination list from end to end, but {his} name was not there. The next exam was three years away.",
     eff: { happy: -4, mind: 1 },
   },
   {
@@ -992,13 +992,13 @@ export const EVENTS: EventDef[] = [
   {
     id: 'ne.e.samurai-lord', stage: ['teen', 'adult'], tags: JP, jobs: ['samurai'], w: 3, kind: 'work', big: true,
     ja: '{name}は{master}に仕えることになった。初めての目通りで、{master}は{name}の刀より草鞋の減り方を見ていた。',
-    en: "{name} entered the service of {master}, the feudal lord. At their first audience, {master} looked less at {name}'s sword than at how worn {name}'s sandals were.",
+    en: "{name} entered the service of {master}, the feudal lord. At their first audience, {master} looked less at {name}'s sword than at how worn {his} sandals were.",
     eff: { fame: 2, wealth: 2 }, tie: { role: 'master', new: true, d: 10 },
   },
   {
     id: 'ne.e.envoy', stage: ['adult', 'middle'], tags: JP, jobs: ['samurai'], w: 1.5, kind: 'adventure',
     ja: '{master}の命で、{name}は敵方の城への使者に立った。帰り道、峠で矢が一本、笠をかすめた。',
-    en: "On {master}'s orders, {name} went as envoy to an enemy castle. On the way back, an arrow grazed {name}'s straw hat at the mountain pass.",
+    en: "On {master}'s orders, {name} went as envoy to an enemy castle. On the way back, an arrow grazed {his} straw hat at the mountain pass.",
     eff: { fame: 2 }, tie: { role: 'master', d: 5 }, risk: { hazard: 'violence', p: 0.02 },
   },
   {
@@ -1025,7 +1025,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'ne.e.battle', stage: ['teen', 'adult', 'middle'], tags: JP, jobs: ['samurai'], w: 1.5, repeat: true, kind: 'battle',
     ja: '合戦の朝、霧の向こうで法螺貝が鳴った。{name}は槍を握り直し、前の者の背中だけを見て走った。',
-    en: "On the morning of battle, a conch-shell horn sounded through the fog. {name} tightened a grip on the spear and ran, eyes on nothing but the back ahead.",
+    en: "On the morning of battle, a conch-shell horn sounded through the fog. {name} tightened {his} grip on the spear and ran, eyes on nothing but the back ahead.",
     eff: { power: 2, fame: 2 }, risk: { hazard: 'war', p: 0.06 },
   },
   {
@@ -1043,7 +1043,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'ne.e.shikigami', stage: ['teen', 'adult'], tags: JP, jobs: ['onmyoji'], w: 3, kind: 'power', big: true,
     ja: '{name}が折った紙の鳥が、息を吹きかけると羽ばたいた。初めての式神、{familiar}だった。',
-    en: "The paper bird {name} folded flapped its wings when breathed upon. It was {name}'s first shikigami, a summoned spirit servant: {familiar}.",
+    en: "The paper bird {name} folded flapped its wings when breathed upon. It was {his} first shikigami, a summoned spirit servant: {familiar}.",
     eff: { mind: 3, level: 1 }, tie: { role: 'familiar', new: true, d: 15 },
   },
   {
@@ -1106,13 +1106,13 @@ export const EVENTS: EventDef[] = [
   {
     id: 'ne.e.ninja-disguise', stage: ['adult', 'middle'], tags: JP, jobs: ['ninja'], w: 1.5, kind: 'work',
     ja: '{name}は薬売りに化けて、敵の城下で三年暮らした。近所の子どもたちには、飴をくれる優しいおじさんで通っていた。',
-    en: "{name} lived three years in an enemy castle town disguised as a medicine peddler. To the neighborhood children, {name} was just the kind one who handed out candy.",
+    en: "{name} lived three years in an enemy castle town disguised as a medicine peddler. To the neighborhood children, {he} was just the kind stranger who handed out candy.",
     eff: { charm: 2, mind: 2 },
   },
   {
     id: 'ne.e.great-fire', stage: ['child', 'teen', 'adult', 'middle', 'elder'], tags: E, w: 0.8, kind: 'hard',
     ja: '冬の乾いた風の夜、町に火が出た。{name}は持てるだけの物を背負って川べりまで逃げた。翌朝、通りは三本まるごと消えていた。',
-    en: "On a night of dry winter wind, fire broke out in town. {name} fled to the riverbank with whatever could be carried. By morning, three entire streets were gone.",
+    en: "On a night of dry winter wind, fire broke out in town. {name} fled to the riverbank with whatever {he} could carry. By morning, three entire streets were gone.",
     eff: { wealth: -5, happy: -3 }, risk: { hazard: 'accident', p: 0.02 },
   },
   {
@@ -1155,25 +1155,25 @@ export const EVENTS: EventDef[] = [
   {
     id: 'ne.e.pilgrimage', stage: ['middle', 'elder'], tags: JP, w: 1.2, kind: 'adventure',
     ja: '{name}は白装束で、遠い霊山への巡礼に出た。杖の鈴が鳴るたびに、来た道のことを一つずつ忘れた。',
-    en: "Dressed in pilgrim's white, {name} set out for a distant sacred mountain. With every chime of the staff's bell, {name} let go of one more memory of the road behind.",
+    en: "Dressed in pilgrim's white, {name} set out for a distant sacred mountain. With every chime of the staff's bell, {he} let go of one more memory of the road behind.",
     eff: { happy: 3, hp: -1, mind: 1 },
   },
   {
     id: 'ne.e.take-vows', stage: ['elder'], tags: E, w: 1.2, kind: 'old',
     ja: '家督を譲った{name}は、頭を丸めて寺に入った。朝の掃き掃除が、一日でいちばん好きな時間になった。',
-    en: "Having handed down the family headship, {name} shaved their head and entered a temple. Sweeping the grounds in the morning became the best part of each day.",
+    en: "Having handed down the family headship, {name} shaved {his} head and entered a temple. Sweeping the grounds in the morning became the best part of each day.",
     set: 'retired', eff: { happy: 4 },
   },
   {
     id: 'ne.e.death-poem', stage: ['elder'], tags: JP, w: 1.5, kind: 'old',
     ja: '{name}は辞世の歌を書いて、文箱にしまった。使う日が来るまで、毎年少しずつ書き直した。',
-    en: "{name} wrote a death poem, a final verse for the end of life, and tucked it in a letter box. Until the day came, {name} revised it a little every year.",
+    en: "{name} wrote a death poem, a final verse for the end of life, and tucked it in a letter box. Until the day came, {he} revised it a little every year.",
     eff: { mind: 2, happy: 1 },
   },
   {
     id: 'ne.e.palace-maid', stage: ['teen', 'adult'], tags: CU, status: ['poor', 'slave', 'orphan'], w: 1, kind: 'work',
     ja: '{name}は宮中の下働きに売られた。洗い場の冷たい水で、冬には指がひび割れた。',
-    en: "{name} was sold into service in the imperial palace. In winter, the icy water of the washhouse split {name}'s fingers.",
+    en: "{name} was sold into service in the imperial palace. In winter, the icy water of the washhouse split {his} fingers.",
     eff: { hp: -2, wealth: 1, happy: -2 },
   },
 ];

@@ -23,6 +23,8 @@ export interface MemorialEntry {
   note: string;
   scene: SceneSpec | null;
   lang: Lang;
+  gen?: number;           // 何代目か (1 = 初代。古い記録には無い)
+  lineage?: string[];     // 前の代の主人公の名前 (古い順)
   candles: number;
   createdAt: string;
 }
@@ -65,7 +67,14 @@ export function toMemorialPost(h: Hero, note = ''): MemorialPost {
     highlights: s.highlights.slice(-12).map((e) => ({ age: e.age, text: clip(e.text, 200) })),
     lastWith: s.lastWith.slice(0, 3).map((t) => ({ name: clip(t.name, 60), role: t.role })),
     note: clip(note.trim(), 140), scene: sceneOf(h, s.lastWith), lang,
+    ...lineagePost(h),
   };
+}
+
+// 系譜 (続けた主人公なら)。サーバと同じ上限 (12人・各60字) で切る
+function lineagePost(h: Hero): { gen?: number; lineage?: string[] } {
+  const l = h.lineage;
+  return l && l.gen > 1 ? { gen: Math.min(999, l.gen), lineage: l.ancestors.slice(-12).map((a) => clip(a.name, 60)) } : {};
 }
 
 /** 館に残す。成功なら新しい id。409 なら同じ人生がもう残っている */
@@ -86,3 +95,6 @@ export async function listMemorial(offset = 0, limit = 20, lang?: 'ja' | 'en'): 
 export const getMemorial = (id: number): Promise<MemorialResult<MemorialEntry>> => call(`/memorial/${id}`);
 
 export const lightCandle = (id: number): Promise<MemorialResult<{ candles: number }>> => call(`/memorial/${id}/candle`, { method: 'POST' });
+
+/** 載せるべきでない記録を知らせる。同じ人は1件に1回、何人かが知らせると非表示になる (Cloudflare 版のサーバ) */
+export const reportMemorial = (id: number): Promise<MemorialResult<{ reported: boolean }>> => call(`/memorial/${id}/report`, { method: 'POST' });

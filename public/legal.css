@@ -1,0 +1,8 @@
+:root { --bg: #14121f; --text: #ece6d6; --dim: #b6ad99; --gold: #e9b44c; color-scheme: dark; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.8 "M PLUS 1p", system-ui, sans-serif; }
+main { max-width: 720px; margin: 0 auto; padding: 24px 16px 64px; }
+h1 { font-size: 24px; margin: 8px 0 4px; } h2 { font-size: 18px; margin: 32px 0 8px; color: var(--gold); } h3 { font-size: 15px; margin: 20px 0 4px; }
+a { color: var(--gold); } p, li { overflow-wrap: anywhere; } .dim { color: var(--dim); font-size: 13px; }
+section + section { border-top: 1px solid #ffffff22; margin-top: 40px; padding-top: 8px; }
+nav { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 14px; }
+.ph { background: #e9b44c33; padding: 0 4px; border-radius: 3px; }

@@ -26,13 +26,13 @@ export const EVENTS: EventDef[] = [
   {
     id: 'co.mem-taste-spread', stage: ['teen', 'adult', 'middle'], memory: true, flag: 'pastTaste', w: 0.8, kind: 'fame',
     ja: '{name}が再現した前世の料理を、{town}の人が真似して作るようになった。誰もそれがどこの味なのか知らない。',
-    en: 'People in {town} began copying the dish {name} had rebuilt from a past life. None of them know where the taste really comes from.',
+    en: 'People in {town} began copying the dish {name} had rebuilt from a past life. None of them knew where the taste really came from.',
     eff: { charm: 2, fame: 2 },
   },
   {
     id: 'co.mem-outlive', stage: ['middle'], memory: true, noFlag: 'outlivedPast', w: 1.5, kind: 'old', big: true, set: 'outlivedPast',
     ja: '前世で生きた年月を、この世界で越えた。ここから先は、どちらの人生でも歩いたことのない道だった。',
-    en: '{name} outlived the years of the past life. From here on, the road was one neither life had walked.',
+    en: '{name} had now lived longer in this world than in the past life. From here on, the road was one neither life had walked.',
     eff: { mind: 2, happy: 1 },
     why: { ja: '前世の享年を越えた', en: 'Lived past the age of the previous death' },
   },
@@ -51,7 +51,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'co.mem-faded', stage: ['middle', 'elder'], memory: true, flag: 'memFading', w: 1, kind: 'old', set: 'memFaded',
     ja: '前世の自分の名前を、紙に書いておかないと思い出せなくなった。それでいいと思える日もあった。',
-    en: '{name} now had to write down the old name to remember it. Some days, that felt like enough.',
+    en: '{name} now had to write {his} old name down to remember it. Some days, that felt like enough.',
     eff: { happy: 1, mind: -1 },
   },
   {
@@ -63,7 +63,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'co.mem-first-words', stage: ['infant'], age: [0, 2], memory: true, w: 1, kind: 'child', tie: { role: 'mother', d: 3 },
     ja: 'まだ歩けないうちから大人の話を聞いて言葉を覚えた。最初の一言がいきなり文になっていて、{mother}を驚かせた。',
-    en: 'Listening to the adults, {name} learned to talk before learning to walk. The first words came out as a full sentence, and {mother} nearly dropped the bowl.',
+    en: 'Listening to the adults, {name} learned to talk before {he} could walk. {His} first words came out as a full sentence, and {mother} nearly dropped the bowl.',
     eff: { mind: 3 },
   },
   {
@@ -75,25 +75,25 @@ export const EVENTS: EventDef[] = [
   {
     id: 'co.mem-hygiene', stage: ['child', 'teen'], tech: [0, 6], memory: true, w: 1, kind: 'family',
     ja: '手を洗う、水は沸かしてから飲む。前世の当たり前を家族に勧めたら、その冬は家の誰も寝込まなかった。',
-    en: 'Wash your hands, boil the water first. {name} pushed these old habits on the family, and that winter no one in the house fell ill.',
+    en: '"Wash your hands. Boil the water first." {name} pushed these old habits on the family, and that winter no one in the house fell ill.',
     eff: { hp: 3, charm: 1 },
   },
   {
     id: 'co.mem-wrong-rules', stage: ['child', 'teen'], memory: true, w: 0.8, kind: 'school',
     ja: '前世で習った理屈を試してみたら、この世界ではうまくいかなかった。ここの決まりは、少しずつ違う。',
-    en: '{name} tested something learned in the past life, and it did not work here. The rules of this world are slightly different.',
+    en: '{name} tested something learned in the past life, and it did not work here. The rules of this world were slightly different.',
     eff: { mind: 1 },
   },
   {
     id: 'co.mem-game-view', stage: ['teen', 'adult'], memory: true, w: 0.7, kind: 'hard',
     ja: 'この世界の人々を、どこか物語の登場人物のように見ていた自分に気づいて、恥ずかしくなった。',
-    en: '{name} realized with some shame that part of them had been treating the people here like characters in a story.',
+    en: '{name} realized with some shame that part of {him} had been treating the people here like characters in a story.',
     eff: { mind: 1, charm: 1 },
   },
   {
     id: 'co.mem-trauma', stage: ['teen', 'adult'], memory: true, w: 0.8, kind: 'hard',
     ja: '前世の最後の日のことを急に思い出して、息が苦しくなった。しばらく、その道を通れなかった。',
-    en: 'The last day of the past life came back without warning, and {name} could not breathe for a while. For weeks, that road was impossible to walk.',
+    en: 'The last day of the past life came back without warning, and {name} could not breathe for a while. For weeks afterward, {he} could not bring {himself} to walk that road.',
     eff: { happy: -4, hp: -1 },
   },
   {
@@ -119,31 +119,31 @@ export const EVENTS: EventDef[] = [
     choice: {
       ja: '打ち明ける?', en: 'Tell someone?',
       options: [
-        { ja: '家族に話す', en: 'Tell the family', eff: { happy: 3 }, set: 'toldPast',
-          log: { ja: '家族に前世のことを話した。', en: '{name} told the family about the past life.' } },
+        { ja: '家族に話す', en: 'Tell your family', eff: { happy: 3 }, set: 'toldPast',
+          log: { ja: '家族に前世のことを話した。', en: '{name} told {his} family about the past life.' } },
         { ja: '一番近しい人にだけ話す', en: 'Tell only the closest person', eff: { happy: 2, charm: 1 }, set: 'toldPast',
           log: { ja: '一番近しい人にだけ打ち明けた。', en: '{name} confided in one person only.' } },
         { ja: '誰にも話さない', en: 'Tell no one', eff: { mind: 1, happy: -1 },
-          log: { ja: '胸にしまっておくことにした。', en: '{name} decided to keep it inside.' } },
+          log: { ja: '胸にしまっておくことにした。', en: '{name} decided to keep it to {himself}.' } },
       ],
     },
   },
   {
     id: 'co.mem-believed', stage: ['teen', 'adult', 'middle'], memory: true, flag: 'toldPast', w: 1, kind: 'family',
     ja: '前世の話を聞いた人は、しばらく黙ってから「それでも、あなたはあなただ」と言った。',
-    en: 'After hearing about the past life, they were silent for a while. Then they said, "You are still you."',
+    en: 'The person {name} had told about the past life was silent for a while, then said, "You are still you."',
     eff: { happy: 5, charm: 1 },
   },
   {
     id: 'co.mem-song', stage: ['teen', 'adult', 'middle'], memory: true, w: 0.8, kind: 'fame',
     ja: '前世で覚えた歌を口ずさんでいたら、子どもたちが真似をした。誰も意味を知らない歌が{town}に広まった。',
-    en: '{name} hummed a song from the past life, and the children picked it up. Now all of {town} sings a song nobody understands.',
+    en: '{name} hummed a song from the past life, and the children picked it up. Before long, all of {town} was singing a song nobody understood.',
     eff: { charm: 2, fame: 1 },
   },
   {
     id: 'co.mem-season', stage: ['adult', 'middle', 'elder'], memory: true, w: 0.4, repeat: true, kind: 'loss',
     ja: '前世で亡くなったのと同じ季節が来ると、少しだけ食が細くなる。',
-    en: 'When the season of the past death comes around, {name} eats a little less.',
+    en: 'When the season of {his} past death came around, {name} always ate a little less.',
     eff: { happy: -1 },
   },
   {
@@ -154,7 +154,7 @@ export const EVENTS: EventDef[] = [
       ja: 'この思いをどうする?', en: 'What to do with the longing?',
       options: [
         { ja: '前世の暮らしを書き残す', en: 'Write the old life down', eff: { mind: 2 }, set: 'pastMemoir',
-          log: { ja: '覚えている限りのことを、帳面に書き始めた。', en: '{name} began filling a notebook with everything still remembered.' } },
+          log: { ja: '覚えている限りのことを、帳面に書き始めた。', en: '{name} began filling a notebook with everything {he} still remembered.' } },
         { ja: '今の暮らしに目を向ける', en: 'Turn toward this life', eff: { happy: 2, charm: 1 },
           log: { ja: '翌朝から、近所の人に自分から声をかけるようにした。', en: 'From the next morning, {name} made a point of greeting the neighbors first.' } },
         { ja: '酒で紛らわす', en: 'Drink it away', eff: { happy: 1, hp: -3 },
@@ -177,7 +177,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'co.mem-past-job', stage: ['adult'], memory: true, w: 1, kind: 'work',
     ja: '前世の仕事の段取りを思い出して、今の仕事に使ってみた。周りが首をかしげるほど早く片づいた。',
-    en: '{name} applied the routines of an old job to the work at hand. It got done so fast the others stared.',
+    en: '{name} applied the routines from {his} old job to the work at hand. It got done so fast the others stared.',
     eff: { wealth: 3, mind: 1 },
   },
   {
@@ -189,7 +189,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'co.mem-mirror', stage: ['teen'], memory: true, w: 0.8, kind: 'child',
     ja: '水面に映る顔が前世の自分とまるで違うことに、今さら驚いた。',
-    en: 'Catching a reflection in still water, {name} was startled all over again by how different this face was.',
+    en: 'Catching a reflection in still water, {name} was startled all over again by how different {his} face was now.',
     eff: { mind: 1 },
   },
   {
@@ -211,14 +211,14 @@ export const EVENTS: EventDef[] = [
   {
     id: 'co.mem-fellow', stage: ['adult', 'middle'], memory: true, w: 0.3, kind: 'love', tie: { role: 'friend', new: true, d: 20 }, set: 'fellowPast',
     ja: '前世の故郷の言葉が通じる{friend}に出会った。向こうの話を、夜明けまでした。',
-    en: '{name} met {friend}, who understood words from the old world. They talked about home until dawn.',
+    en: '{name} met {friend}, who also knew words from the old world. They talked about home until dawn.',
     eff: { happy: 6 },
     why: { ja: '同じ世界から来た人がいた', en: 'Someone else had come from the same world' },
   },
   {
     id: 'co.mem-guilt', stage: ['teen', 'adult'], memory: true, arrival: ['awaken'], w: 0.6, kind: 'hard',
     ja: 'もし前世を思い出さなかったら、この体にはどんな子が育っていたのだろう、と考えることがある。',
-    en: 'Sometimes {name} wonders what kind of person would have grown up in this body if the old memories had never come back.',
+    en: 'Sometimes {name} wondered what kind of person would have grown up in this body if the old memories had never come back.',
     eff: { happy: -2, mind: 1 },
   },
 
@@ -232,19 +232,19 @@ export const EVENTS: EventDef[] = [
   {
     id: 'co.ar-reborn-crawl', stage: ['infant'], arrival: ['reborn'], memory: true, w: 1.5, kind: 'child',
     ja: '這えるようになるとすぐ、家じゅうの道具や書き物を調べて回った。',
-    en: 'As soon as {name} could crawl, every tool and scrap of writing in the house was inspected.',
+    en: 'As soon as {name} could crawl, {he} inspected every tool and scrap of writing in the house.',
     eff: { mind: 2 },
   },
   {
     id: 'co.ar-reborn-name', stage: ['infant', 'child'], arrival: ['reborn'], memory: true, w: 1, kind: 'child',
     ja: '新しい名前で呼ばれて振り向くのに、二年かかった。',
-    en: 'It took two years before {name} turned around naturally when called by the new name.',
+    en: 'It took two years before {name} turned around without thinking when someone called {his} new name.',
     eff: { happy: 1 },
   },
   {
     id: 'co.ar-reborn-sleeptalk', stage: ['child'], arrival: ['reborn'], memory: false, w: 1, kind: 'child',
     ja: '{name}はときどき、誰も知らない言葉で寝言を言った。',
-    en: 'Now and then, {name} talked in their sleep in a language no one knew.',
+    en: 'Now and then, {name} talked in {his} sleep in a language no one knew.',
     eff: { luck: 1 },
   },
   {
@@ -256,7 +256,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'co.ar-awaken-after', stage: ['child', 'teen'], arrival: ['awaken'], memory: true, w: 1.5, kind: 'family', tie: { role: 'mother', d: -3 },
     ja: '思い出した日から、親の呼び方が少しぎこちなくなった。{mother}はそれに気づいていた。',
-    en: 'After the memories returned, {name} grew a little stiff around the parents. {mother} noticed.',
+    en: 'After the memories returned, {name} grew a little stiff around {his} parents. {mother} noticed.',
     eff: { happy: -1, mind: 1 },
   },
   {
@@ -290,7 +290,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'co.ar-sum-joke', stage: ['teen', 'adult'], arrival: ['summoned'], w: 1, kind: 'arrival',
     ja: '言葉は通じるのに、冗談だけが通じなかった。笑うところが、少しずつ分かってきた。',
-    en: 'The words got through, but the jokes never did. Slowly, {name} learned where people here laugh.',
+    en: 'The words got through, but the jokes never did. Slowly, {name} learned where people here laughed.',
     eff: { charm: 2 },
   },
   {
@@ -318,7 +318,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'co.ar-sum-origin', stage: ['adult', 'middle'], arrival: ['summoned'], w: 1, repeat: true, kind: 'arrival',
     ja: 'どこから来たのかと聞かれ、遠い国からだと答えた。それ以上は聞かれなかった。',
-    en: 'Asked where they came from, {name} said "a faraway country." No one asked more.',
+    en: 'Asked where {he} came from, {name} said "a faraway country." No one asked more.',
     eff: { mind: 1 },
   },
   {
@@ -352,7 +352,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'co.ar-native-festival', stage: ['adult', 'middle', 'elder'], arrival: ['native'], w: 0.6, repeat: true, kind: 'family',
     ja: '生まれた土地の祭りに、今年も顔を出した。顔なじみが一人ずつ増え、一人ずつ減っていく。',
-    en: '{name} went to the home festival again this year. Familiar faces come and go, one at a time.',
+    en: '{name} went to the home festival again this year. Each year, one more familiar face appeared and one more was gone.',
     eff: { happy: 2, charm: 1 },
   },
 
@@ -362,10 +362,10 @@ export const EVENTS: EventDef[] = [
     ja: '自分の力が、周りの誰とも違うと分かった。どこまで見せるか、決めなければならなかった。',
     en: '{name} realized this power was unlike anyone else\'s. It was time to decide how much to show.',
     choice: {
-      ja: '特典をどう扱う?', en: 'How do you handle your gift?',
+      ja: '特典をどう扱う?', en: 'How do you handle your cheat skill?',
       options: [
         { ja: '徹底して隠す', en: 'Hide it completely', eff: { mind: 1, happy: -1 }, set: 'hiding',
-          log: { ja: '人前では、並の子として振る舞うことにした。', en: 'In public, {name} would play an ordinary child.' } },
+          log: { ja: '人前では、並の子として振る舞うことにした。', en: 'In public, {name} decided to act like an ordinary child.' } },
         { ja: '少しだけ見せる', en: 'Show a little', eff: { fame: 2, charm: 1 },
           log: { ja: '才能のある子、くらいに見えるよう加減した。', en: '{name} held back enough to pass as merely talented.' } },
         { ja: '堂々と使う', en: 'Use it openly', eff: { fame: 4 }, set: 'outed', risk: { hazard: 'violence', p: 0.01 },
@@ -376,7 +376,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'co.ch-hide-test', stage: ['child', 'teen'], cheat: true, flag: 'hiding', noFlag: 'outed', w: 1, kind: 'school',
     ja: '力を測る場で、わざと並の結果を出した。帰り道、手が震えていた。',
-    en: 'At an official test of ability, {name} deliberately scored average. On the way home, both hands were shaking.',
+    en: 'At an official test of ability, {name} deliberately scored average. On the way home, {his} hands were shaking.',
     eff: { luck: 1, mind: 1 },
   },
   {
@@ -384,7 +384,7 @@ export const EVENTS: EventDef[] = [
     ja: '目の前で人が死にかけていて、力を使わずにはいられなかった。その場にいた全員が見ていた。',
     en: 'Someone was dying right in front of {name}, and there was no choice but to use the power. Everyone there saw.',
     eff: { fame: 5, charm: 2 },
-    why: { ja: '人を救うために隠していた力を使った', en: 'Revealed the hidden gift to save a life' },
+    why: { ja: '人を救うために隠していた力を使った', en: 'Revealed a hidden cheat skill to save a life' },
   },
   {
     id: 'co.ch-outed-drink', stage: ['adult', 'middle'], cheat: true, noFlag: 'outed', w: 0.6, kind: 'hard', set: 'outed',
@@ -395,7 +395,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'co.ch-outed-seen', stage: ['teen', 'adult'], cheat: true, noFlag: 'outed', w: 0.6, kind: 'hard', set: 'outed',
     ja: '人の力を見抜く目を持つ者に、隠していたものをあっさり言い当てられた。',
-    en: 'Someone with an eye for hidden abilities saw straight through {name} and named the gift aloud.',
+    en: 'Someone with an eye for hidden abilities saw straight through {name} and named {his} cheat skill out loud.',
     eff: { fame: 2 },
   },
   {
@@ -407,7 +407,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'co.ch-recruit', stage: ['adult', 'middle'], cheat: true, flag: 'outed', w: 1.2, kind: 'power',
     ja: '力の噂を聞いた{lord}の使いが来て、召し抱えたいと言った。',
-    en: 'An envoy from {lord} arrived, having heard of the gift, and offered {name} a position.',
+    en: 'An envoy from {lord} arrived, having heard of {his} power, and offered {name} a position.',
     choice: {
       ja: '返事は?', en: 'Your answer?',
       options: [
@@ -423,57 +423,57 @@ export const EVENTS: EventDef[] = [
   {
     id: 'co.ch-envy', stage: ['adult', 'middle'], cheat: true, flag: 'outed', w: 1, kind: 'hard',
     ja: '力を妬む者たちに、根も葉もない噂を流された。',
-    en: 'People envious of the gift began spreading baseless rumors about {name}.',
+    en: 'People envious of {name}\'s power began spreading baseless rumors.',
     eff: { charm: -3, happy: -2 },
   },
   {
     id: 'co.ch-suitors', stage: ['teen', 'adult'], cheat: true, flag: 'outed', noFlag: 'married', w: 0.8, kind: 'love',
     ja: '力の噂を聞いた家々から、縁談が次々と舞い込んだ。誰も{name}本人の顔は見ていなかった。',
-    en: 'Marriage offers poured in from families who had heard of the gift. None of them had ever seen {name}\'s face.',
+    en: 'Marriage offers poured in from families who had heard of {name}\'s power. None of them had ever seen {his} face.',
     eff: { charm: 1, happy: -1 },
   },
   {
     id: 'co.ch-feared', stage: ['adult', 'middle', 'elder'], cheat: true, flag: 'outed', w: 0.8, kind: 'loss',
     ja: '力を恐れて、近所の人が目を合わせなくなった。',
-    en: 'Afraid of what {name} could do, the neighbors stopped meeting {name}\'s eyes.',
+    en: 'Afraid of what {name} could do, the neighbors stopped meeting {his} eyes.',
     eff: { happy: -3, charm: -1 },
   },
   {
     id: 'co.ch-disaster', stage: ['adult', 'middle'], cheat: true, w: 0.5, kind: 'battle', big: true, set: 'outed',
     ja: '{town}を大きな災いが襲った。力を使って、逃げ遅れた人を一人また一人と運び出した。',
-    en: 'Disaster struck {town}. Using the gift, {name} carried out the stranded one after another.',
+    en: 'Disaster struck {town}. Using {his} cheat skill, {name} carried the stranded out one after another.',
     eff: { fame: 6, charm: 3, hp: -3 }, risk: { hazard: 'accident', p: 0.03 },
   },
   {
     id: 'co.ch-recoil', stage: ['teen', 'adult', 'middle'], cheat: true, w: 0.7, repeat: true, kind: 'ill',
     ja: '大きな力を使った反動で、十日寝込んだ。',
-    en: 'After using the gift at full strength, {name} was bedridden for ten days.',
+    en: '{name} used {his} cheat skill at full strength and was bedridden for ten days afterward.',
     eff: { hp: -4 }, risk: { hazard: 'disease', p: 0.005 },
   },
   {
     id: 'co.ch-chill', stage: ['adult', 'middle'], cheat: true, w: 0.5, kind: 'ill',
     ja: '力を使うたびに、体の芯が少しずつ冷えていく気がした。医者には何も見つけられなかった。',
-    en: 'Every use of the gift seemed to leave something cold deep inside. No doctor could find anything wrong.',
+    en: 'Every use of the cheat skill seemed to leave something cold deep inside {him}. No doctor could find anything wrong.',
     eff: { hp: -3, mind: 1 },
   },
   {
     id: 'co.ch-temptation', stage: ['teen', 'adult'], cheat: true, w: 0.8, kind: 'hard',
     ja: '力を使えば、嫌な相手を簡単に黙らせられる。そう気づいてしまった。',
-    en: '{name} realized the gift could silence anyone they disliked, easily.',
+    en: '{name} realized the cheat skill could easily silence anyone {he} disliked.',
     choice: {
       ja: 'どうする?', en: 'What do you do?',
       options: [
         { ja: '使う', en: 'Use it', eff: { happy: 1, charm: -3 }, set: 'abused',
-          log: { ja: '一度だけ使った。相手は二度と近寄らなかった。胸の奥に何かが残った。', en: '{name} used it once. They never came near again, and something stayed lodged in {name}\'s chest.' } },
+          log: { ja: '一度だけ使った。相手は二度と近寄らなかった。胸の奥に何かが残った。', en: '{name} used it once. That person never came near again, but something stayed lodged in {his} chest.' } },
         { ja: '使わない', en: 'Refrain', eff: { charm: 1, mind: 1 },
-          log: { ja: '使わないと決めた。', en: '{name} decided never to.' } },
+          log: { ja: '使わないと決めた。', en: '{name} decided never to use it.' } },
       ],
     },
   },
   {
     id: 'co.ch-teach', stage: ['middle', 'elder'], cheat: true, w: 0.6, kind: 'family', tie: { role: 'disciple', new: true, d: 15 },
     ja: '力そのものは渡せないが、使い方の考え方なら伝えられる。{disciple}を弟子に取った。',
-    en: 'The gift itself could not be passed on, but the way of thinking behind it could. {name} took {disciple} as an apprentice.',
+    en: 'The cheat skill itself could not be passed on, but the way of thinking behind it could. {name} took {disciple} as an apprentice.',
     eff: { happy: 2, charm: 1 },
   },
   {
@@ -485,7 +485,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'co.ch-appraisal-lie', stage: ['adult', 'middle'], cheats: ['appraisal'], w: 0.8, kind: 'hard',
     ja: '人を見る力で、親しい人の嘘を見抜いてしまった。知らない方が良かったかもしれない。',
-    en: 'The gift of appraisal revealed a lie from someone close. Perhaps it would have been better not to know.',
+    en: '"Appraisal" revealed a lie from someone close. Perhaps it would have been better not to know.',
     eff: { happy: -3, mind: 1 },
   },
   {
@@ -533,7 +533,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'co.ch-rbd-save', stage: ['teen', 'adult'], cheats: ['return_by_death'], w: 1, kind: 'power',
     ja: '誰も知らないやり直しの先で、ある事故を未然に防いだ。助かった人は、何が起きるはずだったかを知らない。',
-    en: 'After a retry no one else remembers, {name} stopped an accident before it happened. The person saved will never know.',
+    en: 'After a retry no one else remembers, {name} stopped an accident before it happened. The person {he} saved would never know.',
     eff: { luck: 2, happy: 1 },
   },
   {
@@ -545,7 +545,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'co.ch-tamer', stage: ['child', 'teen', 'adult'], cheats: ['tamer'], w: 1.5, kind: 'power', tie: { role: 'familiar', new: true, d: 25 },
     ja: '人になつくはずのない獣が、{name}の後をついてきた。{familiar}と呼ぶことにした。',
-    en: 'A creature that should never have trusted people followed {name} home. {name} named it {familiar}.',
+    en: 'A creature that should never have trusted people followed {name} home. {He} named it {familiar}.',
     eff: { happy: 3 },
   },
   {
@@ -563,12 +563,12 @@ export const EVENTS: EventDef[] = [
   {
     id: 'co.ch-skill-steal', stage: ['teen', 'adult'], cheats: ['skill_steal'], w: 1.2, kind: 'power',
     ja: '倒した相手の技を、自分のものにできると知った。',
-    en: '{name} discovered the power to take the skills of those defeated.',
+    en: '{name} discovered the power to steal the skills of defeated enemies.',
     choice: {
       ja: 'この力をどうする?', en: 'What do you do with it?',
       options: [
         { ja: '奪い続ける', en: 'Keep taking', eff: { power: 4, charm: -2 }, set: 'stealer', risk: { hazard: 'violence', p: 0.02 },
-          log: { ja: '奪った技が増えるほど、自分の手癖が分からなくなった。', en: 'The more {name} took, the less {name} recognized their own habits.' } },
+          log: { ja: '奪った技が増えるほど、自分の手癖が分からなくなった。', en: 'The more {name} took, the less {he} recognized {his} own habits.' } },
         { ja: '身を守るときだけ使う', en: 'Use it only in self-defense', eff: { power: 2 },
           log: { ja: '本当に危ないときだけ使うと決めた。', en: '{name} vowed to use it only when truly in danger.' } },
         { ja: '封じる', en: 'Seal it away', eff: { happy: 1, mind: 1 },
@@ -579,7 +579,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'co.ch-gacha', stage: ['teen', 'adult', 'middle'], cheats: ['gacha'], w: 1, repeat: true, kind: 'power',
     ja: '力を引く運試しで、また使い道の分からないものが出た。',
-    en: 'Another pull of the gift\'s lottery, another prize with no obvious use.',
+    en: 'Another Gacha draw, another prize with no obvious use.',
     eff: { luck: -1, happy: 1 },
   },
   {
@@ -625,7 +625,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'co.ch-max-luck', stage: ['child', 'teen', 'adult', 'middle'], cheats: ['max_luck'], w: 1.2, repeat: true, kind: 'power',
     ja: '道で拾ったくじが当たった。驚かなくなっている自分に驚いた。',
-    en: 'A lottery ticket found on the road won. {name} was surprised only by how unsurprised they felt.',
+    en: 'A lottery ticket found on the road won. {name} was surprised only by how unsurprised {he} felt.',
     eff: { wealth: 3 },
   },
   {
@@ -633,24 +633,24 @@ export const EVENTS: EventDef[] = [
     ja: '役に立たないと笑われ続けた力に、思いがけない使い道があると気づいた。',
     en: 'The power everyone had mocked as useless turned out to have an unexpected use.',
     eff: { power: 3, mind: 2, happy: 4 },
-    why: { ja: '外れの力の本当の使い方に気づいた', en: 'Found the real use of the "useless" gift' },
+    why: { ja: '外れの力の本当の使い方に気づいた', en: 'Found the real use of the "useless" power' },
   },
   {
     id: 'co.ch-trash-mocked', stage: ['child', 'teen'], cheats: ['trash_skill'], noFlag: 'trashBloom', w: 1.2, kind: 'hard',
     ja: '授かった力を知った周りの子に、さんざん笑われた。',
-    en: 'When the other children found out what {name}\'s gift was, they laughed for days.',
+    en: 'When the other children found out what {name}\'s cheat skill was, they laughed for days.',
     eff: { happy: -3, charm: -1 },
   },
   {
     id: 'co.ch-sword', stage: ['child', 'teen'], cheats: ['sword_saint'], w: 1.5, kind: 'power',
     ja: '刃物を初めて握った日、体が勝手に構えを取った。',
-    en: 'The first time {name} held a blade, the body fell into a stance on its own.',
+    en: 'The first time {name} held a blade, {his} body fell into a stance on its own.',
     eff: { power: 4 },
   },
   {
     id: 'co.ch-holy', stage: ['teen', 'adult'], cheats: ['holy_power'], w: 1.5, kind: 'power',
     ja: '傷ついた人に手をかざすと、痛みが引いた。噂を聞いた人が、戸口に列を作った。',
-    en: 'When {name} laid a hand on the wounded, the pain went away. Soon there was a line at the door.',
+    en: 'When {name} laid {his} hands on the wounded, the pain went away. Soon there was a line at the door.',
     eff: { fame: 3, hp: -1 },
   },
   {
@@ -706,7 +706,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'co.ti-friend-new', stage: ['child'], w: 2, kind: 'child', tie: { role: 'friend', new: true, d: 15 },
     ja: '近所の{friend}と、日が暮れるまで遊ぶ仲になった。',
-    en: '{name} and {friend} from down the road became friends who played until the sun went down.',
+    en: '{name} became friends with {friend} from down the road, and they played until the sun went down.',
     eff: { happy: 3 },
   },
   {
@@ -730,7 +730,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'co.ti-friend-away', stage: ['teen', 'adult'], w: 0.7, kind: 'loss', tie: { role: 'friend', d: -5 },
     ja: '{friend}が遠くへ移ることになり、見送りに出た。姿が見えなくなるまで手を振った。',
-    en: '{friend} was moving far away. {name} waved until they were out of sight.',
+    en: '{friend} was moving far away. {name} waved until {he:friend} was out of sight.',
     eff: { happy: -2 },
   },
   {
@@ -742,7 +742,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'co.ti-friend-sick', stage: ['adult', 'middle', 'elder'], w: 0.8, kind: 'ill', tie: { role: 'friend', d: 6 },
     ja: '病に伏せた{friend}を見舞って、昔話をして帰った。帰り道は少し遠回りをした。',
-    en: '{name} visited {friend}, who was ill, and they talked about the old days. {name} took the long way home.',
+    en: '{name} visited {friend}, who was ill, and they talked about the old days. {He} took the long way home.',
     eff: { happy: -1, charm: 1 },
   },
   {
@@ -764,7 +764,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'co.ti-lover-new', stage: ['teen', 'adult'], noFlag: 'married', w: 1.5, kind: 'love', tie: { role: 'lover', new: true, d: 20 },
     ja: '{lover}と出会った。何を話したかは覚えていないが、帰り道がやけに短かった。',
-    en: '{name} met {lover}. Neither remembers what they talked about, only that the walk home felt very short.',
+    en: '{name} met {lover}. Neither could remember what they talked about, only that the walk home felt very short.',
     eff: { happy: 5 },
   },
   {
@@ -785,7 +785,7 @@ export const EVENTS: EventDef[] = [
         { ja: 'もう少し待つ', en: 'Wait a little longer', eff: { happy: -1 },
           log: { ja: '今はまだ、と言葉を飲み込んだ。', en: '{name} swallowed the words. Not yet.' } },
         { ja: '別れを告げる', en: 'End it', eff: { happy: -4 }, set: 'brokeUp',
-          log: { ja: '別れを告げた。正しかったかどうかは、今も分からない。', en: '{name} ended it, and still does not know if that was right.' } },
+          log: { ja: '別れを告げた。正しかったかどうかは、今も分からない。', en: '{name} ended it. Whether that was right, {he} never knew.' } },
       ],
     },
   },
@@ -798,7 +798,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'co.ti-arranged', stage: ['teen', 'adult'], noFlag: 'married', w: 0.8, kind: 'family', tie: { role: 'father', d: 0 },
     ja: '親が縁談を持ってきた。相手の顔は、まだ一度も見たことがない。',
-    en: 'The parents brought a marriage proposal. {name} had never seen the other person\'s face.',
+    en: '{name}\'s parents brought a marriage proposal. {He} had never even seen the other person\'s face.',
     choice: {
       ja: '返事は?', en: 'Your answer?',
       options: [
@@ -830,7 +830,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'co.ti-spouse-old', stage: ['elder'], w: 1, repeat: true, kind: 'old', tie: { role: 'spouse', d: 4 },
     ja: '{spouse}と並んで座り、若い頃の話をした。同じ話を、もう何度もしている。',
-    en: '{name} and {spouse} sat side by side and talked about when they were young. They have told the same stories many times.',
+    en: '{name} and {spouse} sat side by side and talked about when they were young. They had told the same stories many times before.',
     eff: { happy: 3 },
   },
   {
@@ -845,14 +845,14 @@ export const EVENTS: EventDef[] = [
         { ja: '家を移る', en: 'Move somewhere cheaper', eff: { wealth: 2, happy: -2 },
           log: { ja: '小さな家に移った。', en: 'They moved to a smaller place.' } },
         { ja: '親族を頼る', en: 'Ask relatives for help', eff: { wealth: 2, charm: -1 },
-          log: { ja: '頭を下げて親族を頼った。', en: '{name} swallowed their pride and asked the family for help.' } },
+          log: { ja: '頭を下げて親族を頼った。', en: '{name} swallowed {his} pride and asked {his} relatives for help.' } },
       ],
     },
   },
   {
     id: 'co.ti-widowed', stage: ['adult', 'middle', 'elder'], flag: 'widowed', w: 0.6, repeat: true, kind: 'loss',
     ja: '亡くした伴侶の席を、まだ片づけられずにいる。',
-    en: '{name} still has not been able to clear away the late spouse\'s place at the table.',
+    en: '{name} still could not bring {himself} to clear away {his} late spouse\'s place at the table.',
     eff: { happy: -3 },
   },
   {
@@ -872,25 +872,25 @@ export const EVENTS: EventDef[] = [
   {
     id: 'co.ti-child-word', stage: ['adult', 'middle'], w: 1.2, kind: 'family', tie: { role: 'child', d: 6 },
     ja: '{child}が初めて言葉を話した。何を言ったのかは、親の耳にしか分からなかった。',
-    en: '{child} spoke a first word. Only a parent\'s ears could tell what it was.',
+    en: '{child} spoke {his:child} first word. Only a parent\'s ears could tell what it was.',
     eff: { happy: 5 },
   },
   {
     id: 'co.ti-child-fever', stage: ['adult', 'middle'], w: 0.8, kind: 'ill', tie: { role: 'child', d: 5 },
     ja: '{child}が高い熱を出し、一晩じゅう額を冷やし続けた。朝には下がっていた。',
-    en: '{child} ran a high fever, and {name} kept a cool cloth on the little forehead all night. By morning it had broken.',
+    en: '{child} ran a high fever, and {name} kept a cool cloth on {his:child} little forehead all night. By morning it had broken.',
     eff: { happy: -1, hp: -1 },
   },
   {
     id: 'co.ti-child-quarrel', stage: ['middle', 'elder'], w: 0.8, kind: 'family', tie: { role: 'child', d: -8 },
     ja: '{child}と将来のことで言い争った。昔の自分と親の喧嘩を、そのままなぞっていた。',
-    en: '{name} and {child} fought about the future. It was the same fight {name} once had with their own parents.',
+    en: '{name} and {child} fought about the future. It was the same fight {he} had once had with {his} own parents.',
     eff: { happy: -2 },
   },
   {
     id: 'co.ti-child-leave', stage: ['middle', 'elder'], w: 1, kind: 'family', tie: { role: 'child', d: 2 },
     ja: '{child}が家を出て、自分の暮らしを始めた。家が急に広くなった。',
-    en: '{child} left home to start a life of their own. The house suddenly felt very large.',
+    en: '{child} left home to start a life of {his:child} own. The house suddenly felt very large.',
     eff: { happy: -1 },
   },
   {
@@ -909,7 +909,7 @@ export const EVENTS: EventDef[] = [
         { ja: '背中を押す', en: 'Give your blessing', eff: { happy: 2, wealth: -2 },
           log: { ja: '蓄えの一部を持たせて送り出した。', en: '{name} sent {child} off with part of the savings.' } },
         { ja: '反対する', en: 'Object', eff: { happy: -2 },
-          log: { ja: '反対した。{child}はしばらく口をきかなかった。', en: '{name} objected. {child} did not speak to {name} for some time.' } },
+          log: { ja: '反対した。{child}はしばらく口をきかなかった。', en: '{name} objected. {child} did not speak to {him} for some time.' } },
         { ja: '黙って見守る', en: 'Say nothing and watch', eff: { mind: 1 },
           log: { ja: '何も言わずに見守ることにした。', en: '{name} decided to say nothing and watch.' } },
       ],
@@ -936,7 +936,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'co.ti-father-clash', stage: ['teen'], w: 0.8, kind: 'family', tie: { role: 'father', d: -6 },
     ja: '進む道のことで、{father}と真っ向からぶつかった。',
-    en: '{name} clashed head-on with {father} over what to do with life.',
+    en: '{name} clashed head-on with {father} over what to do with {his} life.',
     choice: {
       ja: 'どうする?', en: 'What do you do?',
       options: [
@@ -993,7 +993,7 @@ export const EVENTS: EventDef[] = [
       ja: 'どうする?', en: 'What do you do?',
       options: [
         { ja: '独り立ちする', en: 'Strike out alone', eff: { mind: 2, wealth: 1 },
-          log: { ja: '独り立ちした。{mentor}は見送りに来なかったが、餞別だけは届いていた。', en: '{name} struck out alone. {mentor} did not see them off, but a parting gift arrived.' } },
+          log: { ja: '独り立ちした。{mentor}は見送りに来なかったが、餞別だけは届いていた。', en: '{name} struck out alone. {mentor} did not see {him} off, but a parting gift arrived.' } },
         { ja: '残って支える', en: 'Stay and support', eff: { charm: 2, wealth: -1 },
           log: { ja: '残って{mentor}を支えることにした。', en: '{name} stayed on to support {mentor}.' } },
       ],
@@ -1019,7 +1019,7 @@ export const EVENTS: EventDef[] = [
       ja: '受ける?', en: 'Accept?',
       options: [
         { ja: '受けて立つ', en: 'Accept', eff: { power: 2, fame: 1 }, risk: { hazard: 'violence', p: 0.005 },
-          log: { ja: '受けて立った。勝敗より、終わった後の握手が記憶に残った。', en: '{name} accepted. More than the result, the handshake after stuck in memory.' } },
+          log: { ja: '受けて立った。勝敗より、終わった後の握手が記憶に残った。', en: '{name} accepted. More than the result, {he} remembered the handshake afterward.' } },
         { ja: '断る', en: 'Decline', eff: { charm: -1 },
           log: { ja: '断った。{rival}は鼻で笑った。', en: '{name} declined. {rival} scoffed.' } },
         { ja: 'わざと負ける', en: 'Lose on purpose', eff: { charm: 2, happy: -1 },
@@ -1036,7 +1036,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'co.ti-nemesis-new', stage: ['teen', 'adult', 'middle'], w: 0.6, kind: 'hard', tie: { role: 'nemesis', new: true, d: -20 },
     ja: '{nemesis}に深く恨まれた。何がきっかけだったのか、本当は今もよく分からない。',
-    en: '{name} earned the deep hatred of {nemesis}. Even now, the cause is not entirely clear.',
+    en: '{name} earned the deep hatred of {nemesis}. The cause was never entirely clear.',
     eff: { happy: -2 }, risk: { hazard: 'violence', p: 0.005 },
   },
   {
@@ -1048,7 +1048,7 @@ export const EVENTS: EventDef[] = [
       ja: 'どうする?', en: 'What do you do?',
       options: [
         { ja: '戦う', en: 'Fight', eff: { power: 2 }, risk: { hazard: 'violence', p: 0.04 },
-          log: { ja: '戦って退けた。肩に傷が残った。', en: '{name} fought them off and kept a scar on one shoulder.' } },
+          log: { ja: '戦って退けた。肩に傷が残った。', en: '{name} fought them off but was left with a scar on one shoulder.' } },
         { ja: '逃げる', en: 'Run', eff: { happy: -2 }, risk: { hazard: 'violence', p: 0.01 },
           log: { ja: '走って逃げた。', en: '{name} ran.' } },
         { ja: '話をつける', en: 'Talk your way out', eff: { charm: 1, wealth: -2 }, risk: { hazard: 'violence', p: 0.02 },
@@ -1065,7 +1065,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'co.ti-familiar-new', stage: ['child', 'teen', 'adult'], w: 0.7, kind: 'child', tie: { role: 'familiar', new: true, d: 20 },
     ja: '怪我をした小さな生き物を拾って手当てした。{familiar}と呼ぶと、そのまま居着いた。',
-    en: '{name} took in a small injured creature and nursed it. Named {familiar}, it simply never left.',
+    en: '{name} took in a small injured creature and nursed it. {He} named it {familiar}, and it simply never left.',
     eff: { happy: 3 },
   },
   {
@@ -1077,7 +1077,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'co.ti-familiar-old', stage: ['adult', 'middle', 'elder'], w: 0.6, kind: 'old', tie: { role: 'familiar', d: 3 },
     ja: '{familiar}の動きが鈍くなってきた。日なたで眠る時間が長い。',
-    en: '{familiar} has slowed down and spends long hours sleeping in the sun.',
+    en: '{familiar} had slowed down and spent long hours sleeping in the sun.',
     eff: { happy: -1 },
   },
   {
@@ -1093,7 +1093,7 @@ export const EVENTS: EventDef[] = [
     choice: {
       ja: 'どうする?', en: 'What do you do?',
       options: [
-        { ja: '背負って運ぶ', en: 'Carry them', eff: { hp: -2, charm: 2 }, risk: { hazard: 'accident', p: 0.01 },
+        { ja: '背負って運ぶ', en: 'Carry {him:companion}', eff: { hp: -2, charm: 2 }, risk: { hazard: 'accident', p: 0.01 },
           log: { ja: '背負って、夜通し歩いた。', en: '{name} carried {companion} all night.' } },
         { ja: '助けを呼びに走る', en: 'Run for help', eff: { luck: 1 },
           log: { ja: '走って助けを呼んだ。間に合った。', en: '{name} ran for help, and it came in time.' } },
@@ -1127,7 +1127,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'co.ti-disciple-new', stage: ['middle'], w: 0.8, kind: 'work', tie: { role: 'disciple', new: true, d: 10 },
     ja: '{disciple}を弟子に取った。昔の自分によく似た、生意気な若者だった。',
-    en: '{name} took {disciple} as an apprentice: a cheeky youngster a lot like {name} once was.',
+    en: '{name} took {disciple} as an apprentice: a cheeky youngster a lot like {name} had once been.',
     eff: { happy: 2 },
   },
   {
@@ -1145,26 +1145,26 @@ export const EVENTS: EventDef[] = [
   {
     id: 'co.ti-parent-keepsake', stage: ['middle', 'elder'], w: 0.5, kind: 'loss',
     ja: '親の使っていた古い道具を手に取ると、あの頃の家の匂いを思い出した。',
-    en: 'Holding an old tool that once belonged to a parent, {name} remembered how the house used to smell.',
+    en: '{name} held an old tool that had once belonged to {his} parents and remembered how the house used to smell.',
     eff: { happy: -1, mind: 1 },
   },
   {
     id: 'co.ti-longlived', stage: ['adult', 'middle', 'elder'], races: ['elf', 'dark_elf', 'dragonkin', 'vampire', 'demon', 'merfolk', 'fairy'], w: 1.2, kind: 'loss',
     ja: '幼なじみだった人間たちが、みな先に年老いていった。自分だけが、あの頃の顔のままだった。',
-    en: 'The human friends of {name}\'s youth all grew old first. {name} alone still had the same face.',
+    en: 'The human friends of {name}\'s youth all grew old first. {name} alone still looked the same.',
     eff: { happy: -4, mind: 2 },
     why: { ja: '寿命の長い種族に生まれた', en: 'Born into a long-lived race' },
   },
   {
     id: 'co.ti-longlived-stones', stage: ['middle', 'elder'], races: ['elf', 'dark_elf', 'dragonkin', 'vampire', 'demon', 'merfolk'], w: 0.6, repeat: true, kind: 'loss',
     ja: '見送った友の名を、一つずつ石に刻んで並べている。もう両手では数えきれない。',
-    en: '{name} carves the name of each friend outlived into a stone and sets them in a row. There are more than two hands can count.',
+    en: '{name} carved the name of each friend {he} had outlived into a stone and set the stones in a row. There were more than two hands could count.',
     eff: { happy: -2 },
   },
   {
     id: 'co.ti-longlived-choice', stage: ['adult', 'middle'], races: ['elf', 'dark_elf', 'half_elf', 'dragonkin', 'vampire', 'demon', 'merfolk', 'fairy'], w: 0.8, kind: 'love',
     ja: '寿命の短い種族の人と、親しくなりかけていた。いずれ必ず見送る側になる。',
-    en: '{name} was growing close to someone from a short-lived people, knowing that one day {name} would be the one left behind.',
+    en: '{name} was growing close to someone from a short-lived people, knowing that one day {he} would be the one left behind.',
     choice: {
       ja: 'どうする?', en: 'What do you do?',
       options: [
@@ -1198,7 +1198,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'co.dy-cut', stage: ['teen', 'adult', 'middle'], w: 0.8, repeat: true, kind: 'ill',
     ja: '仕事中に手を深く切った。傷が膿まないよう、毎晩洗った。',
-    en: '{name} cut a hand badly at work and washed the wound every night so it would not fester.',
+    en: '{name} badly cut {his} hand at work and washed the wound every night so it would not fester.',
     eff: { hp: -2 }, risk: { hazard: 'disease', p: 0.005 },
   },
   {
@@ -1222,7 +1222,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'co.dy-lost-savings', stage: ['teen', 'adult', 'middle'], w: 0.5, kind: 'hard',
     ja: '大事に貯めていた金を、どこかで落とした。',
-    en: '{name} lost the carefully saved money somewhere and never found it.',
+    en: '{name} lost {his} carefully saved money somewhere and never found it.',
     eff: { wealth: -2, happy: -1 },
   },
   {
@@ -1234,7 +1234,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'co.dy-tooth', stage: ['middle'], w: 0.8, kind: 'old',
     ja: '奥歯が一本抜けた。固いものを噛むとき、少し考えるようになった。',
-    en: 'A back tooth fell out. {name} now thinks twice before biting anything hard.',
+    en: 'A back tooth fell out. From then on, {name} thought twice before biting anything hard.',
     eff: { hp: -1 },
   },
   {
@@ -1252,7 +1252,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'co.dy-back', stage: ['middle', 'elder'], w: 0.7, kind: 'ill',
     ja: '腰を痛めて、しばらく杖が手放せなかった。',
-    en: '{name} hurt their back and could not do without a cane for a while.',
+    en: '{name} hurt {his} back and could not do without a cane for a while.',
     eff: { hp: -2 },
   },
   {
@@ -1293,7 +1293,7 @@ export const EVENTS: EventDef[] = [
         { ja: '退く', en: 'Retire', eff: { happy: 3, wealth: -2 }, set: 'retired',
           log: { ja: '仕事を退いた。最初の一月は、朝早く目が覚めて困った。', en: '{name} retired. For the first month, waking early was a nuisance.' } },
         { ja: '続ける', en: 'Keep going', eff: { wealth: 2, hp: -2 },
-          log: { ja: '体が動くうちは続けると決めた。', en: '{name} resolved to keep going while the body allowed.' } },
+          log: { ja: '体が動くうちは続けると決めた。', en: '{name} resolved to keep going while {his} body allowed.' } },
         { ja: '相談役に回る', en: 'Step back and advise', eff: { charm: 2 }, set: 'retired',
           log: { ja: '若い者に任せて、相談役に回った。', en: '{name} handed things to the young ones and stayed on as an adviser.' } },
       ],
@@ -1338,7 +1338,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'co.dy-lost-way', stage: ['child'], w: 0.8, kind: 'child', risk: { hazard: 'accident', p: 0.005 },
     ja: '行ったことのない町外れまで一人で歩いて、帰り道が分からなくなった。日暮れに、探しに来た大人に見つけられた。',
-    en: '{name} wandered alone to the far edge of town and could not find the way back. A grown-up found them at dusk.',
+    en: '{name} wandered alone to the far edge of town and could not find the way back. A grown-up found {him} at dusk.',
     eff: { mind: 1 },
   },
   {
@@ -1393,7 +1393,7 @@ export const EVENTS: EventDef[] = [
       ja: 'どこへ?', en: 'Where to?',
       options: [
         { ja: '生まれた土地へ', en: 'Back to where it began', eff: { happy: 4 },
-          log: { ja: '生まれた土地を歩いた。見覚えのあるものは、もう少ししか残っていなかった。', en: '{name} walked the land of their birth. Little that was familiar remained.' } },
+          log: { ja: '生まれた土地を歩いた。見覚えのあるものは、もう少ししか残っていなかった。', en: '{name} walked the land of {his} birth. Little that was familiar remained.' } },
         { ja: '見たことのない場所へ', en: 'Somewhere never seen', eff: { happy: 3, mind: 1 }, risk: { hazard: 'accident', p: 0.01 },
           log: { ja: '見たことのない土地へ出かけた。年甲斐もなく胸が躍った。', en: '{name} set out for a place never seen, heart racing like a youngster\'s.' } },
         { ja: '家にいる', en: 'Stay home', eff: { hp: 1 },
@@ -1404,7 +1404,7 @@ export const EVENTS: EventDef[] = [
   {
     id: 'co.dy-shoes', stage: ['teen', 'adult'], w: 0.5, kind: 'work',
     ja: '初めて自分の稼ぎで、新しい靴を買った。',
-    en: '{name} bought a new pair of shoes with their own earnings for the first time.',
+    en: '{name} bought a new pair of shoes with {his} own earnings for the first time.',
     eff: { happy: 2, wealth: -1 },
   },
   {

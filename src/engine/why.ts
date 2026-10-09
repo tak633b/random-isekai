@@ -6,9 +6,10 @@ import { traitNotes } from './traits';
 import { BLESSING, HAZARDS, hazards, lifeTableFor, lAt, maternalRisk, plagueH, famineH, warServeH, qAt, total, heqOf, type Hazards } from './mortality';
 import { jobOf } from './jobs';
 import { CHEATS } from './cheats';
-import { statusName } from './status';
+import { statusBirth, statusName } from './status';
+import { worldPlace } from './worlds';
 import { raceOf } from './races';
-import { L, T } from '../i18n';
+import { L, T, an, cap, isEn } from '../i18n';
 
 // 直前の出来事に why を付ける
 export function because(h: Hero, why: string): void {
@@ -17,7 +18,8 @@ export function because(h: Hero, why: string): void {
 }
 
 export const pct = (x: number) => (x >= 0.1 ? Math.round(x * 100).toString() : (x * 100).toFixed(x >= 0.01 ? 1 : 2));
-export const joinWhy = (parts: (string | false | undefined | null)[]) => parts.filter(Boolean).join(L('。', '; '));
+// 英語は文の頭を大文字に (部品は文の途中にも置けるよう小文字で書いてある)
+export const joinWhy = (parts: (string | false | undefined | null)[]) => { const s = parts.filter(Boolean).join(L('。', '; ')); return isEn ? cap(s) : s; };
 const times = (x: number) => (x >= 10 ? Math.round(x).toString() : x.toFixed(1).replace(/\.0$/, ''));
 const oneIn = (p: number) => Math.max(2, Math.round(1 / Math.max(p, 1e-6)));
 
@@ -34,11 +36,12 @@ function ratioWhy(h: Hero, hz: Hazard): string | null {
   const base = plainHazards(h)[hz];
   if (base <= 0 || mine / base < 1.5) return null;
   const j = jobOf(h.job);
-  const who = j && (j.risk[hz] ?? 1) > 1.2 || (j?.add?.[hz] ?? 0) > 0 ? T({ ja: j!.ja, en: j!.en })
-    : h.cheat && (CHEATS[h.cheat].mult[hz] ?? 1) > 1 ? T(CHEATS[h.cheat].name)
-      : statusName(h.status, h.world);
+  // 英語は何が効いたかで言い方を変える (職業は小文字、特典は名を引用、身分は born …)
+  const [who, whoEn] = j && (j.risk[hz] ?? 1) > 1.2 || (j?.add?.[hz] ?? 0) > 0 ? [j!.ja, `as ${an(`a ${j!.en.toLowerCase()}`)}`]
+    : h.cheat && (CHEATS[h.cheat].mult[hz] ?? 1) > 1 ? [CHEATS[h.cheat].name.ja, `with "${CHEATS[h.cheat].name.en}"`]
+      : [statusName(h.status, h.world), `born ${statusBirth(h.status, h.world)}`];
   return L(`この人の${hazardName(hz)}の危険は、${who}だったことで平民の${times(mine / base)}倍だった`,
-    `as ${/^[aeiou]/i.test(who) ? 'an' : 'a'} ${who}, the risk of ${hazardName(hz).toLowerCase()} was ${times(mine / base)}× that of a commoner`);
+    `${whoEn}, the risk of ${hazardName(hz).toLowerCase()} was ${times(mine / base)}× that of a commoner`);
 }
 
 // 死因の分類の名 (集計と、死因の文が無いときの代わり)
@@ -49,6 +52,14 @@ const HAZARD_NAMES: Record<Hazard, [string, string]> = {
 };
 export const hazardName = (hz: Hazard) => L(...HAZARD_NAMES[hz]);
 
+// 種族の名の複数形 (英語)。folk / kin と Oni はそのまま
+function racePlural(r: string): string {
+  if (/(?:folk|kin|Oni)$/.test(r)) return r;
+  if (/us$/.test(r)) return r.replace(/us$/, 'i');
+  if (/y$/.test(r)) return r.replace(/y$/, 'ies');
+  return r.replace(/lf$/, 'lve').replace(/arf$/, 'arve') + 's';
+}
+
 // 亡くなったときの why
 export function deathWhy(h: Hero, hz: Hazard): string {
   const t = lifeTableFor(h.world, h.race);
@@ -56,11 +67,11 @@ export function deathWhy(h: Hero, hz: Hazard): string {
   const age = h.age;
   const race = T(raceOf(h.race).name);
   const reach = L(`この世界で生まれた${race}のうち、${age}歳まで生きるのは約${pct(lAt(t, age))}%`,
-    `of ${race}s born in this world, about ${pct(lAt(t, age))}% live to ${age}`);
+    `of ${racePlural(race)} born in this world, about ${pct(lAt(t, age))}% live to ${age}`);
   const parts: (string | null | false)[] = [];
   switch (hz) {
     case 'infant':
-      parts.push(L(`${w}では、生まれた子のおよそ${oneIn(1 - lAt(t, 5))}人に1人が5歳までに亡くなる`, `In the ${w}, about 1 child in ${oneIn(1 - lAt(t, 5))} dies before turning 5`));
+      parts.push(L(`${w}では、生まれた子のおよそ${oneIn(1 - lAt(t, 5))}人に1人が5歳までに亡くなる`, `In ${T(worldPlace(h.world))}, about 1 child in ${oneIn(1 - lAt(t, 5))} dies before turning 5`));
       break;
     case 'war':
       parts.push(L(`この世界の戦で従軍した者は、1年でおよそ${pct(1 - Math.exp(-warServeH(h.world)))}%が亡くなる`, `in this world's wars, about ${pct(1 - Math.exp(-warServeH(h.world)))}% of those who serve die each year`));
@@ -92,7 +103,7 @@ export function deathWhy(h: Hero, hz: Hazard): string {
 
 // 死の取り消し (死に戻り・不死の体)
 export function reviveWhy(h: Hero): string {
-  return h.cheat ? L(`${T(CHEATS[h.cheat].name)}の力。残りは${h.revives}回`, `the power of ${T(CHEATS[h.cheat].name)}; ${h.revives} left`) : '';
+  return h.cheat ? L(`${T(CHEATS[h.cheat].name)}の力。残りは${h.revives}回`, `Saved by "${T(CHEATS[h.cheat].name)}" (${h.revives === 1 ? '1 use' : `${h.revives} uses`} left)`) : '';
 }
 
 // その年の危険の内訳 (画面の「危険の内訳」用): 大きい順に、割合つき

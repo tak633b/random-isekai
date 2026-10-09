@@ -10,7 +10,7 @@ import { heq } from './mortality';
 import { raceOf } from './races';
 import { beastName, styleOf, worldNames } from './names';
 import { callName } from './bonds';
-import { L, T } from '../i18n';
+import { L, T, pron } from '../i18n';
 
 export const STORY_MAX = 12;
 // false にすると peopleYear は何もしない (人物像を入れない人生と比べるテスト用)
@@ -44,16 +44,22 @@ const RANKS: GuildRank[] = ['F', 'E', 'D', 'C', 'B', 'A', 'S'];
 const heqT = (t: Tie) => heq(t.age, raceOf(t.race));
 const fighter = (t: Tie) => FIGHT_ROLES.has(t.role) || (!!t.job && FIGHT_JOBS.has(t.job));
 const jobWord = (id: JobId | null | undefined) => (id ? L(JOBS[id].ja, JOBS[id].en.toLowerCase()) : '');
+// 英語: 職業の複数形 (the other thieves) と序数 (a third child)
+const jobsWord = (id: JobId | null | undefined) => {
+  const w = jobWord(id);
+  return /(?:crew|samurai|ninja|onmyoji)$/.test(w) ? w : `${w.replace(/thief$/, 'thieve')}s`;
+};
+const ORDINAL: Record<number, string> = { 2: 'second', 3: 'third', 4: 'fourth', 5: 'fifth', 6: 'sixth', 7: 'seventh', 8: 'eighth', 9: 'ninth', 10: 'tenth' };
 const gamey = (h: Hero) => h.world.tags.includes('gamey');
 const startAge = (h: Hero) => (h.log.length ? h.log[0].age : h.age);
 
 // ランクの言い方は世界で変える
 export function rankWord(h: Hero, r: GuildRank): string {
   switch (styleOf(h.world)) {
-    case 'wa': case 'zh': case 'ruin': return L(`${r}級`, `grade ${r}`);
-    case 'modern': return L(`${r}級探索者`, `${r}-class explorer`);
-    case 'scifi': return L(`等級${r}`, `tier ${r}`);
-    default: return L(`ランク${r}`, `rank ${r}`);
+    case 'wa': case 'zh': case 'ruin': return L(`${r}級`, `Grade ${r}`);
+    case 'modern': return L(`${r}級探索者`, `${r}-Rank Explorer`);
+    case 'scifi': return L(`等級${r}`, `Tier ${r}`);
+    default: return L(`ランク${r}`, `Rank ${r}`);
   }
 }
 
@@ -80,12 +86,12 @@ function metLine(h: Hero, t: Tie): string {
   const a = t.since;
   if ((t.role === 'child' || t.role === 'sibling') && a > startAge(h)) return L(`${a}歳の年に生まれた。`, `Born the year you were ${a}.`);
   if (FAMILY.has(t.role)) return a === 0 ? L('生まれた時から。', 'Since the day you were born.') : L('この体で目を覚ました時から家族だった。', 'Family since you woke in this body.');
-  const familiar: [string, string] = styleOf(h.world) === 'wa' || styleOf(h.world) === 'zh' ? ['契りを結んだ', 'bound by a pact'] : ['従えた', 'tamed'];
+  const familiar: [string, string] = styleOf(h.world) === 'wa' || styleOf(h.world) === 'zh' ? ['契りを結んだ', 'bound to you by a pact'] : ['従えた', 'became your familiar'];
   const by: Record<Exclude<Role, 'mother' | 'father' | 'sibling' | 'child'>, [string, string]> = {
-    spouse: [`${town}で結ばれた`, `wed in ${town}`], lover: [`${town}で恋仲になった`, `fell in love in ${town}`], fiance: ['婚約した', 'engaged'],
-    friend: [`${town}で知り合った`, `met in ${town}`], companion: [`${town}で組んだ`, `teamed up in ${town}`], mentor: ['弟子入りした', 'took you as a student'],
+    spouse: [`${town}で結ばれた`, `wed in ${town}`], lover: [`${town}で恋仲になった`, `fell in love in ${town}`], fiance: ['婚約した', 'got engaged to you'],
+    friend: [`${town}で知り合った`, `met in ${town}`], companion: [`${town}で組んだ`, `teamed up in ${town}`], mentor: ['弟子入りした', 'took you on as a disciple'],
     rival: ['張り合うようになった', 'became your rival'], nemesis: ['敵になった', 'became your enemy'], familiar,
-    master: ['仕えることになった', 'you entered their service'], servant: ['仕えるようになった', 'entered your service'], disciple: ['弟子にとった', 'became your student'],
+    master: ['仕えることになった', `you entered ${pron(t.sex, 'his')} service`], servant: ['仕えるようになった', 'entered your service'], disciple: ['弟子にとった', 'became your disciple'],
   };
   const [ja, en] = by[t.role as keyof typeof by];
   return L(`${a}歳のとき、${ja}。`, `At ${a}: ${en}.`);
@@ -164,16 +170,16 @@ function flush(h: Hero): void {
 
 // 性格で言い回しを少し変える
 const MARRY_TONE: Record<Personality, [string, string]> = {
-  cheerful: ['にぎやかな式を挙げて', 'With a loud, happy wedding, '], fiery: ['にぎやかな式を挙げて', 'With a loud, happy wedding, '],
-  quiet: ['ささやかに', 'Quietly, '], timid: ['ささやかに', 'Quietly, '], gentle: ['ささやかに', 'Quietly, '],
-  proud: ['堂々とした式で', 'In a proper ceremony, '], stern: ['堂々とした式で', 'In a proper ceremony, '],
+  cheerful: ['にぎやかな式を挙げて', 'in a loud, happy wedding'], fiery: ['にぎやかな式を挙げて', 'in a loud, happy wedding'],
+  quiet: ['ささやかに', 'quietly'], timid: ['ささやかに', 'quietly'], gentle: ['ささやかに', 'quietly'],
+  proud: ['堂々とした式で', 'in a grand ceremony'], stern: ['堂々とした式で', 'in a grand ceremony'],
   kind: ['', ''], brave: ['', ''], cunning: ['', ''],
 };
 const LEAVE_TONE: Record<Personality, [string, string]> = {
   brave: ['もっと強い相手を求めて旅立った', 'left to look for stronger foes'], fiery: ['もっと強い相手を求めて旅立った', 'left to look for stronger foes'],
   cheerful: ['笑って手を振り、旅立った', 'waved and set off'], quiet: ['書き置きを残して旅立った', 'left a note and was gone'],
-  timid: ['書き置きを残して旅立った', 'left a note and was gone'], proud: ['自分の道を行くと言って去った', 'said they had their own road, and left'],
-  stern: ['自分の道を行くと言って去った', 'said they had their own road, and left'], kind: ['名残を惜しみながら旅立った', 'left, reluctant to go'],
+  timid: ['書き置きを残して旅立った', 'left a note and was gone'], proud: ['自分の道を行くと言って去った', 'said there was another road to walk, and left'],
+  stern: ['自分の道を行くと言って去った', 'said there was another road to walk, and left'], kind: ['名残を惜しみながら旅立った', 'left, reluctant to go'],
   gentle: ['名残を惜しみながら旅立った', 'left, reluctant to go'], cunning: ['ある朝、いつのまにかいなくなっていた', 'was simply gone one morning'],
 };
 
@@ -223,30 +229,30 @@ function oneYear(h: Hero, t: Tie, r: Rng, ally: boolean): void {
     }
   } else if (t.job && !FIGHT_JOBS.has(t.job) && e < 60 && r() < 0.03) {
     const n = count(t, 'promote');
-    if (n === 0) tell(t, h.age, L(`${jobWord(t.job)}として一人前と認められた。`, `Was recognized as a full ${jobWord(t.job)}.`), 'promote');
+    if (n === 0) tell(t, h.age, L(`${jobWord(t.job)}として一人前と認められた。`, `Became a full-fledged ${jobWord(t.job)}.`), 'promote');
     else if (n === 1) {
-      tell(t, h.age, L(`${jobWord(t.job)}たちの頭になった。`, `Rose to lead the other ${jobWord(t.job)}s.`), 'promote');
-      if (near(t)) toLog(h, t, L(`${name}が${jobWord(t.job)}たちの頭になった。`, `${name} rose to lead the other ${jobWord(t.job)}s.`), 'fame');
+      tell(t, h.age, L(`${jobWord(t.job)}たちの頭になった。`, `Rose to lead the other ${jobsWord(t.job)}.`), 'promote');
+      if (near(t)) toLog(h, t, L(`${name}が${jobWord(t.job)}たちの頭になった。`, `${name} rose to lead the other ${jobsWord(t.job)}.`), 'fame');
     }
   }
   // 結婚と子
   if (!married(t) && t.role !== 'lover' && t.role !== 'fiance' && e >= 18 && e < 45 && r() < 0.06) {
     const [tja, ten] = MARRY_TONE[p.personality];
-    tell(t, h.age, L(`${tja}結婚した。`, ten ? `${ten}got married.` : 'Got married.'), 'marry');
+    tell(t, h.age, L(`${tja}結婚した。`, ten ? `Married ${ten}.` : 'Got married.'), 'marry');
     if (near(t)) toLog(h, t, L(`${name}が結婚した。`, `${name} got married.`), 'love');
   } else if (married(t) && t.role !== 'mother' && t.role !== 'father' && t.role !== 'spouse' && e < 45 && r() < 0.08) {
     const n = count(t, 'child') + 1;
-    tell(t, h.age, n === 1 ? L('子が生まれた。', 'Had a child.') : L(`${n}人目の子が生まれた。`, `Had child number ${n}.`), 'child');
+    tell(t, h.age, n === 1 ? L('子が生まれた。', 'Had a child.') : L(`${n}人目の子が生まれた。`, `Had a ${ORDINAL[n] ?? `${n}th`} child.`), 'child');
   }
   // けが
   if (r() < (fighter(t) ? 0.04 : 0.01)) {
-    tell(t, h.age, fighter(t) ? L(`${beastName(r, h.world)}との戦いで深手を負った。`, `Badly wounded fighting a ${beastName(r, h.world)}.`)
+    tell(t, h.age, fighter(t) ? L(`${beastName(r, h.world)}との戦いで深手を負った。`, `Was badly wounded fighting a ${beastName(r, h.world)}.`)
       : L('怪我をして、しばらく働けなかった。', 'Was hurt and could not work for a while.'), 'injury');
   }
   // 旅立ち
   const lp = LEAVE_P[t.role] ?? 0;
   if (lp && h.age - t.since >= 3 && r() < lp && h.people.some((o) => o !== t && o.role === t.role && o.alive && o.until === undefined && o.bond > t.bond)) {
-    const [lja, len] = t.role === 'disciple' ? ['独り立ちした', 'went off on their own'] : t.role === 'lover' ? ['別れて去っていった', 'parted ways'] : LEAVE_TONE[p.personality];
+    const [lja, len] = t.role === 'disciple' ? ['独り立ちした', 'struck out alone'] : t.role === 'lover' ? ['別れて去っていった', 'parted ways'] : LEAVE_TONE[p.personality];
     t.until = h.age;
     tell(t, h.age, L(`${lja}。`, `${len[0].toUpperCase()}${len.slice(1)}.`), 'leave');
     toLog(h, t, L(`${name}が${lja}。`, `${name} ${len}.`), 'loss', true)!.leave = [t.id];

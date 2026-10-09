@@ -77,7 +77,9 @@ if (!part || part === 'enemies') {
   head('敵: 姿ごと (idle2 attack2 hurt down)');
   const seen = new Map<string, EnemySpec>();
   for (const w of WORLDS) for (const foe of FOES) for (let s = 0; s < 24; s++) { const e = enemyFor(w, foe, s); const k = enemyKind(e); if (!seen.has(k)) seen.set(k, e); }
+  const only = new URLSearchParams(location.search).get('only')?.split(',');
   for (const [k, e] of seen) {
+    if (only && !only.includes(k)) continue;
     const r = row(`${k} (${e.world}/${e.foe})`);
     const all: Pix[] = [];
     for (const [pose, cnt] of EPOSES) for (let f = 0; f < cnt; f++) { const P = time(() => paintEnemy(e, pose, f)); all.push(P); r.append(canvas(P, 'e', pose + f)); }

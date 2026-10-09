@@ -4,8 +4,8 @@
 import type { DeathDef, DeathRecord, Decision, EventDef, Fight, Foe, Hazard, Hero, JobId, LogEntry, Option, Role, Stage, Tie, TraitDef, TraitKind, YearKind } from './types';
 import { makeRng, pickWeighted } from './rng';
 import { addTie, byRole, bump, callName, log, shared } from './bonds';
-import { beastName, personName, worldNames } from './names';
-import { ageOfHeq, attentionOf, BLESSING, heqOf, riskScale, setEventRisk, stageOf } from './mortality';
+import { beastName, personName, plural, worldNames } from './names';
+import { restEnd, ageOfHeq, attentionOf, BLESSING, heqOf, riskScale, setEventRisk, stageOf } from './mortality';
 import { traitMult, traitOf } from './traits';
 import { jobOf } from './jobs';
 import { raceOf } from './races';
@@ -14,7 +14,7 @@ import { hazardName } from './why';
 import { canBear, eventBlocked, jobHeld } from './anchor';
 import { fightHazard, fightOf, foeFor, FLEE, lastFight, settleFight } from './fight';
 export { fightOf, foeFor, isClash } from './fight';
-import { isEn, L, T, an } from '../i18n';
+import { isEn, L, T, an, cap, pron, type Pronoun } from '../i18n';
 
 // ---- データの読み込み -------------------------------------------------------
 
@@ -148,7 +148,7 @@ export function eventOk(h: Hero, d: EventDef, stage = stageOf(h), now = nowOf(h)
   if (d.noFlag && h.flags[d.noFlag] !== undefined) return false;
   if (d.birth && !canBear(h)) return false;  // 子が生まれる出来事は、産む側が子を持てる年齢のときだけ
   // 連れ合いがいるあいだは、新しい恋人・婚約者はできない (浮気の出来事 'affair' を id に持つものは別)
-  if (d.tie?.new && (d.tie.role === 'lover' || d.tie.role === 'fiance') && !d.id.includes('affair') && now.roles.has('spouse')) return false;
+  if (d.tie?.new && (d.tie.role === 'lover' || d.tie.role === 'fiance') && !d.id.includes('affair') && (now.roles.has('spouse') || now.roles.has('fiance'))) return false; // 婚約者がいる間も
   if (eventBlocked(h, d)) return false;      // ほかの人の一生: 結婚と子は錨のとおりだけ
   if (d.needs && !d.needs.every((k) => h.traits.some((id) => traitOf(id)?.kind === k))) return false;
   // 文に {cheat} {skill} などがあるのに、埋める特典・trait を持っていなければ起きない (「{cheat}」のまま出ないように)
@@ -199,10 +199,17 @@ export function traitFor(h: Hero, kind: TraitKind | undefined, key: string): Tra
 }
 
 // {name} {friend} … {town} {god} {beast} {job} {race} {guild} {lord} {age}
+// 英語だけ: {he} {him} {his} {himself} {He} {His} 主人公の代名詞 / {his:mentor} など輪の人の代名詞 / {beasts} 魔物の複数形
 // {cheat} 持っている特典 / {skill} {ability} {blessing} {constitution} {trait} 持っている trait (出来事の id ごとに決まった1つ)。ties は今回の出来事で決まった人 (役ごと)
 export function fill(text: string, h: Hero, ties: Partial<Record<Role, Tie>> = {}, evKey = ''): string {
   const n = worldNames(h);
-  const out = text.replace(/\{(\w+)\}/g, (all, key: string) => {
+  const out = text.replace(/\{(\w+)(?::(\w+))?\}/g, (all, key: string, of?: string) => {
+    // 輪の人の代名詞 (英語だけ): {he:mentor} {his:friend} {He:rival}。その役の人の性別で。いなければ they
+    if (of) {
+      const t = ties[of as Role] ?? byRole(h, of as Role);
+      const p = pron(t?.sex, key.toLowerCase() as Pronoun);
+      return key[0] === key[0].toUpperCase() ? cap(p) : p;
+    }
     switch (key) {
       case 'name': return h.given;
       case 'town': return n.town;
@@ -213,6 +220,10 @@ export function fill(text: string, h: Hero, ties: Partial<Record<Role, Tie>> = {
       case 'job': return jobName(h);
       case 'race': return T(raceOf(h.race).name);
       case 'age': return String(h.age);
+      // 英語の代名詞 (主人公の性別で)。{He} {His} は文の頭に。{beasts} は魔物の複数形 (a horde of {beasts})
+      case 'he': case 'him': case 'his': case 'himself': return pron(h.sex, key);
+      case 'He': case 'His': return cap(pron(h.sex, key.toLowerCase() as Pronoun));
+      case 'beasts': return plural(beastName(makeRng((h.seed * 31 + h.age * 7919) >>> 0), h.world));
       case 'cheat': return h.cheat ? T(CHEATS[h.cheat].name) : all;
       case 'skill': case 'ability': case 'blessing': case 'constitution': case 'trait': {
         const t = traitFor(h, key === 'trait' ? undefined : (key as TraitKind), evKey);
@@ -444,6 +455,7 @@ export function eventByRef(ref: string): EventDef | undefined {
 function deathOk(h: Hero, d: DeathDef, hz: Hazard): boolean {
   const w = h.world;
   return d.hazard === hz
+    && !!d.rest === (hz === 'age' && restEnd(h)) // 老いない人の千年の終わりは、その専用の文だけ
     && (!d.stage || d.stage.includes(stageOf(h)))
     && (!d.tags || d.tags.some((t) => w.tags.includes(t)))
     && (!d.not || !d.not.some((t) => w.tags.includes(t)))

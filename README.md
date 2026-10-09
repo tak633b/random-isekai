@@ -2,7 +2,7 @@
 
 English | [日本語](README.ja.md)
 
-A browser game where you live one whole life in another world, a year at a time, until it ends. Pick one of 16 worlds (a sword-and-sorcery kingdom, a land of shrines and samurai, a cultivation continent, a steam-powered capital, a neon megacity, a star empire, modern Earth with dungeons, a post-collapse wasteland and more) or let everything be random. Whether you survive each year is a roll of the dice, and the odds come from the world's danger, your race's lifespan, the status you were born into, your job, your stats, your reincarnation perk and whatever happened that year.
+A browser game where you live one whole life in another world, a year at a time, until it ends. Pick one of 16 worlds (a sword-and-sorcery kingdom, a land of shrines and samurai, a cultivation continent, a steam-powered capital, a neon megacity, a star empire, modern Earth with dungeons, a post-collapse wasteland and more) or let everything be random. Whether you survive each year is a roll of the dice, and the odds come from the world's danger, your race's lifespan, the status you were born into, your job, your stats, your cheat skill and whatever happened that year.
 
 You can also live the same setup hundreds of times and see how long people actually last in that world.
 
@@ -14,10 +14,38 @@ Once you are reborn, the years play out on their own (1× to 16×, pause, skip t
 
 ![A fight: bandits confront the hero and companions, and the hero wins that year](docs/images/battle-en.png)
 
+## The hero's road, and everyone else's
+
+**The hero's road.** A cheat skill is not just a number. A child notices the power, uses it in front of others for the first time, registers with the Adventurers' Guild at Rank F (or joins a sect, an explorers' association, a mercenary outfit, depending on the world), climbs the ranks, pulls off a great deed, saves a town from a horde of monsters, and may end up in songs. Whether a step comes, and when, is still rolled each year, and big fights carry a real risk of death.
+
+**The people around you.** Everyone in your circle has a profile of their own: race, age, job, level and Guild rank, a signature skill, a personality, how you met, and what became of them. They marry, have children, get promoted, get hurt, and sometimes leave to walk their own road. Closer people's news shows up in your timeline.
+
+![A companion's profile: race, job, skill, personality, how you met and where they are now](docs/images/person-en.png)
+
+**Other people's lives.** "This person's life" opens the whole life of anyone in your circle, from birth to death, built by the same engine and pinned to what you saw: the year you met, your wedding, your children, the wars and plagues you lived through together. Shared years are marked, and you can jump from any of them back to your own timeline.
+
+![The life of a companion, year by year, with the years shared with the hero marked](docs/images/life-of-en.png)
+
+**Other reincarnators.** You are not the only one who came from another world. Each world has its own roster of reincarnators and summoned people, each with a cheat skill and a past life. You hear rumors of them, meet a few, team up with some and fight others. Some become the Hero, some open shops serving old-world cooking, and some declare themselves Demon Lord.
+
+![The list of other reincarnators: cheat skill, past life and the latest news of each](docs/images/reincarnators-en.png)
+
+**The chronicle.** The history of the world around your life, from decades before your birth to after your death: wars and their endings, great plagues, famines, Demon Lords rising and falling, what the other reincarnators did, and your own deeds once you became famous.
+
+![The chronicle: wars, plagues, the Demon Lord and the other reincarnators, year by year](docs/images/chronicle-en.png)
+
+## Living on as someone else
+
+A death does not have to be the end. On the death record you can pick someone who outlived the hero: a child, the spouse, a sibling, a companion, a disciple, a familiar, or a reincarnator the hero met. You go on as that heir from the year after the death, at their own age. Their past is exactly the life you saw from the hero's side, and the world carries on: the same chronicle, the same wars and plagues, the same roster of reincarnators.
+
+Each new life is one more generation. The death record, the memorial and the chronicle show the lineage (Generation 1 → Generation 2 → …), and you can open the earlier generations' records from it.
+
+![Continue as someone else: the heirs still alive at the hero's death, each with a button to go on as them](docs/images/continue-en.png)
+
 ## How it plays
 
 1. On the title screen, choose "Reborn at random" or "Choose your rebirth".
-2. In setup you can pick the world, how strong magic and special powers are, how dangerous and war-torn it is, and your race, sex, status, talent, reincarnation perk, how you arrive (reborn as a baby, remember later, summoned, or a native with no past life), how much you remember, and your name. Anything you leave on "Random" is decided at birth.
+2. In setup you can pick the world, how strong magic and special powers are, how dangerous and war-torn it is, and your race, sex, status, talent, cheat skill, how you arrive (reborn as a baby, awakened later, summoned, or a native with no past life), how much you remember, and your name. Anything you leave on "Random" is decided at birth.
 3. The arrival scene tells you how your last life ended and where you were born this time.
 4. Advance one year, ten years, or to the end. When a choice comes up, you make it. A panel shows what is most likely to kill you this year.
 5. When you die you get a record: age, cause, a one-line "why" with the numbers behind it, who was with you at the end, the main events and the full timeline.
@@ -44,13 +72,14 @@ Each world's mortality is anchored to a real historical life table: the medieval
 - Long-lived races such as elves and dwarves age more slowly once grown (elves at 0.1 times the human rate), but monsters and accidents strike per calendar year, so many still die young.
 - Adventurers die to monsters several times more often than commoners, less so as they level up.
 - War, great plagues and famines are not folded into the yearly baseline. They happen as rare events of their own.
-- Perks act on specific causes. Regeneration cuts deaths in combat; modern medical knowledge cuts deaths from disease. Showier perks draw assassins and show trials.
+- Cheat skills act on specific causes. Regeneration cuts deaths in combat; Modern Medicine cuts deaths from disease. Showier cheats draw assassins and show trials.
 
-For 3000 automatic lives as a human commoner with no perk, the mean age at death lands within ±2 years of the reference life expectancy in all 16 worlds (`src/engine/mortality.test.ts`). The research notes are in `docs/research/` (Japanese) and the formulas in `docs/DESIGN.md`.
+For 3000 automatic lives as a human commoner with no cheat skill, the mean age at death lands within ±2 years of the reference life expectancy in all 16 worlds (`src/engine/mortality.test.ts`). The research notes are in `docs/research/` (Japanese) and the formulas in `docs/DESIGN.md`.
 
 ## What's inside
 
-- 902 events and 232 death descriptions, in Japanese and English. Conditions (world type, life stage, status, job, race, perk, past-life memory, story flags) are declarative, so new events need no code.
+- 1,271 events and 232 death descriptions, in Japanese and English. Conditions (world type, life stage, status, job, race, cheat skill, past-life memory, story flags) are declarative, so new events need no code.
+- The English side follows one glossary (`docs/GLOSSARY.md`: Adventurers' Guild, Rank F, Demon Lord, Hero, Saintess, cheat skill, reincarnator and so on), and `src/english-scan.test.ts` plays lives in every world in English and fails on any Japanese character or grammar slip it finds.
 - People: family, friends, party members, mentors, rivals, nemeses, lovers, spouses, children, familiars and disciples. Each has a closeness score from 0 to 100 and shared memories, and ages and dies on their own life table.
 - All pixel art is drawn on canvas at runtime, with no image files. Scenes are 320×100 across 16 worlds, 16 places, 4 times of day and the seasons. Portraits are 48×56 and full-body sprites 32×48, covering 27 races and 42 jobs.
 - You can close the tab and continue later. Up to 20 past lives are kept in localStorage. You don't need a server just to play.

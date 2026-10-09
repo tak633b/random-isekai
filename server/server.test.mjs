@@ -2,6 +2,7 @@
 // 後半はクライアント (src/net/memorial.ts) から実際の人生を送る
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { mkdtempSync, rmSync } from 'node:fs';
+import { DatabaseSync } from 'node:sqlite';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { ENUMS, MAX_BODY, startServer } from './server.mjs';
@@ -69,10 +70,30 @@ describe('検証', () => {
     享年が小数: { age: 4.5 },
     名前が数: { name: 12 },
     名前が制御文字だけ: { name: '\u0000\u0007\n' },
+    代が0: { gen: 0 },
+    代が1000: { gen: 1000 },
+    代が小数: { gen: 2.5 },
+    代が文字: { gen: '2' },
+    系譜が13人: { lineage: Array.from({ length: 13 }, (_, i) => `名${i}`) },
+    系譜の名前が長すぎ: { lineage: ['あ'.repeat(61)] },
+    系譜の名前が空: { lineage: [''] },
+    系譜が配列でない: { lineage: 'アルト' },
   };
   for (const [what, over] of Object.entries(bad)) {
     it(`弾く: ${what}`, async () => { expect((await post(base, entry(over))).status).toBe(400); });
   }
+
+  it('系譜: 代と前の代の名前を残して返す。無ければ初代', async () => {
+    const r = await post(base, entry({ gen: 3, lineage: ['アルト', 'リナ\u0000'] }));
+    expect(r.status).toBe(201);
+    const got = (await (await fetch(`${base}/api/memorial/${(await r.json()).data.id}`)).json()).data;
+    expect(got.gen).toBe(3);
+    expect(got.lineage).toEqual(['アルト', 'リナ']);
+    const r2 = await post(base, entry());
+    const got2 = (await (await fetch(`${base}/api/memorial/${(await r2.json()).data.id}`)).json()).data;
+    expect(got2.gen).toBe(1);
+    expect(got2.lineage).toEqual([]);
+  });
 
   it('弾く: 壊れた JSON', async () => { expect((await post(base, '{')).status).toBe(400); });
 
@@ -91,6 +112,23 @@ describe('検証', () => {
     expect(got.scene).toBeNull();
     expect(got).not.toHaveProperty('ip');
   });
+});
+
+it('系譜の欄の無い古い db を開くと欄を足し、古い記録は初代として返す', async () => {
+  const path = join(dir, 'old.db');
+  const old = new DatabaseSync(path);
+  old.exec(`CREATE TABLE memorial (id INTEGER PRIMARY KEY AUTOINCREMENT, seed INTEGER NOT NULL, world TEXT NOT NULL, name TEXT NOT NULL, race TEXT NOT NULL,
+    sex TEXT NOT NULL, status TEXT NOT NULL, age INTEGER NOT NULL, hazard TEXT NOT NULL, cause_label TEXT NOT NULL, cause_text TEXT NOT NULL,
+    why TEXT NOT NULL DEFAULT '', highlights TEXT NOT NULL DEFAULT '[]', last_with TEXT NOT NULL DEFAULT '[]', note TEXT NOT NULL DEFAULT '', scene TEXT,
+    lang TEXT NOT NULL DEFAULT 'ja', candles INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')), UNIQUE (seed, world))`);
+  old.prepare(`INSERT INTO memorial (seed, world, name, race, sex, status, age, hazard, cause_label, cause_text) VALUES (1, 'medieval', '古い人', 'human', 'F', 'commoner', 30, 'age', '老衰', '眠るように。')`).run();
+  old.close();
+  const s = await startServer({ port: 0, host: '127.0.0.1', dbPath: path, distDir: join(dir, 'nodist') });
+  servers.push(s);
+  const got = (await (await fetch(`http://127.0.0.1:${s.port}/api/memorial/1`)).json()).data;
+  expect(got.name).toBe('古い人');
+  expect(got.gen).toBe(1);
+  expect(got.lineage).toEqual([]);
 });
 
 describe('制限・二重投稿・ろうそく・一覧', () => {

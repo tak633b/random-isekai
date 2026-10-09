@@ -7,6 +7,7 @@ import { FIGHT_MS, Stage } from './stage';
 import { barList, fmtPct } from './charts';
 import { logHTML, markGifts } from './records';
 import { chronicleHTML, nearestYear, openLife, reincarnatorsHTML } from './lifeview';
+import { genOf, genWord, lineageHTML, recordLineage } from './lineage';
 import { profileLines } from '../engine/people';
 import { traitTags } from './build';
 import { addAi, aiOf, restoreAi, saveAi } from './ailog';
@@ -14,6 +15,9 @@ import { aiYearButton } from './aipanel';
 import { aiReady } from '../ai/settings';
 import { ROLE_NAME, STAT_NAME, ageText, jobName } from './labels';
 import { esc, load, save } from './dom';
+import { checkYear } from '../meta/tickets';
+import { isRandom, restoreMode, saveMode } from './mode';
+import { toast } from './toast';
 import { AFTER_CHOICE_SEC, SPEEDS, lifeSpan, loadPlay, savePlay, scaledMs, yearSec, type PlayState } from './play';
 import { screen, type Nav } from './nav';
 import { L, T } from '../i18n';
@@ -24,9 +28,9 @@ export const savedLife = (): SavedHero | null => load<SavedHero | null>(CURRENT,
 export function resumeLife(): Hero | null {
   const s = savedLife();
   if (!s) return null;
-  try { const h = fromSaved(s); restoreAi(h); return h; } catch { save(CURRENT, null); return null; }
+  try { const h = fromSaved(s); restoreAi(h); restoreMode(h); return h; } catch { save(CURRENT, null); return null; }
 }
-const persist = (h: Hero) => { save(CURRENT, h.alive ? toSaved(h) : null); saveAi(h.alive ? h : null); };
+const persist = (h: Hero) => { save(CURRENT, h.alive ? toSaved(h) : null); saveAi(h.alive ? h : null); saveMode(h.alive ? h : null); };
 
 const LOG_YEARS = 40;
 const STATS: StatKey[] = ['hp', 'power', 'mind', 'charm', 'luck', 'happy', 'wealth', 'fame'];
@@ -71,7 +75,7 @@ export function showLife(h: Hero, nav: Nav, resumed = false): void {
     <aside class="colside">
       <div class="panel" id="me"></div>
       <div class="panel"><h2>${L('人の輪', 'People')}</h2><div id="ring"></div></div>
-      <div class="panel"><h2>${L('この1年の危険', 'This year’s dangers')}</h2><div id="risk"></div></div>
+      <div class="panel"><h2>${L('この1年の危険', "This year's dangers")}</h2><div id="risk"></div></div>
     </aside>
   </main>
   <div class="modal-back" id="modal" hidden><div class="modal" id="modalbody" role="dialog" aria-modal="true" aria-labelledby="dtitle"></div></div>`, (t) => {
@@ -80,6 +84,9 @@ export function showLife(h: Hero, nav: Nav, resumed = false): void {
     if (tb) { tab = tb as typeof tab; renderTab(); return; }
     const lk = t.closest<HTMLElement>('[data-life]')?.dataset.life;
     if (lk) { showLifeOf(lk); return; }
+    // 前の代の記録へ (中断として保存してから)
+    const rc = t.closest<HTMLElement>('[data-record]')?.dataset.record;
+    if (rc !== undefined) { stop(); persist(h); savePlay(play); nav.past(Number(rc)); return; }
     const jp = t.closest<HTMLElement>('[data-jump]')?.dataset.jump;
     if (jp !== undefined) { jumpTo(Number(jp)); return; }
     const b = t.closest<HTMLElement>('[data-act]');
@@ -89,8 +96,8 @@ export function showLife(h: Hero, nav: Nav, resumed = false): void {
       case 'speed': play.speed = Number(b.dataset.v); ff = false; break;
       case 'ff': ff = true; play.paused = false; break;
       case 'auto': h.auto = !h.auto; break;
-      case 'y1': step(1); break;
-      case 'y10': step(10); break;
+      case 'y1': step(1); yearChecks(); break;
+      case 'y10': step(10); yearChecks(); break;
       case 'end': liveOut(h); break;
       case 'opt':
         choose(h, Number(b.dataset.i)); closeModal();
@@ -122,6 +129,15 @@ export function showLife(h: Hero, nav: Nav, resumed = false): void {
   const onScreen = () => document.getElementById('scenecv') === cv && !leaving;
   let raf = 0;
 
+  // 年ごとの実績 (when: 'year') の判定。解除したら知らせる。かかった時間を残す (確かめる用)
+  function yearChecks(): void {
+    if (!h.alive) return;
+    const t0 = performance.now();
+    for (const a of checkYear(h, isRandom(h))) toast(L(`実績「${T(a.name)}」`, `Achievement: ${T(a.name)}`), T(a.desc));
+    const ms = performance.now() - t0, app = document.getElementById('app')!;
+    app.dataset.checkMs = ms.toFixed(2);
+    app.dataset.checkMax = Math.max(Number(app.dataset.checkMax ?? 0), ms).toFixed(2);
+  }
   // 選択が出たらそこで止まる (手で進めるとき)
   function step(n: number): void {
     for (let i = 0; i < n && h.alive && !h.pending.length; i++) advanceYear(h);
@@ -148,6 +164,7 @@ export function showLife(h: Hero, nav: Nav, resumed = false): void {
         if (h.pending.length && !h.auto) { ff = false; break; }
       }
       if (n) {
+        yearChecks();
         render();
         if (t - saved > 1000 || h.pending.length || !h.alive) { persist(h); saved = t; }
         if (!h.alive) return died();
@@ -254,11 +271,11 @@ export function showLife(h: Hero, nav: Nav, resumed = false): void {
     const heq = Math.round(heqOf(h));
     const gamey = h.world.tags.includes('gamey');
     document.getElementById('age')!.textContent = ageText(h.age);
-    document.getElementById('wholine')!.textContent = `${h.name}${heq !== h.age ? L(`・人間でいえば${heq}歳`, ` · about ${heq} in human years`) : ''}${L(`・寿命の目安 ${Math.round(span)}年`, ` · lifespan about ${Math.round(span)}`)}`;
+    document.getElementById('wholine')!.textContent = `${genOf(h) > 1 ? `${genWord(genOf(h))}${L('・', ' · ')}` : ''}${h.name}${heq !== h.age ? L(`・人間でいえば${heq}歳`, ` · about ${heq} in human years`) : ''}${L(`・寿命の目安 ${Math.round(span)}年`, ` · lifespan about ${Math.round(span)}`)}`;
     controls();
     stage.show(h, { budgetMs: scaledMs(yearMs, play.speed, ff), fast: ff || play.speed >= 8 });
     const st = h.state;
-    const chips = [st.war > 0 && L('戦争中', 'At war'), st.plague > 0 && L('大疫病', 'Plague'), st.famine > 0 && L('飢饉', 'Famine'), st.demonKing && L('魔王がいる', 'A Demon King reigns')].filter(Boolean) as string[];
+    const chips = [st.war > 0 && L('戦争中', 'At war'), st.plague > 0 && L('大疫病', 'Plague'), st.famine > 0 && L('飢饉', 'Famine'), st.demonKing && L('魔王がいる', 'A Demon Lord reigns')].filter(Boolean) as string[];
     document.getElementById('scenecap')!.innerHTML = `${esc(T(h.world.name))}${chips.map((c) => `<span class="chip">${esc(c)}</span>`).join('')}`;
     // 年表は新しい40年ぶん (長命の人生でも1年の描き直しを軽く保つ。全部は死亡記録で読める)
     const from = fullLog ? -Infinity : h.age - LOG_YEARS;
@@ -296,12 +313,13 @@ function meHTML(h: Hero, heq: number, gamey: boolean): string {
       <p class="note">${ageText(h.age)}${heq !== h.age ? L(`(人間でいえば${heq}歳)`, ` (about ${heq} in human years)`) : ''}${h.cheat ? `${L('・', ' · ')}${esc(T(CHEATS[h.cheat].name))}` : ''}${h.revives ? L(`・死の取り消し残り${h.revives}回`, ` · can undo death ${h.revives} more ${h.revives === 1 ? 'time' : 'times'}`) : ''}</p>
       ${gamey ? `<p class="lv">Lv <b>${Math.round(h.level)}</b>${h.rank ? `<span>${L('ギルドランク', 'Guild rank')} <b>${h.rank}</b></span>` : ''}${titlesOf(h).map((t) => `<span class="title">${esc(t)}</span>`).join('')}</p>` : ''}
     </div></div>
+    ${lineageHTML(recordLineage(h), h.name)}
     ${traitTags(h.traits, h.blessing)}
     <ul class="stats">${STATS.map((k) => `<li><span>${STAT_NAME[k]}</span><i class="meter"><b class="m-${k}" style="width:${h.stats[k]}%"></b></i><em>${Math.round(h.stats[k])}</em></li>`).join('')}</ul>`;
 }
 
 // 称号 (立ったしるしから)
-const TITLES: [string, string, string][] = [['demonKingSlain', '魔王を討った者', 'Demon King’s bane'], ['hero', '勇者', 'Hero'], ['saint', '聖女', 'Saint'],
+const TITLES: [string, string, string][] = [['demonKingSlain', '魔王を討った者', "Demon Lord's Bane"], ['hero', '勇者', 'Hero'], ['saint', '聖女', 'Saint'],
   ['lord', '領主', 'Lord'], ['knighted', '騎士', 'Knight'], ['famous', '名の知れた者', 'Renowned'], ['exiled', '追放された者', 'Exile']];
 const titlesOf = (h: Hero): string[] => TITLES.filter(([f]) => h.flags[f] !== undefined).map(([, ja, en]) => L(ja, en));
 
@@ -335,7 +353,7 @@ function personHTML(h: Hero, t: Tie): string {
   return `<div class="person" id="person">
     <div class="phead">${faceHTML(f, 'face big')}<canvas class="pix sprite" data-sprite="${esc(JSON.stringify(f))}" width="32" height="48" aria-hidden="true"></canvas>
       <div><h3>${esc(t.name)}</h3><p class="note">${esc(ROLE_NAME[t.role])}${L('・近さ ', ' · closeness ')}${Math.round(t.bond)}</p>
-        <button class="lifebtn" data-life="t:${t.id}">${L('この人の一生', 'This person’s life')}</button></div></div>
+        <button class="lifebtn" data-life="t:${t.id}">${L('この人の一生', "This person's life")}</button></div></div>
     <dl class="plines">${lines.map((x) => `<div><dt>${esc(x.label)}</dt><dd>${markGifts(esc(x.value))}</dd></div>`).join('')}</dl>
     <h4>${L('その人の歩みと、一緒に過ごしたこと', 'Their own story, and the time you shared')}</h4>
     ${rows.length ? `<ul class="pstory">${rows.map((r) => `<li class="${r.own ? 'own' : 'shared'}"><span>${ageText(r.age)}</span><div><i>${r.own ? L('その人', 'them') : L('一緒に', 'together')}</i>${markGifts(esc(r.text))}</div></li>`).join('')}</ul>`

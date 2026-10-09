@@ -19,7 +19,7 @@ import { endLovers } from './events';
 import { deathRecord, fightOf, fill, foeFor, isClash, drawEvents, eventByRef, eventDecision, newTie, type Die } from './events';
 import { deathWhy, reviveWhy } from './why';
 import { styleOf, worldNames } from './names';
-import { L, T } from '../i18n';
+import { L, T, an, pron } from '../i18n';
 
 // ---- 死 -------------------------------------------------------------------
 
@@ -92,7 +92,7 @@ function draft(h: Hero): void {
   // 一緒に戦う仲間がいれば、その人と並んで出る
   const ally = alliesFor(h)[0];
   const [wja, wen] = ally ? [`${ally.name}と並んで`, ` alongside ${ally.name}`] : ['', ''];
-  if (j?.war) { log(h, L(`${T({ ja: j.ja, en: j.en })}として、${wja}戦に出た。`, `Went to war as a ${j.en.toLowerCase()}${wen}.`), 'battle', true).fight = fightOf(h, foeFor(h, 'war', '')); return; }
+  if (j?.war) { log(h, L(`${T({ ja: j.ja, en: j.en })}として、${wja}戦に出た。`, `Went to war as ${j.id === 'hero' ? 'the Hero' : an(`a ${j.en.toLowerCase()}`)}${wen}.`), 'battle', true).fight = fightOf(h, foeFor(h, 'war', '')); return; }
   // 徴兵は前近代の軍で多く、近代以降 (tech 7 以上) は職業軍人が主になる
   if (h.sex === 'M' && e < 45 && statusRank(h.status) <= statusRank('commoner') && h.rng() < (h.world.tech >= 7 ? 0.05 : 0.25)) {
     h.flags.drafted = h.age;
@@ -103,12 +103,12 @@ function draft(h: Hero): void {
 // 魔王の呼び名は世界の系統で変える (和風は鬼の王、中華風は魔尊)。[現れた, 討つ者に選ばれた, 討ち果たした, どこかの誰かが討った]
 function dkLines(h: Hero): [string, string][] {
   switch (styleOf(h.world)) {
-    case 'wa': return [['鬼の王が山から下りてきた。', 'The King of Oni came down from the mountains.'], ['鬼の王を討つ者に選ばれ、旅に出た。', 'Was chosen to slay the King of Oni, and set out.'],
-      ['鬼の王を討ち果たした。', 'Slew the King of Oni.'], ['どこかの武者が、鬼の王を討ったという。', 'Word came that some warrior had slain the King of Oni.']];
+    case 'wa': return [['鬼の王が山から下りてきた。', 'The King of the Oni came down from the mountains.'], ['鬼の王を討つ者に選ばれ、旅に出た。', 'Was chosen to slay the King of the Oni, and set out.'],
+      ['鬼の王を討ち果たした。', 'Slew the King of the Oni.'], ['どこかの武者が、鬼の王を討ったという。', 'Word came that some warrior had slain the King of the Oni.']];
     case 'zh': return [['魔尊が封印を破った。', 'The Demon Sovereign broke its seal.'], ['魔尊を討つ者に選ばれ、山を下りた。', 'Was chosen to slay the Demon Sovereign, and came down the mountain.'],
       ['魔尊を討ち果たした。', 'Slew the Demon Sovereign.'], ['どこかの仙人が、魔尊を討ったという。', 'Word came that some immortal had slain the Demon Sovereign.']];
-    default: return [['魔王が現れた。', 'A Demon King has risen.'], ['勇者に選ばれ、魔王を討つ旅に出た。', 'Was chosen as the Hero, and set out to slay the Demon King.'],
-      ['魔王を討ち果たした。', 'Slew the Demon King.'], ['どこかの勇者が、魔王を討ったという。', 'Word came that some hero had slain the Demon King.']];
+    default: return [['魔王が現れた。', 'A Demon Lord rose.'], ['勇者に選ばれ、魔王を討つ旅に出た。', 'Was chosen as the Hero, and set out to slay the Demon Lord.'],
+      ['魔王を討ち果たした。', 'Slew the Demon Lord.'], ['どこかの勇者が、魔王を討ったという。', 'Word came that some hero had slain the Demon Lord.']];
   }
 }
 
@@ -128,7 +128,7 @@ function demonKing(h: Hero): void {
     if (saintly && h.rng() < 0.08) {
       // 男性は神官として (聖女は女性の呼び名)
       h.flags.saint = h.age; h.job = h.sex === 'M' ? 'priest' : 'saint'; h.jobYears = 0; bump(h, { fame: 30 });
-      log(h, L(`${worldNames(h).god}の神託で、${h.sex === 'M' ? '聖者' : '聖女'}に選ばれた。`, `The oracle of ${worldNames(h).god} named them the Saint.`), 'fame', true);
+      log(h, L(`${worldNames(h).god}の神託で、${h.sex === 'M' ? '聖者' : '聖女'}に選ばれた。`, `The oracle of ${worldNames(h).god} named ${pron(h.sex, 'him')} the ${h.sex === 'M' ? 'Saint' : 'Saintess'}.`), 'fame', true);
     } else if (heroish && h.rng() < 0.06) {
       h.flags.hero = h.age; h.job = 'hero'; h.jobYears = 0; bump(h, { fame: 30 });
       log(h, L(...dkLines(h)[1]), 'fame', true);
@@ -177,11 +177,11 @@ function milestones(h: Hero, out: Decision[]): void {
     h.flags.baptized = h.age;
     const c = h.cheat ? CHEATS[h.cheat] : null;
     const [ja, en] = h.arrival === 'summoned'
-      ? [`召喚した者たちに、この世界での力を調べられた。`, `The summoners tested what power had come with the summoned.`] as [string, string]
+      ? [`召喚した者たちに、この世界での力を調べられた。`, `The summoners tested what power had come with ${pron(h.sex, 'him')}.`] as [string, string]
       : measured(h);
     const txt = c
-      ? (h.cheat === 'trash_skill' ? L(`${ja}授かったのは役に立たないと笑われる力だった。`, `${en} The gift was laughed off as useless.`)
-        : L(`${ja}授かったのは「${T(c.name)}」。`, `${en} The gift: ${T(c.name)}.`))
+      ? (h.cheat === 'trash_skill' ? L(`${ja}授かったのは役に立たないと笑われる力だった。`, `${en} The cheat skill was laughed off as useless.`)
+        : L(`${ja}授かったのは「${T(c.name)}」。`, `${en} The cheat skill: "${T(c.name)}".`))
       : L(`${ja}人並みだった。`, `${en} Ordinary.`);
     log(h, txt, 'power', !!c);
     if (c && c.attention >= 2 && h.rng() < 0.3) { h.flags.outed = h.age; log(h, L('その力は噂になった。', 'Word of the power spread.'), 'fame'); }
@@ -252,7 +252,7 @@ function adultLife(h: Hero, e: number): void {
 function born(h: Hero, mother?: Tie): void {
   const c = newTie(h, 'child');
   const sp = byRole(h, 'spouse');
-  shared(h, sp && sp !== c ? [c, sp] : [c], L(`子の${c.name}が生まれた。`, `A child, ${c.name}, was born.`), 'family', 0, true).join = [c.id];
+  shared(h, sp && sp !== c ? [c, sp] : [c], L(`子の${c.name}が生まれた。`, `A ${c.sex === 'F' ? 'daughter' : 'son'}, ${c.name}, was born.`), 'family', 0, true).join = [c.id];
   bump(h, { happy: 8 });
   if (mother && h.rng() < maternalRisk(h.world)) {
     mourn(h, mother, -25);
@@ -392,7 +392,7 @@ function siblings(h: Hero): void {
   if (!m || heqOf(h) >= 14 || heq(m.age, raceOf(m.race)) >= 42) return;
   if (h.rng() < Math.min(0.25, raceOf(m.race).fertility * 0.5)) {
     const s = newTie(h, 'sibling');
-    shared(h, [s], L(`下のきょうだいの${s.name}が生まれた。`, `A younger sibling, ${s.name}, was born.`), 'family').join = [s.id];
+    shared(h, [s], L(`下のきょうだいの${s.name}が生まれた。`, `A younger ${s.sex === 'F' ? 'sister' : 'brother'}, ${s.name}, was born.`), 'family').join = [s.id];
   }
 }
 
