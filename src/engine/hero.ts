@@ -12,6 +12,7 @@ import { ageOfHeq, heq } from './mortality';
 import { anchorFamily, anchorYear } from './anchor';
 import { ALLOT_KEYS, POINT_STEP, randomBuild, traitOf } from './traits';
 import { addTie, log } from './bonds';
+import { earthName, howText, itemName, rollTransfer } from './transfer';
 import { L, T, cap, pron } from '../i18n';
 
 export const TALENTS: Talent[] = ['might', 'magic', 'wits', 'charm', 'luck', 'craft', 'none'];
@@ -84,7 +85,9 @@ export function createHero(setup: Setup): Hero {
   const talent0 = pick(rng, TALENTS);
   const talent = c.talent ?? talent0;
   const cheat0 = drawCheat(rng, world);
-  const cheat: CheatId | null = c.cheat === 'none' ? null : c.cheat ?? (arr === 'native' ? null : cheat0);
+  // 異世界転移: 元の世界の名前・年齢・仕事・持ち物 (別の乱数)。引いた特典が無ければ、転移で授かる力を持たせる
+  const tr = arr === 'summoned' ? rollTransfer(setup.seed, sex, world) : null;
+  const cheat: CheatId | null = c.cheat === 'none' ? null : c.cheat ?? (arr === 'native' ? null : cheat0 ?? tr?.cheat ?? null);
   const memory0 = pickWeighted(rng, MEMORIES, ([, w]) => w)[0];
   const memory: MemoryLevel = c.memory ?? (arr === 'native' ? 'none' : arr === 'summoned' ? 'full' : memory0);
 
@@ -99,7 +102,7 @@ export function createHero(setup: Setup): Hero {
   const past: PastLife | undefined = arr === 'native' ? undefined : { age: pastAge, cause: pastCause, job: { ja: pastJob[0], en: pastJob[1] } };
 
   const nm = personName(rng, world, sex, status);
-  const given = c.name ?? nm.given;
+  const given = c.name ?? tr?.given ?? nm.given;
   const r = raceOf(race);
   const stats = initialStats(rng, status, talent, memory);
   if (arr === 'summoned') stats.power = clamp(stats.power + 10, 0, 100);
@@ -111,7 +114,7 @@ export function createHero(setup: Setup): Hero {
   const [s0, s1] = START_HEQ[startAge];
   const startHeq = s0 + Math.floor(side() * (s1 - s0 + 1));
   // ほかの人の一生で、来た年齢が決まっているとき (召喚・転移) はその年齢から
-  const start = setup.anchors?.arriveAge ?? (startAge === 'birth' ? 0 : heqToAge(startHeq, r));
+  const start = setup.anchors?.arriveAge ?? (tr && startAge === 'adult' ? tr.age : startAge === 'birth' ? 0 : heqToAge(startHeq, r));
   const build = randomBuild(side, world, race, { traits: c.traits, points: c.points });
   for (const k of ALLOT_KEYS) stats[k] = clamp(stats[k] + (build.points[k] ?? 0) * POINT_STEP, 0, 100);
   for (const id of build.traits) for (const [k, v] of Object.entries(traitOf(id)?.stats ?? {})) stats[k as keyof Stats] = clamp(stats[k as keyof Stats] + (v ?? 0), 0, 100);
@@ -125,14 +128,20 @@ export function createHero(setup: Setup): Hero {
   const h: Hero = {
     seed: setup.seed, rng, setup: filled, world,
     // 名を選んだとき (埋めた後の設定で生き直すときも) は、引いた家名をその名に付ける
-    name: c.name ? withFamily(world, c.name, nm.family) : nm.full, given, sex, race, status, talent, cheat, traits: build.traits, blessing, arrival: arr, memory,
+    name: tr ? earthName(given, tr.family) : c.name ? withFamily(world, c.name, nm.family) : nm.full, given, sex, race, status, talent, cheat, traits: build.traits, blessing, arrival: arr, memory,
     // 途中の年齢の体で目を覚ますときは、思い出すのはその時 (awaken でも最初から記憶がある)
     memoryAwake: (arr !== 'awaken' || start > 0) && memory !== 'none',
     age: start, alive: true, stats, level: 1, job: null, jobYears: 0,
     flags: {}, revives: cheat ? CHEATS[cheat].revive ?? 0 : 0, people: [], nextId: 1, log: [], pending: [], kinds: [],
     state: { war: 0, plague: 0, famine: 0, demonKing }, auto: setup.auto ?? false, policy: setup.policy ?? 'normal', used: [],
   };
-  if (past) h.past = arr === 'summoned' ? { ...past, age: start, job: summonedJob(start, past.job) } : past;
+  if (past) h.past = arr === 'summoned' ? { ...past, age: start, job: tr && startAge === 'adult' ? tr.job : summonedJob(start, past.job) } : past;
+  if (tr) {
+    h.transfer = { how: tr.how, job: h.past!.job, items: tr.items };
+    h.flags[`tr.${tr.how}`] = start;
+    for (const it of tr.items) h.flags[`item.${it}`] = start;
+    h.flags[`earth.${tr.code}`] = start;
+  }
 
   // 家族: 両親ときょうだい。召喚された人はこの世界に家族がいない。孤児は親を知らない
   const parentAge = () => Math.round(r.adult + clamp(normal(rng, 8, 5), 0, 25) / Math.max(0.05, r.k));
@@ -159,6 +168,9 @@ export function createHero(setup: Setup): Hero {
   if (setup.anchors) anchorYear(h); // ほかの人の一生: 0歳の錨 (生まれた年に共有した出来事)
   return h;
 }
+
+// 英語では仕事を小文字で (a 25-year-old office worker)
+const isEnText = (s: string) => s.toLowerCase();
 
 const PAST_CAUSE_TEXT: Record<PastLife['cause'], [string, string]> = {
   truck: ['トラックにはねられて', 'was hit by a truck'], overwork: ['働きすぎて倒れて', 'worked until collapsing'], illness: ['病で', 'died of an illness'],
@@ -194,6 +206,15 @@ export function birthStory(h: Hero): string {
   }
   switch (h.arrival) {
     case 'summoned':
+      if (h.transfer) {
+        const names = h.transfer.items.map(itemName);
+        const items = L(names.join('と'), names.map((x) => `a ${x}`).join(', ').replace(/, ([^,]*)$/, ' and $1'));
+        return howText(h.transfer.how).replace(/\{(\w+)\}/g, (all, k: string) => ({
+          given: h.given, age: String(p?.age ?? h.age), job: p ? (isEnText(T(p.job))) : '', place, town: n.town, woke: L(WOKE[styleOf(h.world)][0], WOKE[styleOf(h.world)][1]),
+          He: cap(pron(h.sex, 'he')), he: pron(h.sex, 'he'), him: pron(h.sex, 'him'), his: pron(h.sex, 'his'),
+        } as Record<string, string>)[k] ?? all)
+          + L(`持っていたのは${items}だけ。なぜか言葉は通じた。`, ` All {he} had on {him} was ${items}. Somehow, {he} understood the language.`.replace(/\{he\}/g, pron(h.sex, 'he')).replace(/\{him\}/g, pron(h.sex, 'him')));
+      }
       return L(`${p?.age ?? h.age}歳の${p ? T(p.job) : ''}だった${h.given}は、光に包まれて${w}に召喚された。${n.town}の${WOKE[styleOf(h.world)][0]}で目を覚ました。`,
         `${h.given}, a ${p?.age ?? h.age}-year-old ${p ? T(p.job).toLowerCase() : 'stranger'}, was swallowed by light and summoned to ${place}. ${cap(pron(h.sex, 'he'))} woke ${WOKE[styleOf(h.world)][1]} in ${n.town}.`);
     case 'reborn':

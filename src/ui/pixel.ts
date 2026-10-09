@@ -10,7 +10,7 @@ import { hash, type Pix } from './raster';
 export { W, H };
 
 export const heroFigure = (h: Hero): Figure => ({
-  seed: h.seed, race: h.race, sex: h.sex, stage: stageOf(h), job: h.job, status: h.status, me: true, dead: !h.alive,
+  seed: h.seed, race: h.race, sex: h.sex, stage: stageOf(h), job: h.job, status: h.status, me: true, dead: !h.alive, ...(h.transfer ? { earth: true } : {}),
 });
 
 export const tieFigure = (h: Pick<Hero, 'seed' | 'status'>, t: Pick<Tie, 'id' | 'race' | 'sex' | 'age' | 'alive' | 'job'>): Figure => ({

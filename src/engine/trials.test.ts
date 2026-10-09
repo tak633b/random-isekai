@@ -47,21 +47,22 @@ describe('集計の形', () => {
 
   // 実測 (2026-10-09, 出来事を棄却法で引くようにした後): 中世欧州風・人間で 1000回が 0.28秒、現代 0.45秒、宇宙 0.50秒、エルフ 0.62秒、
   // 不死の体 2.0秒 (上限 1000年で打ち切り、17人がまだ生きている)。
-  // 機械の速さで揺れるので、幅は倍に取る
-  // 速さ: 300回を3度回して一番速いものを見る (全体を並行で回したときのほかのテストの負荷を除くため)。
-  // 一度だけ 1000回を測る形では、全体の実行中に 1695ms まで揺れて上限を越えた (2026-10-09)
-  it('300回の試行が十分に速い (3度の最小)', () => {
-    let best = Infinity;
+  // 速さ: 300回の試行を、同じ時に回した決まった計算 (乱数の並びを作って並べ替える) と比べる。
+  // 全体を並行で回すと絶対時間は 1.5〜2倍に揺れるが (2026-10-09: 単独 347ms・全体の中 545〜809ms)、比はほぼ変わらない (単独 4.7〜4.8・全体の中 4.9)。
+  // 上限は比で 10 (今の倍)。2倍重くなればここで落ちる。絶対時間は桁違いに遅くなったときだけ見る
+  const ref = (): number => { const a: number[] = []; let x = 1; for (let i = 0; i < 300000; i++) { x = (x * 1103515245 + 12345) % 2147483648; a.push(x); } a.sort((p, q) => p - q); return a[5]; };
+  it('300回の試行が十分に速い (決まった計算との比、3度の最小)', () => {
+    let best = Infinity, base = Infinity;
     for (let k = 0; k < 3; k++) {
-      const t0 = performance.now();
+      let t0 = performance.now();
+      ref();
+      base = Math.min(base, performance.now() - t0);
+      t0 = performance.now();
       runTrials(setup('human'), 300);
       best = Math.min(best, performance.now() - t0);
     }
-    // 実測 (2026-10-09, M3 Max): 単独で 244〜246ms、全体を並行で回した中で 261ms。
-    // 手元の上限はその倍 (500ms)、CI はさらに3倍 (1500ms)。2〜3倍重くなればここで落ちる
-    const LIMIT_LOCAL = 500, LIMIT_CI = 1500;
-    const ci = (globalThis as { process?: { env: Record<string, string | undefined> } }).process?.env.CI;
-    expect(best, `${best.toFixed(0)}ms`).toBeLessThan(ci ? LIMIT_CI : LIMIT_LOCAL);
+    expect(best / base, `${best.toFixed(0)}ms / ${base.toFixed(0)}ms`).toBeLessThan(10);
+    expect(best, `${best.toFixed(0)}ms`).toBeLessThan(5000);
   });
 });
 

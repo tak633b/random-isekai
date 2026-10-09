@@ -7,7 +7,7 @@ import type { CheatId, Foe, Hazard, Policy, RaceId, StartAge, Text, WorldId } fr
 export type LifeId = string;
 
 // 解放できるもの。trait は TraitDef.id、cheat は CheatId など、種類と id の組で持つ
-export type UnlockKind = 'custom' | 'world' | 'race' | 'cheat' | 'blessing' | 'startAge' | 'trait' | 'status';
+export type UnlockKind = 'custom' | 'world' | 'race' | 'cheat' | 'blessing' | 'startAge' | 'trait' | 'status' | 'arrival';
 export type UnlockKey = `${UnlockKind}:${string}`; // 例 'world:dark' 'trait:sk.swordplay' 'custom:setup'
 
 // 1つの人生から読み取った事実。実績の条件とチケットの加算はこれだけを見る (Hero を直接見ない)
@@ -50,6 +50,9 @@ export interface LifeFacts {
   firstYearAdventure: boolean; // 冒険に出たその年に亡くなった
   eventIds: string[];       // 起きた出来事の id (秘密の実績の条件に)
   tactic: Policy | 'mixed'; // 一生を通した作戦 (途中で変えたら mixed)
+  standing: string;         // 最後の身分 (成り上がり・没落の後)
+  rose: number;             // 身分が上がった回数
+  fell: boolean;            // 没落したことがある
 }
 
 // 一生を通した合計 (このブラウザでの)

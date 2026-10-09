@@ -10,7 +10,8 @@ import { aiSettingsPanel } from './aipanel';
 import { esc, load, save } from './dom';
 import { screen, type Nav } from './nav';
 import { isRandom } from './mode';
-import { L, T } from '../i18n';
+import { L, T, pron } from '../i18n';
+import { itemName } from '../engine/transfer';
 import { BLESSING_KEY, isSeen, isUnlocked, priceOf, unlock, unlockedChoices } from '../meta/unlocks';
 import type { UnlockKey } from '../meta/types';
 import { loadProgress } from '../meta/store';
@@ -29,7 +30,7 @@ export interface Choice {
 
 const START_AGES: StartAge[] = ['birth', 'child', 'teen', 'adult'];
 const START_NAME: Record<StartAge, string> = {
-  birth: L('赤ちゃんから', 'From birth'), child: L('子ども (5〜8歳)', 'Child (5–8)'), teen: L('十代 (13〜16歳)', 'Teen (13–16)'), adult: L('大人として召喚・転移 (17〜30歳)', 'Summoned as an adult (17–30)'),
+  birth: L('赤ちゃんから', 'From birth'), child: L('子ども (5〜8歳)', 'Child (5–8)'), teen: L('十代 (13〜16歳)', 'Teen (13–16)'), adult: L('大人 (17〜30歳。転移は15〜45歳)', 'Adult (17–30; transported 15–45)'),
 };
 
 const KEY = 'choice';
@@ -61,6 +62,8 @@ export function fillFromUnlocked(s: Setup, c: Choice): Setup {
   const hero = { ...s.hero };
   if (hero.race === undefined) hero.race = pick(u.races.length ? u.races : unlockedChoices().races, 'human' as RaceId);
   if (hero.status === undefined) hero.status = pick(u.statuses, 'commoner' as Status);
+  // 転生の型: 異世界転移を開けていなければ、ほかの型から (重みはエンジンと同じ 45:25:10)
+  if (hero.arrival === undefined && !isUnlocked('arrival:summoned')) { const x = r() * 80; hero.arrival = x < 45 ? 'reborn' : x < 70 ? 'awaken' : 'native'; }
   if (hero.cheat === undefined) hero.cheat = r() < 0.12 || !u.cheats.length ? 'none' : pick(u.cheats, 'none' as CheatId | 'none');
   if (hero.traits === undefined) {
     const ok = new Set(unlockedChoices(w, hero.race).traits);
@@ -115,9 +118,9 @@ function heroForm(c: Choice, w: World | null): string {
     ${row(L('才能', 'Talent'), seg('talent', c.talent, TALENTS.map((t) => [t, TALENT_NAME[t]])))}
     ${row(L('転生特典', 'Cheat skill'), seg('cheat', c.cheat, [['none', L('なし', 'None')], ...cheats.map((id) => [id, T(CHEATS[id].name)] as [CheatId | 'none', string])], true, true, (id) => (id === 'none' ? null : `cheat:${id}`)),
       c.cheat && c.cheat !== 'none' ? esc(T(CHEATS[c.cheat].desc)) : w ? L('この世界の魔法と技術で使える特典だけ。', "Only cheat skills that work with this world's magic and technology.") : '')}
-    ${row(L('転生の型', 'Arrival'), seg('arrival', c.arrival, ARRIVALS.map((a) => [a, ARRIVAL_NAME[a]])), L('召喚は今の体のまま来る。現地の生まれは前世を持たない。', 'The summoned arrive as they are. The native-born have no past life.'))}
+    ${row(L('転生の型', 'Arrival'), seg('arrival', c.arrival, ARRIVALS.map((a) => [a, ARRIVAL_NAME[a]]), false, true, (a) => `arrival:${a}`), L('異世界転移は、元の世界の名前・年齢・仕事・持ち物のまま突然来て、何かの力を授かる。現地の生まれは前世を持たない。', 'Transported heroes arrive suddenly with their own name, age, job and pockets, plus a gifted power. The native-born have no past life.'))}
     ${row(L('前世の記憶', 'Memories of a past life'), seg('memory', c.memory, MEMORIES.map((m) => [m, MEMORY_NAME[m]])))}
-    ${row(L('始まる年齢', 'Starting age'), seg('startAge', c.startAge, START_AGES.map((a) => [a, START_NAME[a]]), true, true, (a) => `startAge:${a}`), L('おまかせは転生の型どおり (召喚なら大人、ほかは赤ちゃんから)。', 'Random follows the arrival type (adults when summoned, otherwise from birth).'))}
+    ${row(L('始まる年齢', 'Starting age'), seg('startAge', c.startAge, START_AGES.map((a) => [a, START_NAME[a]]), true, true, (a) => `startAge:${a}`), L('おまかせは転生の型どおり (異世界転移なら大人、ほかは赤ちゃんから)。', 'Random follows the arrival type (adults when transported, otherwise from birth).'))}
     ${row(L('女神の加護', "Goddess's blessing"), seg('blessing', c.blessing ? '1' : '0', [['0', L('なし', 'No')], ['1', L('あり', 'Yes')]], false, false, (v) => (v === '1' ? BLESSING_KEY : null)), blessingNote(w, c.race))}
     <div class="row"><label><h3>${L('名前 (任意)', 'Name (optional)')}</h3><input id="name" maxlength="24" value="${esc(c.name ?? '')}" placeholder="${L('空ならこの世界らしい名前', 'Leave empty for a local name')}" autocomplete="off"></label></div>
     ${row(L('作戦', 'Tactics'), seg('policy', c.policy, POLICIES.map((p) => [p, POLICY_NAME[p]])), L('どんな生き方を重んじるか。冒険と戦いの起きやすさ、戦いの危うさ、自動で選ぶときの選び方がゆるく変わる。人生の途中でもいつでも変えられる。', 'What you lean toward. It loosely shifts how often adventure and fights come, how dangerous fights are, and how choices are made automatically. You can change it any time during a life.'))}`;
@@ -260,6 +263,8 @@ export function showSetup(nav: Nav): void {
 // 前世の終わりの1行 (前世の無い人は空)
 export function pastLine(h: Hero): string {
   if (!h.past) return '';
+  // 異世界転移は死んでいない: 元の世界での自分
+  if (h.transfer) return L(`元の世界では${h.past.age}歳の${T(h.past.job)}、${h.name}。`, `Back home: ${h.name}, a ${h.past.age}-year-old ${T(h.past.job).toLowerCase()}.`);
   const end = pastEnd(h.past.cause, h.arrival === 'summoned', h.seed).text;
   return L(`前世は${h.past.age}歳の${T(h.past.job)}。${end}。`, `In a past life: a ${h.past.age}-year-old ${T(h.past.job)}. ${end}`);
 }
@@ -277,7 +282,10 @@ export function meeting(h: Hero): string {
       ? L('この世界の子として生まれた。前世のことは、思い出せないまま終わるのかもしれない。', 'Born a child of this world. The past life may never come back.')
       : L('この世界の子として生まれた。前世のことは、まだ思い出していない。', 'Born a child of this world. The past life has not come back yet.'))
       + (gift ? L(`体の奥には「${gift}」が眠っている。`, ` Somewhere inside, ${gift} lies dormant.`) : '');
-    case 'summoned': return L('足もとに光る陣が広がり、気づくと見知らぬ神殿に立っていた。神官たちがこちらを見つめている。', 'A circle of light spread underfoot. Then there was a strange temple, and priests staring.')
+    case 'summoned': if (h.transfer) return gift
+      ? L(`持ち物を確かめていて気づいた。自分の中に「${gift}」という力がある。転移のときに授かったらしい。`, `Checking {his} pockets, {name} noticed something else: a power called ${gift}. A gift from the crossing, apparently.`.replace('{his}', pron(h.sex, 'his')).replace('{name}', h.given))
+      : L('持ち物を確かめた。力のようなものは、何も授かっていなかった。', 'Checked the pockets. No special power had come along for the ride.');
+      return L('足もとに光る陣が広がり、気づくと見知らぬ神殿に立っていた。神官たちがこちらを見つめている。', 'A circle of light spread underfoot. Then there was a strange temple, and priests staring.')
       + (gift ? L(`自分の中に「${gift}」があるのが分かった。`, ` ${gift} was there, inside, unmistakably.`) : '');
     case 'native': return L(`前世はない。${T(h.world.name)}に生まれた、ただひとりの子。`, `No past life. Just one child born into the ${T(h.world.name)}.`);
   }
@@ -300,16 +308,17 @@ export function showArrival(h: Hero, asked: Setup, nav: Nav): void {
     [L('始まる年齢', 'Starting age'), ageText(h.age), !!a.startAge],
     [L('女神の加護', "Goddess's blessing"), h.blessing ? L('あり', 'Yes') : L('なし', 'No'), true],
     [L('名前', 'Name'), f.name ?? h.given, !!a.name],
+    ...(h.transfer ? [[L('元の世界の仕事', 'Job back home'), T(h.transfer.job), false], [L('持ってきた物', 'In the pockets'), h.transfer.items.map(itemName).join(L('・', ', ')), false]] as [string, string, boolean][] : []),
     [L('作戦', 'Tactics'), POLICY_NAME[h.policy], !!asked.policy],
   ];
   const past = pastLine(h);
   screen(`
   <main class="page arrival">
     <article class="record">
-      <header><span>${L('転生', 'Arrival')}</span><span>${esc(T(h.world.name))}</span></header>
+      <header><span>${h.transfer ? L('異世界転移', 'Transported') : L('転生', 'Arrival')}</span><span>${esc(T(h.world.name))}</span></header>
       ${sceneHTML(sceneOf(h), L('生まれた場所', 'Where it begins'))}
       <div class="recbody">
-        ${past ? `<p class="kicker">${L('前世の終わり', 'How the last life ended')}</p><p class="lead">${esc(past)}</p>` : ''}
+        ${past ? `<p class="kicker">${h.transfer ? L('元の世界', 'Back home') : L('前世の終わり', 'How the last life ended')}</p><p class="lead">${esc(past)}</p>` : ''}
         <p class="story">${esc(meeting(h))}</p>
         <p class="story">${esc(h.log[0]?.text ?? '')}</p>
         <div class="rechead">${faceHTML(heroFigure(h), 'face big')}<div><p class="kicker">${L('名前', 'Name')}</p><h1>${esc(h.name)}</h1></div></div>

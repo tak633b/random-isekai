@@ -1,6 +1,6 @@
 // 同じ設定で何回も生きる (DESIGN 6節)。engine の runTrials と同じ数え方を、画面を固めないよう小分けにして回す
 import type { Policy, Setup } from '../engine/types';
-import { CHEATS, HAZARDS, REACH_AGES, TABLE_E0, createHero, hazardName, raceOf, randomSeed, statusName, trialAdd, trialFinish, trialStart, type TrialResult } from '../engine';
+import { CHEATS, END_KINDS as HAZARDS, REACH_AGES, TABLE_E0, createHero, hazardName, raceOf, randomSeed, statusName, trialAdd, trialFinish, trialStart, type TrialResult } from '../engine';
 import { ageHistogram, barList, fmtPct } from './charts';
 import { ARRIVAL_NAME, POLICY_NAME } from './labels';
 import { esc } from './dom';

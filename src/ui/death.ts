@@ -1,4 +1,5 @@
 // 亡くなったとき: 死亡記録を出し、この端末に残す。追悼館に残す・AI の最後の言葉 (任意)。同じ設定で何回も試す・もう一度・新しく転生
+import { openSheet } from './sheet';
 import type { Hero } from '../engine/types';
 import { randomSeed } from '../engine';
 import { keep, recordHTML, toRecord } from './records';
@@ -57,6 +58,7 @@ export function showDeath(h: Hero, nav: Nav): void {
       <button class="primary" data-go="trials">${L('同じ設定で何回も試す', 'Run this setup many times')}</button>
       <button data-go="again">${L('同じ設定でもう一度', 'Same setup, new life')}</button>
       <button data-go="new">${L('新しく転生', 'A new rebirth')}</button>
+      <button data-go="sheet">${L('ステータスを見る', 'Status')}</button>
       <button data-go="title" class="quiet">${L('タイトルへ', 'Title')}</button>
     </div>
     <p class="note">${L('「同じ設定」は、おまかせで決まった項目も含めて固定し、運だけを変える。', '"Same setup" keeps everything that was decided, including what was random, and changes only luck.')}</p>
@@ -81,6 +83,7 @@ export function showDeath(h: Hero, nav: Nav): void {
     if (go === 'again') nav.start({ ...h.setup, seed: randomSeed() });
     if (go === 'new') { if (isUnlocked(CUSTOM)) nav.setup(); else nav.title(); }
     if (go === 'title') nav.title();
+    if (go === 'sheet') openSheet(h);
     if (go === 'post') void post();
     const m = t.closest<HTMLElement>('[data-mem]')?.dataset.mem;
     if (m) nav.memorial(Number(m));

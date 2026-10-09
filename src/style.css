@@ -487,8 +487,8 @@ h1 .tickets, h2 .tickets, .tickets { font-family: var(--dot); color: var(--accen
 .rv-skip { position: absolute; top: 10px; right: 16px; margin: 0; font-size: 12px; color: var(--faint); }
 .rv-stage { grid-area: 1 / 1; width: 100%; max-width: 560px; opacity: 0; visibility: hidden; transform: translateY(10px); transition: opacity .2s, transform .2s, visibility 0s .2s; }
 .rv-stage.on { opacity: 1; visibility: visible; transform: none; transition: opacity .45s, transform .45s; }
-.rv-past, .rv-voice, .rv-scene, .rv-sub, .rv-line, #rv-cd, .rv-bless, .rv-traits li { opacity: 0; transition: opacity .5s, transform .5s; transform: translateY(6px); }
-.rv-past.on, .rv-voice.on, .rv-scene.on, .rv-sub.on, .rv-line.on, #rv-cd.on, .rv-bless.on, .rv-traits li.on { opacity: 1; transform: none; }
+.rv-past, .rv-voice, .rv-scene, .rv-sub, .rv-line, #rv-cd, #rv-lang, .rv-bless, .rv-traits li { opacity: 0; transition: opacity .5s, transform .5s; transform: translateY(6px); }
+.rv-past.on, .rv-voice.on, .rv-scene.on, .rv-sub.on, .rv-line.on, #rv-cd.on, #rv-lang.on, .rv-bless.on, .rv-traits li.on { opacity: 1; transform: none; }
 .rv-past { color: var(--faint); font-size: 14px; }
 .rv-voice { font-size: 17px; line-height: 2; }
 .rv-spin { font-family: var(--dot); font-size: clamp(26px, 7vw, 40px); margin: 6px 0 12px; color: var(--sub); min-height: 1.4em; }
@@ -515,3 +515,35 @@ h1 .tickets, h2 .tickets, .tickets { font-family: var(--dot); color: var(--accen
   .rv-stage, .rv-stage.on, .rv-past, .rv-voice, .rv-scene, .rv-sub, .rv-line, #rv-cd, .rv-bless, .rv-traits li { transition: none; transform: none; }
   .rv-spin.land, .rv-card.landed.rv-legend { animation: none; }
 }
+/* 異世界転移: 足もとに広がる魔法陣 (角を曲がって来た人は、ゆがむ景色) */
+.rv-circle { width: 140px; height: 140px; margin: 0 auto 18px; border-radius: 50%; border: 2px solid var(--magic); box-shadow: 0 0 30px var(--magic), inset 0 0 30px var(--magic);
+  background: repeating-conic-gradient(from 0deg, transparent 0 14deg, rgb(124 196 216 / .25) 14deg 16deg); animation: rvspin 6s linear infinite, rvpulse 1.6s ease-in-out infinite alternate; }
+.rv-circle.rv-corner { border-radius: 8px; border-color: var(--sub); box-shadow: none; background: linear-gradient(90deg, var(--surface) 50%, var(--bg2) 50%); animation: rvwarp 2.4s ease-in-out infinite alternate; }
+@keyframes rvspin { to { rotate: 360deg; } }
+@keyframes rvpulse { from { opacity: .55; } to { opacity: 1; } }
+@keyframes rvwarp { from { transform: skewX(0deg); } to { transform: skewX(14deg) scale(.92); } }
+@media (prefers-reduced-motion: reduce) { .rv-circle, .rv-circle.rv-corner { animation: none; } }
+
+/* ステータス画面 (ui/sheet.ts) */
+.facebtn { padding: 0; border: 0; background: none; min-height: 0; cursor: pointer; border-radius: 8px; }
+.facebtn:hover .face { box-shadow: 0 0 0 2px var(--accent); }
+.modal.sheet { max-width: 560px; }
+.shead { display: flex; gap: 12px; align-items: center; margin-bottom: 10px; }
+.shead h2 { margin: 0; font-family: var(--dot); }
+.shead p { margin: 2px 0; font-size: 13px; color: var(--sub); }
+.svit { display: grid; gap: 6px; margin: 8px 0 12px; }
+.svit div, .sattr li { display: grid; grid-template-columns: 6.5em 1fr 4.5em; align-items: center; gap: 8px; }
+.svit span { font-family: var(--dot); color: var(--accent); }
+.svit em, .sattr em { font-style: normal; text-align: right; font-variant-numeric: tabular-nums; }
+.sbar { display: block; height: 10px; border-radius: 5px; background: var(--bg2); border: 1px solid var(--line); overflow: hidden; }
+.sbar b { display: block; height: 100%; background: var(--good); }
+.sbar.mp b { background: var(--magic); }
+.sbar.at b { background: var(--accent); }
+.sattr, .sskill, .kills { list-style: none; padding: 0; margin: 6px 0; display: grid; gap: 4px; }
+.sskill li small { display: block; color: var(--sub); }
+.sskill li.cheat b { color: var(--accent); }
+.kills { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+.kills li { display: flex; justify-content: space-between; background: var(--bg2); border-radius: 6px; padding: 2px 8px; }
+.ssec { border-top: 1px solid var(--line); padding: 6px 0; }
+.ssec summary { cursor: pointer; color: var(--accent); font-family: var(--dot); }
+.climb { color: var(--accent); }

@@ -4,7 +4,7 @@
 // その年のハザードを死因の分類 (Hazard) ごとに持ち、身分・職業・能力・特典・世界の状態の倍率を重ねる。
 import type { Hazard, Hero, Race, RaceId, Stage, World } from './types';
 import { raceOf } from './races';
-import { statusExecution, statusMult, statusRank } from './status';
+import { standingOf, statusExecution, statusMult, statusRank } from './status';
 import { jobOf, jobsIn } from './jobs';
 import { CHEATS } from './cheats';
 import { traitAging, traitAttention, traitMult } from './traits';
@@ -12,8 +12,10 @@ import { hasTag } from './worlds';
 import { tacticFight } from './tactic';
 
 export const HAZARDS: Hazard[] = ['infant', 'disease', 'monster', 'violence', 'war', 'accident', 'childbirth', 'magic', 'execution', 'famine', 'plague', 'age'];
+// 一生の終わり方の分類すべて (毎年の確率がある HAZARDS と、元の世界へ帰る 'return')
+export const END_KINDS: Hazard[] = [...HAZARDS, 'return'];
 export type Hazards = Record<Hazard, number>;
-const zero = (): Hazards => ({ infant: 0, disease: 0, monster: 0, violence: 0, war: 0, accident: 0, childbirth: 0, magic: 0, execution: 0, famine: 0, plague: 0, age: 0 });
+const zero = (): Hazards => ({ infant: 0, disease: 0, monster: 0, violence: 0, war: 0, accident: 0, childbirth: 0, magic: 0, execution: 0, famine: 0, plague: 0, age: 0, return: 0 });
 
 export const ADULT_HEQ = 16;
 const hz = (q: number) => -Math.log(1 - q);
@@ -190,9 +192,9 @@ export function hazards(h: Hero): Hazards {
   // 世界の状態とその人の状況で起きる死
   if (h.state.plague > 0) z.plague += plagueH(w) * plagueAgeK(h.age, e);
   if (h.state.famine > 0) z.famine += famineH() * famineAgeK(h.age, e);
-  if (h.flags.pregnant !== undefined) z.childbirth += hz(maternalRisk(w)) * (statusRank(h.status) >= statusRank('noble') || h.job === 'saint' ? 0.4 : 1);
+  if (h.flags.pregnant !== undefined) z.childbirth += hz(maternalRisk(w)) * (statusRank(standingOf(h)) >= statusRank('noble') || h.job === 'saint' ? 0.4 : 1);
   if (adult) {
-    z.execution += statusExecution(h.status);
+    z.execution += statusExecution(standingOf(h));
     if (w.magic >= 2 && h.talent === 'magic') z.magic += 0.0005;
     z.magic += powersH(w);
     // 目立つ特典を持つ人は暗殺と断罪が増える。ばれていれば (outed) 2倍
@@ -204,7 +206,7 @@ export function hazards(h: Hero): Hazards {
     if (h.state.demonKing) z.monster *= 1.5; // 魔王の侵攻中は辺境の魔物が増える (research/07 の 4節は 2倍)
   }
 
-  mul(z, statusMult(h.status));
+  mul(z, statusMult(standingOf(h))); // 今の身分 (成り上がった人は上の身分の暮らしの危険で)
   const j = adult && !h.flags.retired ? jobOf(h.job) : null;
   if (j) {
     mul(z, j.risk);

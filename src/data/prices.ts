@@ -43,11 +43,16 @@ const FREE_TRAITS = [
   ...allTraits().filter((t) => plain(t) && t.kind === 'weakness' && t.cost >= -2).slice(0, 4),
 ].map((t) => `trait:${t.id}` as UnlockKey);
 
-export const FREE: UnlockKey[] = ['world:medieval', 'race:human', 'startAge:birth', 'status:commoner', ...FREE_TRAITS];
+// 転生の型: 異世界転移だけ有料 (元の世界の名前・仕事・持ち物と、必ず何かの力を持って来るので、強い特典と同じ中ほどの値段)
+export const TRANSFER_KEY: UnlockKey = 'arrival:summoned';
+const ARRIVAL_PRICE = 3;
+
+export const FREE: UnlockKey[] = ['world:medieval', 'race:human', 'startAge:birth', 'status:commoner', 'arrival:reborn', 'arrival:awaken', 'arrival:native', ...FREE_TRAITS];
 
 export const PRICES: Record<UnlockKey, number> = Object.fromEntries([
   [CUSTOM, 10],
   [BLESSING_KEY, 3],
+  [TRANSFER_KEY, ARRIVAL_PRICE],
   ...WORLD_IDS.map((w) => [`world:${w}`, WORLD_PRICE[w] ?? 1]),
   ...RACE_IDS.map((r) => [`race:${r}`, RACE_PRICE[r] ?? 1]),
   ...CHEAT_IDS.map((c) => [`cheat:${c}`, CHEAT_PRICE[c]]),

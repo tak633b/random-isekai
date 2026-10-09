@@ -1,5 +1,6 @@
 // 画面に出す呼び名。エンジンが名前を持っていないもの (才能・転生の型・記憶・性格・役・年の色) をここで訳す
-import type { Arrival, GuildRank, MemoryLevel, PastLife, Role, Sex, StatKey, Talent, YearKind } from '../engine/types';
+import type { Arrival, GuildRank, Hero, MemoryLevel, PastLife, Role, Sex, StatKey, Talent, YearKind } from '../engine/types';
+import { statusName } from '../engine/status';
 import { JOBS } from '../engine/jobs';
 import type { JobId } from '../engine/types';
 import { L } from '../i18n';
@@ -11,12 +12,25 @@ export const TALENT_NAME: Record<Talent, string> = {
 
 export const ARRIVAL_NAME: Record<Arrival, string> = {
   reborn: L('赤ちゃんから', 'Reborn as a baby'), awaken: L('途中で思い出す', 'Awakened later'),
-  summoned: L('召喚', 'Summoned'), native: L('現地の生まれ', 'Native-born'),
+  summoned: L('異世界転移', 'Transported'), native: L('現地の生まれ', 'Native-born'),
 };
 
 export const MEMORY_NAME: Record<MemoryLevel, string> = { none: L('なし', 'None'), faint: L('ぼんやり', 'Faint'), full: L('はっきり', 'Clear') };
 
 export { TACTIC_NAME as POLICY_NAME } from '../engine/tactic'; // 作戦 (前は「自動で選ぶときの性格」)
+
+// 身分の歩み (成り上がり・没落)。生まれから今までを「奴隷 → 平民 → 騎士」の形で。変わっていなければ空
+export const climbText = (h: Hero): string => (h.climb?.length ? [h.status, ...h.climb.map((c) => c.to)].map((s) => statusName(s, h.world)).join(' → ') : '');
+
+// 称号 (立ったしるしから)
+const TITLES: [string, string, string][] = [['demonKingSlain', '魔王を討った者', "Demon Lord's Bane"], ['hero', '勇者', 'Hero'], ['saint', '聖女', 'Saint'],
+  ['lord', '領主', 'Lord'], ['knighted', '騎士', 'Knight'], ['famous', '名の知れた者', 'Renowned'], ['dragonSlayer', '竜殺し', 'Dragonslayer'],
+  ['guildmaster', 'ギルドマスター', 'Guildmaster'], ['courtMage', '宮廷魔術師', 'Court Mage'], ['freed', '鎖を断った者', 'Unchained'], ['exiled', '追放された者', 'Exile']];
+export const titlesOf = (h: Hero): string[] => TITLES.filter(([f]) => h.flags[f] !== undefined).map(([, ja, en]) => L(ja, en));
+
+// 一生の終わりの年齢の書き方。元の世界へ帰った人 (hazard 'return') は享年と言わない。age は数字だけを <b> に入れた HTML
+export const endAge = (age: number, hazard?: string): string => (hazard === 'return' ? L(`<b>${age}</b>歳で元の世界へ`, `Went home at <b>${age}</b>`) : L(`享年 <b>${age}</b>`, `Died at <b>${age}</b>`));
+export const endAgeShort = (age: number, hazard?: string): string => (hazard === 'return' ? L(`${age}歳で帰還`, `went home at ${age}`) : L(`享年${age}`, `died at ${age}`));
 
 export const SEX_NAME: Record<Sex, string> = { F: L('女', 'Female'), M: L('男', 'Male') };
 

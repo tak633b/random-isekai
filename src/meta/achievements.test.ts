@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { allDeaths, createHero, liveOut, WORLDS, WORLD_IDS } from '../engine';
+import { allEvents, allDeaths, createHero, liveOut, WORLDS, WORLD_IDS } from '../engine';
 import { continueAs, heirsOf } from '../engine/lineage';
 import { reincarnatorsOf } from '../engine/reincarnators';
 import type { Hero, HeroChoice, Policy, WorldId } from '../engine/types';
@@ -15,7 +15,7 @@ const REAL = allAchievements();
 afterAll(() => useAchievements(REAL));
 
 const facts = (over: Partial<LifeFacts> = {}): LifeFacts => ({
-  lifeId: '1', ended: true, random: true, tactic: 'normal', name: 'A', world: 'medieval', race: 'human', sex: 'F', status: 'commoner', cheat: null,
+  lifeId: '1', ended: true, random: true, tactic: 'normal', standing: 'commoner', rose: 0, fell: false, name: 'A', world: 'medieval', race: 'human', sex: 'F', status: 'commoner', cheat: null,
   traits: [], arrival: 'reborn', blessing: false, age: 50, heq: 50, hazard: 'age', deathId: 'd.age', job: null, rank: null, level: 3,
   flags: ['famous'], marriages: 1, children: 2, foesMet: 3, foesWon: 2, foesLost: 0, foeKinds: ['slime'], foeKindsWon: ['slime'],
   encounters: [], reincMet: 0, reincFought: 0, gen: 1, maxBond: 80, outlivedAll: false, lifespanRatio: 0.8, firstYearAdventure: false,
@@ -89,9 +89,10 @@ const perLife = (c: Cond): boolean =>
   'all' in c ? c.all.every(perLife) : 'any' in c ? c.any.every(perLife) : 'not' in c ? perLife(c.not) : 'fact' in c || 'has' in c;
 
 // 条件から、探すときの設定を読む: 世界・種族・特典・身分・始まり方、死因の文の世界、図鑑の姿の世界
-function hintsOf(c: Cond): { worlds: WorldId[]; hero: HeroChoice; policy?: Policy } {
+function hintsOf(c: Cond): { worlds: WorldId[]; hero: HeroChoice; policy?: Policy; wide: boolean } {
   const worlds = new Set<WorldId>(), hero: HeroChoice = {};
   let policy: Policy | undefined;
+  let wide = false; // 特定の死因の文・しるしは、1人あたりの起きやすさが低いので広く探す
   const walk = (x: Cond): void => {
     if ('all' in x) return x.all.forEach(walk);
     if ('any' in x) return walk(x.any[0]);
@@ -106,36 +107,68 @@ function hintsOf(c: Cond): { worlds: WorldId[]; hero: HeroChoice; policy?: Polic
       if (x.fact === 'deathId') {
         const d = allDeaths().find((y) => y.id === x.eq);
         if (d) {
-          for (const w of WORLD_IDS) if ((!d.tags || d.tags.some((t) => WORLDS[w].tags.includes(t))) && !d.not?.some((t) => WORLDS[w].tags.includes(t))) worlds.add(w);
+          wide = true;
+          for (const w of WORLD_IDS) if ((!d.tags || d.tags.some((t) => WORLDS[w].tags.includes(t))) && !d.not?.some((t) => WORLDS[w].tags.includes(t)) && (d.magic === undefined || WORLDS[w].magic >= d.magic) && (!d.tech || (WORLDS[w].tech >= d.tech[0] && WORLDS[w].tech <= d.tech[1]))) worlds.add(w);
           if (d.races?.length === 1) hero.race = d.races[0];
           if (d.status?.length === 1) hero.status = d.status[0];
         }
       }
     }
     if ('has' in x && (x.has === 'foeKinds' || x.has === 'foeKindsWon')) BESTIARY.find((b) => b.id === x.id)?.worlds.forEach((w) => worlds.add(w));
+    // しるしの実績: そのしるしを立てる出来事の条件から、世界・身分・特典・種族・来かたを読む (乱数の並びが変わっても、起きうる人生を探せるように)
+    if ('has' in x && x.has === 'flags') {
+      const e = allEvents().find((d) => d.set === x.id || d.choice?.options.some((o) => o.set === x.id));
+      if (e) {
+        wide = true;
+        for (const w of WORLD_IDS) {
+          const W = WORLDS[w];
+          if ((!e.tags || e.tags.some((t) => W.tags.includes(t))) && !e.not?.some((t) => W.tags.includes(t)) && (e.magic === undefined || W.magic >= e.magic) && (!e.tech || (W.tech >= e.tech[0] && W.tech <= e.tech[1]))) worlds.add(w);
+        }
+        if (e.status?.length) hero.status ??= e.status[0];
+        if (e.cheats?.length) hero.cheat ??= e.cheats[0];
+        if (e.races?.length === 1) hero.race ??= e.races[0];
+        if (e.arrival?.length === 1) hero.arrival ??= e.arrival[0];
+        if (e.jobs?.some((j) => j === 'mage' || j === 'priest')) hero.talent ??= 'magic';
+      }
+    }
   };
   walk(c);
-  return { worlds: worlds.size ? [...worlds] : WORLD_IDS, hero, policy };
+  return { worlds: worlds.size ? [...worlds] : WORLD_IDS, hero, policy, wide };
 }
 
-// 見つけにくいものの手がかり (測って見つけた seed と設定)。seed が外れたら (データが変わったら) 同じ設定で探し直す
-interface Hint { world: WorldId; hero: HeroChoice; seed: number }
+// 見つけにくいものの手がかり (測って見つけた seed と設定)。seed は近道にすぎない: 出来事が増えて乱数の並びが変わり seed が外れても、
+// 同じ設定で広く (HINT_BUDGET 人まで) 探し直す。設定は「その実績が起きうる人生」になるものを書く (seed を貼り直すのではなく)
+interface Hint { world: WorldId; hero: HeroChoice; seed: number; policy?: Policy }
 const HINTS: Record<string, Hint> = {
   'a.feat.age1000': { world: 'medieval', hero: { race: 'elf', cheat: 'immortal_body' }, seed: 119 },
-  'a.feat.guildmaster': { world: 'medieval', hero: { cheat: 'sword_saint' }, seed: 631 },
-  'a.death.sandstorm': { world: 'desert', hero: {}, seed: 370 },
+  'a.feat.guildmaster': { world: 'medieval', hero: { cheat: 'sword_saint' }, seed: 1465 }, // 鍛える選択を入れた後に測り直した (前は 631)
+  'a.death.alien': { world: 'space', hero: {}, seed: 194 },
+  'a.feat.freed': { world: 'medieval', hero: { status: 'slave' }, seed: 8 },
+  'a.feat.slaveToNoble': { world: 'medieval', hero: { status: 'slave' }, seed: 448, policy: 'bold' },
+  'a.feat.orphanRise': { world: 'medieval', hero: { status: 'orphan' }, seed: 60, policy: 'bold' },
+  'a.feat.restored': { world: 'medieval', hero: { status: 'noble' }, seed: 26 },
+  'a.feat.courtmage': { world: 'medieval', hero: { talent: 'magic' }, seed: 119 },
+  'a.feat.streamer': { world: 'modern', hero: {}, seed: 194 },
+  'a.death.radiation': { world: 'postapoc', hero: {}, seed: 69 },
+  'a.feat.wentHome': { world: 'medieval', hero: { arrival: 'summoned' }, seed: 29 },
+  'a.feat.stayed': { world: 'medieval', hero: { arrival: 'summoned' }, seed: 13 },
+  'a.death.scurvy': { world: 'ocean', hero: {}, seed: 326 },
+  'a.death.sandstorm': { world: 'desert', hero: {}, seed: 283 },
   'a.death.seppuku': { world: 'wa', hero: { status: 'gentry' }, seed: 258 },
   'a.death.heroSilenced': { world: 'medieval', hero: { cheat: 'holy_power' }, seed: 29 },
 };
+
+const HINT_BUDGET = 4000;
 
 // 1つの人生で決まる実績を、設定を変えて探す (見つかった seed を返す)
 function search(a: AchievementDef, tries: number): number | null {
   const p = newProgress();
   const ok = (h: Hero) => evalCond(a.cond, factsOf(h, true), p);
   const hint = HINTS[a.id];
-  if (hint && ok(live(hint.seed, hint.world, hint.hero))) return hint.seed;
-  const { worlds, hero, policy } = hint ? { worlds: [hint.world], hero: hint.hero, policy: undefined } : hintsOf(a.cond);
-  for (let i = 0; i < tries; i++) if (ok(live(i + 1, worlds[i % worlds.length], hero, policy))) return i + 1;
+  if (hint && ok(live(hint.seed, hint.world, hint.hero, hint.policy))) return hint.seed;
+  const { worlds, hero, policy, wide } = hint ? { worlds: [hint.world], hero: hint.hero, policy: hint.policy, wide: true } : hintsOf(a.cond);
+  const n = wide ? HINT_BUDGET : tries;
+  for (let i = 0; i < n; i++) if (ok(live(i + 1, worlds[i % worlds.length], hero, policy))) return i + 1;
   return null;
 }
 
@@ -159,6 +192,7 @@ const REASONS: Record<string, string> = {
   'a.collection.encounters100': '出会い図鑑の全部が要る。past_friend の出来事がまだ無い',
   'a.collection.bestiary100': '全81種にはおまかせ3000人で出会える (落ち武者と虚無の悪魔は3000人に1人)。2000人の通しでは揃わない。長く遊べば届く',
   'a.collection.won100': '同上 (3000人で全81種に勝った)',
+  'a.feat.gekokujo': '王族への下剋上は、中世の貴族を作戦ガンガンいこうぜで生きても4000人に1人ほど (2026-10-09 に seed 3818 で実測)。長く遊べば届く',
   'a.collection.achievements100': '上の届かない実績と秘密の実績を含む',
 };
 
@@ -199,7 +233,7 @@ describe('実績の一覧', () => {
       // 合計だけの条件は増える一方なので、2000人の伸びから届く人数を見積もる (2万人以内なら届くとみなす)
       if ('total' in a.cond) { const rate = long.totals[a.cond.total] / LONG; ok = rate > 0 && a.cond.gte / rate <= 20000; }
       else if (gen) for (let s = 1; s <= 40 && !ok; s++) { const h = chain(s, Number(gen[1])); ok = !!h && evalCond(a.cond, factsOf(h, true), newProgress()); }
-      else if (perLife(a.cond)) ok = search(a, 160) !== null;
+      else if (perLife(a.cond)) ok = search(a, 600) !== null;
       if (!ok) missing.push(`${a.id} ${JSON.stringify(a.cond)}`);
     }
     expect(missing).toEqual([]);

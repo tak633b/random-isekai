@@ -3,7 +3,7 @@ import type { Figure, Hazard, Hero, LogEntry, Role, SceneSpec, Setup, Tie } from
 import { fateLine } from '../engine/people';
 import { CHEATS, heqOf, raceOf, randomSeed, statusName, summary } from '../engine';
 import { heroFigure, sceneOf, tieFigure, faceHTML, sceneHTML, paintAll } from './pixel';
-import { ARRIVAL_NAME, KIND_NAME, ROLE_NAME, SEX_NAME, ageText, jobName } from './labels';
+import { ARRIVAL_NAME, KIND_NAME, ROLE_NAME, SEX_NAME, ageText, climbText, endAge, jobName } from './labels';
 import { esc, load, save } from './dom';
 import { screen, setBack, type Nav } from './nav';
 import { aiOf } from './ailog';
@@ -55,6 +55,7 @@ export function toRecord(h: Hero): LifeRecord {
     [L('世界', 'World'), T(h.world.name)],
     [L('種族', 'Race'), `${T(raceOf(h.race).name)}${L('・', ', ')}${SEX_NAME[h.sex]}`],
     [L('生まれ', 'Born into'), statusName(h.status, h.world)],
+    ...(climbText(h) ? [[L('身分の歩み', 'Rise and fall'), climbText(h)] as [string, string]] : []),
     [L('転生の型', 'Arrival'), ARRIVAL_NAME[h.arrival]],
     [L('転生特典', 'Cheat skill'), h.cheat ? T(CHEATS[h.cheat].name) : L('なし', 'None')],
     [L('最後の仕事', 'Last job'), jobName(h.job)],
@@ -112,7 +113,7 @@ export function recordHTML(r: LifeRecord): string {
     <div class="recbody">
       <div class="rechead">${faceHTML(r.face, 'face big')}<div>
         <p class="kicker">${esc(r.worldName)}${r.lineage && r.lineage.gen > 1 ? `${L('・', ' · ')}${esc(genWord(r.lineage.gen))}` : ''}</p><h1>${esc(r.name)}</h1>
-        <p class="age">${L(`享年 <b>${r.age}</b>`, `Died at <b>${r.age}</b>`)}${r.heqAge !== r.age ? `<small>${L(`人間でいえば${r.heqAge}歳`, `about ${r.heqAge} in human years`)}</small>` : ''}</p>
+        <p class="age">${endAge(r.age, r.hazard)}${r.heqAge !== r.age ? `<small>${L(`人間でいえば${r.heqAge}歳`, `about ${r.heqAge} in human years`)}</small>` : ''}</p>
       </div></div>
       ${lineageHTML(r.lineage, r.name)}
       <div class="cause"><b>${esc(r.cause)}</b><p>${esc(r.text)}</p>${r.why ? `<p class="why">${L('なぜ: ', 'Why: ')}${esc(r.why)}</p>` : ''}</div>

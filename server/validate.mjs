@@ -8,7 +8,7 @@ export const ENUMS = {
     'dragonkin', 'demon', 'vampire', 'oni', 'goblin', 'orc', 'lizardfolk', 'merfolk', 'winged', 'fairy', 'slime', 'homunculus', 'android', 'cyborg', 'mutant', 'alien'],
   sex: ['F', 'M'],
   status: ['slave', 'orphan', 'poor', 'commoner', 'merchant', 'gentry', 'noble', 'royal'],
-  hazard: ['infant', 'disease', 'monster', 'violence', 'war', 'accident', 'childbirth', 'magic', 'execution', 'famine', 'plague', 'age'],
+  hazard: ['infant', 'disease', 'monster', 'violence', 'war', 'accident', 'childbirth', 'magic', 'execution', 'famine', 'plague', 'age', 'return'],
   role: ['mother', 'father', 'sibling', 'spouse', 'child', 'lover', 'fiance', 'friend', 'companion', 'mentor', 'rival', 'nemesis', 'familiar', 'master', 'servant', 'disciple'],
   job: ['farmer', 'merchant', 'smith', 'alchemist', 'herbalist', 'priest', 'knight', 'soldier', 'mercenary', 'adventurer', 'mage', 'scholar', 'bard', 'thief', 'tamer', 'cook',
     'lord', 'servant', 'hunter', 'sailor', 'miner', 'assassin', 'necromancer', 'hero', 'saint', 'samurai', 'onmyoji', 'cultivator', 'ninja', 'engineer', 'factory', 'airship',

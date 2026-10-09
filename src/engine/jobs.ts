@@ -3,7 +3,7 @@
 // docs/research/05-classes-magic-guilds.md の 9.4節 (職業ごとの上乗せ) から。
 // risk は世界の基準のハザードにかける倍率、add は基準に無い死因 (魔法・処刑) や職業そのものの危険に足す年あたりの値
 import type { Hazard, Hero, JobId, StatKey, Status, Talent, World, WorldTag } from './types';
-import { statusRank } from './status';
+import { standingOf, statusRank } from './status';
 import { traitOf } from './traits';
 
 type Mult = Partial<Record<Hazard, number>>;
@@ -102,7 +102,7 @@ export function jobsIn(world: World, status: Status): JobDef[] {
     && (!j.maxStatus || rank <= statusRank(j.maxStatus)));
 }
 
-export const jobsFor = (h: Hero): JobDef[] => jobsIn(h.world, h.status);
+export const jobsFor = (h: Hero): JobDef[] => jobsIn(h.world, standingOf(h));
 
 // 戦う職 (英雄の筋に寄せる先)
 export const FIGHT_JOBS: JobId[] = ['adventurer', 'knight', 'hero', 'explorer', 'mercenary', 'cultivator', 'samurai', 'ninja', 'soldier', 'scavenger', 'mage', 'onmyoji', 'tamer', 'hunter'];

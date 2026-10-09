@@ -14,7 +14,8 @@ import { traitTags } from './build';
 import { addAi, aiOf, restoreAi, saveAi } from './ailog';
 import { aiYearButton } from './aipanel';
 import { aiReady } from '../ai/settings';
-import { ROLE_NAME, STAT_NAME, ageText, jobName } from './labels';
+import { ROLE_NAME, STAT_NAME, ageText, climbText, jobName, titlesOf } from './labels';
+import { openSheet } from './sheet';
 import { esc, load, save } from './dom';
 import { checkYear } from '../meta/tickets';
 import { isRandom, restoreMode, saveMode } from './mode';
@@ -86,6 +87,7 @@ export function showLife(h: Hero, nav: Nav, resumed = false): void {
     if (tb) { tab = tb as typeof tab; renderTab(); return; }
     const lk = t.closest<HTMLElement>('[data-life]')?.dataset.life;
     if (lk) { showLifeOf(lk); return; }
+    if (t.closest('[data-sheet]')) { openSheet(h); return; }
     // 前の代の記録へ (中断として保存してから)
     const rc = t.closest<HTMLElement>('[data-record]')?.dataset.record;
     if (rc !== undefined) { stop(); persist(h); savePlay(play); nav.past(Number(rc)); return; }
@@ -320,9 +322,10 @@ export function showLife(h: Hero, nav: Nav, resumed = false): void {
 
 function meHTML(h: Hero, heq: number, gamey: boolean): string {
   const job = h.job ? jobName(h.job) + (h.flags.retired !== undefined ? L('・隠居', ', retired') : '') : heq < 16 ? L('子ども', 'Child') : L('定職なし', 'No trade');
-  return `<div class="mehead">${faceHTML(heroFigure(h), 'face big')}<div>
+  return `<div class="mehead"><button class="facebtn" data-sheet="1" title="${L('ステータスを見る', 'Open status')}" aria-label="${L('ステータスを見る', 'Open status')}">${faceHTML(heroFigure(h), 'face big')}</button><div>
       <h2 class="pname">${esc(h.name)}</h2>
-      <p>${esc(T(raceOf(h.race).name))}${L('・', ' · ')}${esc(statusName(h.status, h.world))}${L('・', ' · ')}${esc(job)}</p>
+      <p>${esc(T(raceOf(h.race).name))}${L('・', ' · ')}${esc(statusName(h.standing ?? h.status, h.world))}${L('・', ' · ')}${esc(job)}</p>
+      ${climbText(h) ? `<p class="note climb">${esc(climbText(h))}</p>` : ''}
       <p class="note">${ageText(h.age)}${heq !== h.age ? L(`(人間でいえば${heq}歳)`, ` (about ${heq} in human years)`) : ''}${h.cheat ? `${L('・', ' · ')}${esc(T(CHEATS[h.cheat].name))}` : ''}${h.revives ? L(`・死の取り消し残り${h.revives}回`, ` · can undo death ${h.revives} more ${h.revives === 1 ? 'time' : 'times'}`) : ''}</p>
       ${gamey ? `<p class="lv">Lv <b>${Math.round(h.level)}</b>${h.rank ? `<span>${L('ギルドランク', 'Guild rank')} <b>${h.rank}</b></span>` : ''}${titlesOf(h).map((t) => `<span class="title">${esc(t)}</span>`).join('')}</p>` : ''}
     </div></div>
@@ -331,10 +334,6 @@ function meHTML(h: Hero, heq: number, gamey: boolean): string {
     <ul class="stats">${STATS.map((k) => `<li><span>${STAT_NAME[k]}</span><i class="meter"><b class="m-${k}" style="width:${h.stats[k]}%"></b></i><em>${Math.round(h.stats[k])}</em></li>`).join('')}</ul>`;
 }
 
-// 称号 (立ったしるしから)
-const TITLES: [string, string, string][] = [['demonKingSlain', '魔王を討った者', "Demon Lord's Bane"], ['hero', '勇者', 'Hero'], ['saint', '聖女', 'Saint'],
-  ['lord', '領主', 'Lord'], ['knighted', '騎士', 'Knight'], ['famous', '名の知れた者', 'Renowned'], ['exiled', '追放された者', 'Exile']];
-const titlesOf = (h: Hero): string[] => TITLES.filter(([f]) => h.flags[f] !== undefined).map(([, ja, en]) => L(ja, en));
 
 // 近い順。亡くなった人・離れた人は後ろで薄く
 const order = (a: Tie, b: Tie) => +(!a.alive || a.until !== undefined) - +(!b.alive || b.until !== undefined) || b.bond - a.bond;

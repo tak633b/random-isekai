@@ -6,6 +6,7 @@ import { CHEATS, RACE_IDS, WORLD_IDS, WORLDS, availableCheats, cheatWeight, make
 import { faceHTML, heroFigure, paintAll, sceneHTML, sceneOf } from './pixel';
 import { TALENT_NAME } from './labels';
 import { meeting, pastLine } from './setup';
+import { itemName } from '../engine/transfer';
 import { screen } from './nav';
 import { esc } from './dom';
 import { L, T } from '../i18n';
@@ -34,14 +35,17 @@ export function showReveal(h: Hero, asked: Setup, done: () => void, back: () => 
   const traits = h.traits.map(traitOf).filter((t): t is TraitDef => !!t);
   const picked = `<small class="rv-pick">${L('選んだ', 'Your pick')}</small>`;
   const past = pastLine(h);
+  const tf = h.transfer; // 異世界転移: 魔法陣か、角を曲がるか。種族と生まれは回さず、元の世界の自分を出す
+  const voice = tf ? h.log[0]?.text ?? '' : meeting(h);
   const born = L(`${statusName(h.status, h.world)}の家に、${h.sex === 'F' ? '女の子' : '男の子'}として`, `Into a ${statusName(h.status, h.world).toLowerCase()} family, as a ${h.sex === 'F' ? 'girl' : 'boy'}`);
 
   screen(`
   <main class="page reveal" aria-live="polite">
     <p class="rv-skip">${L('押す・Enter で飛ばす', 'Tap or press Enter to skip')}</p>
     <section class="rv-stage" id="rv-void">
+      ${tf ? `<div class="rv-circle${tf.how === 'vanish' ? ' rv-corner' : ''}" aria-hidden="true"></div>` : ''}
       ${past ? `<p class="rv-past">${esc(past)}</p>` : ''}
-      <p class="rv-voice">${esc(meeting(h))}</p>
+      <p class="rv-voice">${esc(voice)}</p>
     </section>
     <section class="rv-stage" id="rv-world">
       <p class="kicker">${L('生まれ変わる世界', 'The world you are born into')} ${wa.preset !== 'random' ? picked : ''}</p>
@@ -50,14 +54,16 @@ export function showReveal(h: Hero, asked: Setup, done: () => void, back: () => 
       <p class="rv-sub">${esc(`${MAGIC[h.world.magic]}${L('・', ' · ')}${POWERS[h.world.powers]}${L('・', ' · ')}${L('危険', 'danger')} ${h.world.danger}/10${L('・', ' · ')}${L('戦', 'war')} ${h.world.war}/10`)}</p>
     </section>
     <section class="rv-stage" id="rv-born">
-      <p class="kicker">${L('種族', 'Race')} ${a.race ? picked : ''}</p>
-      <h2 class="rv-spin rv-${raceRar}" id="rv-rn">&nbsp;</h2>
-      <p class="rv-line rv-${statusRarity(h.status)}" id="rv-st">${esc(born)} ${tag(statusRarity(h.status))}</p>
+      <p class="kicker">${tf ? L('元の世界の、あなた', 'You, as you were back home') : `${L('種族', 'Race')} ${a.race ? picked : ''}`}</p>
+      <h2 class="rv-spin rv-${tf ? 'common' : raceRar}" id="rv-rn">&nbsp;</h2>
+      ${tf ? `<p class="rv-line" id="rv-st">${esc(L(`${h.past?.age ?? h.age}歳・${T(tf.job)}`, `${h.past?.age ?? h.age}, ${T(tf.job).toLowerCase()}`))}<br><small>${esc(L(`持ってきた物: ${tf.items.map(itemName).join('・')}`, `In the pockets: ${tf.items.map(itemName).join(', ')}`))}</small></p>`
+        : `<p class="rv-line rv-${statusRarity(h.status)}" id="rv-st">${esc(born)} ${tag(statusRarity(h.status))}</p>`}
       <p class="rv-line" id="rv-ta">${L('才能', 'Talent')}: <b>${esc(TALENT_NAME[h.talent])}</b></p>
     </section>
     <section class="rv-stage" id="rv-gift">
       <p class="kicker">${L('授けられたもの', 'What you were given')}</p>
-      <div class="rv-card rv-${cheatRar}" id="rv-cheat"><small>${L('転生特典', 'Cheat skill')} ${a.cheat ? picked : ''}</small><h2 class="rv-spin" id="rv-cn">&nbsp;</h2>
+      ${tf ? `<div class="rv-card rv-common" id="rv-lang"><small>${L('転移の定番', 'Standard issue')}</small><h2>${L('言語理解', 'Language comprehension')}</h2><p>${L('なぜか言葉が分かる。文字はまだ読めない。', 'Somehow you understand the language. Reading it is another matter.')}</p></div>` : ''}
+      <div class="rv-card rv-${cheatRar}" id="rv-cheat"><small>${tf ? L('授かった力', 'Gifted power') : L('転生特典', 'Cheat skill')} ${a.cheat ? picked : ''}</small><h2 class="rv-spin" id="rv-cn">&nbsp;</h2>
         <p id="rv-cd">${cheat ? `${esc(T(cheat.desc))} ${tag(cheatRar)}` : L('何も授からなかった。', 'Nothing was given.')}</p></div>
       ${h.blessing ? `<div class="rv-card rv-legend rv-bless" id="rv-bl"><small>${L('女神の加護', "Goddess's blessing")}</small><h2>${L('加護を受けた', 'Blessed')}</h2><p>${L('大人になるまで、命を守る光がそばにある。', 'Until you grow up, a light keeps watch over you.')}</p></div>` : ''}
       <ul class="rv-traits">${traits.map((t, i) => `<li class="rv-card rv-${traitRarity(t.cost)}" id="rv-t${i}"><b>${esc(T(t.name))}</b> ${tag(traitRarity(t.cost))}<small>${esc(T(t.desc))}</small></li>`).join('')}</ul>
@@ -104,10 +110,11 @@ export function showReveal(h: Hero, asked: Setup, done: () => void, back: () => 
   spin('rv-wn', WORLD_IDS.map((w) => T(WORLDS[w].name)), T(h.world.name), wa.preset === 'random', 1000);
   at(100, () => { root.querySelector('#rv-world .rv-scene')?.classList.add('on'); root.querySelector('#rv-world .rv-sub')?.classList.add('on'); });
   at(800, () => stage('rv-born'));
-  spin('rv-rn', RACE_IDS.map((r) => T(raceOf(r).name)), T(raceOf(h.race).name), !a.race, 700);
+  spin('rv-rn', RACE_IDS.map((r) => T(raceOf(r).name)), tf ? h.name : T(raceOf(h.race).name), !a.race && !tf, 700);
   at(200, () => show('rv-st'));
   at(250, () => show('rv-ta'));
   at(700, () => stage('rv-gift'));
+  if (tf) at(200, () => show('rv-lang'));
   spin('rv-cn', availableCheats(h.world).map((c) => T(c.name)), cheat ? T(cheat.name) : L('なし', 'None'), !a.cheat, 1000);
   at(100, () => { show('rv-cd'); $('rv-cheat')?.classList.add('landed'); });
   if (h.blessing) at(350, () => show('rv-bl'));

@@ -94,12 +94,12 @@ describe('不死の体でも種族の上限で亡くなる', () => {
     // 千年に届いて亡くなった人は、老衰ではなく自分で選んだ終わり (d.age-rest)
     if (elf.death!.hazard === 'age') expect(elf.death!.id).toBe('d.age-rest');
     let rest = 0;
-    for (let s = 1; s <= 30; s++) {
+    for (let s = 1; s <= 40; s++) {
       const h = liveOut(createHero({ seed: s, world: { preset: 'medieval' }, hero: { race: 'human', cheat: 'immortal_body', arrival: 'reborn' }, auto: true }));
       expect(h.age).toBeLessThanOrEqual(AGELESS_MAX);
       if (h.age >= AGELESS_MAX) { rest++; expect(h.death!.id).toBe('d.age-rest'); }
     }
-    // 実測 (2026-10-09): 不死の人間30人のうち千年に届くのは seed 15 の1人 (40人なら 15・36 の2人)
+    // 実測 (2026-10-09、鍛える選択を入れた後): 不死の人間200人のうち千年に届くのは10人。40人までなら seed 32 の1人
     expect(rest).toBeGreaterThan(0);
   });
 });

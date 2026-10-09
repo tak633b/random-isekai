@@ -25,7 +25,7 @@ const oneIn = (p: number) => Math.max(2, Math.round(1 / Math.max(p, 1e-6)));
 
 // 平民で、特典も職業もない同じ人のハザード。倍率の効き目を比べる相手
 function plainHazards(h: Hero): Hazards {
-  const plain: Hero = { ...h, status: 'commoner', job: null, cheat: null, rank: undefined, flags: { ...h.flags }, stats: { ...h.stats } };
+  const plain: Hero = { ...h, status: 'commoner', standing: undefined, job: null, cheat: null, rank: undefined, flags: { ...h.flags }, stats: { ...h.stats } };
   delete plain.flags.hero; delete plain.flags.drafted; delete plain.flags.outed;
   return hazards(plain);
 }
@@ -39,7 +39,8 @@ function ratioWhy(h: Hero, hz: Hazard): string | null {
   // 英語は何が効いたかで言い方を変える (職業は小文字、特典は名を引用、身分は born …)
   const [who, whoEn] = j && (j.risk[hz] ?? 1) > 1.2 || (j?.add?.[hz] ?? 0) > 0 ? [j!.ja, `as ${an(`a ${j!.en.toLowerCase()}`)}`]
     : h.cheat && (CHEATS[h.cheat].mult[hz] ?? 1) > 1 ? [CHEATS[h.cheat].name.ja, `with "${CHEATS[h.cheat].name.en}"`]
-      : [statusName(h.status, h.world), `born ${statusBirth(h.status, h.world)}`];
+      : h.standing && h.standing !== h.status ? [statusName(h.standing, h.world), `as ${an(`a ${statusName(h.standing, h.world).toLowerCase()}`)}`]
+        : [statusName(h.status, h.world), `born ${statusBirth(h.status, h.world)}`];
   return L(`この人の${hazardName(hz)}の危険は、${who}だったことで平民の${times(mine / base)}倍だった`,
     `${whoEn}, the risk of ${hazardName(hz).toLowerCase()} was ${times(mine / base)}× that of a commoner`);
 }
@@ -49,6 +50,7 @@ const HAZARD_NAMES: Record<Hazard, [string, string]> = {
   infant: ['幼い日の病', 'Childhood illness'], disease: ['病', 'Illness'], monster: ['魔物', 'Monsters'], violence: ['暴力', 'Violence'],
   war: ['戦争', 'War'], accident: ['事故', 'Accident'], childbirth: ['出産', 'Childbirth'], magic: ['魔法の代償', 'Magic gone wrong'],
   execution: ['処刑', 'Execution'], famine: ['飢え', 'Famine'], plague: ['疫病', 'Plague'], age: ['老い', 'Old age'],
+  return: ['元の世界へ帰った', 'Went home'],
 };
 export const hazardName = (hz: Hazard) => L(...HAZARD_NAMES[hz]);
 
@@ -84,6 +86,9 @@ export function deathWhy(h: Hero, hz: Hazard): string {
       break;
     case 'childbirth':
       parts.push(L(`この世界では出産のたびに、およそ${oneIn(maternalRisk(h.world))}人に1人の母親が亡くなる`, `in this world, about 1 mother in ${oneIn(maternalRisk(h.world))} dies with each birth`));
+      break;
+    case 'return':
+      parts.push(L('異世界へ来た人のうち、元の世界へ帰れる人はごくわずか', 'of those who come from another world, very few ever find the way back'));
       break;
     case 'age':
       parts.push(reach);

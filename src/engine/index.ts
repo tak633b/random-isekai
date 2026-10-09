@@ -7,7 +7,7 @@ export { CHEATS, CHEAT_IDS, availableCheats, cheatWeight } from './cheats';
 export { JOBS, jobOf, jobsFor, jobsIn } from './jobs';
 export { STATUSES, statusName, statusWeights } from './status';
 export { worldNames, personName } from './names';
-export { HAZARDS, stageOf, stageAt, heq, heqOf, hazards, deathChance, lifeTableFor, type Hazards, type LifeTable } from './mortality';
+export { HAZARDS, END_KINDS, stageOf, stageAt, heq, heqOf, hazards, deathChance, lifeTableFor, type Hazards, type LifeTable } from './mortality';
 export { createHero, TALENTS, sexWord } from './hero';
 export { closest, callName, around } from './bonds';
 export { deathWhy, hazardName, riskBreakdown } from './why';

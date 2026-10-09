@@ -208,7 +208,8 @@ export type Hazard =
   | 'execution'   // 処刑・断罪
   | 'famine'      // 飢饉
   | 'plague'      // 大疫病
-  | 'age';        // 老い
+  | 'age'         // 老い
+  | 'return';     // 元の世界へ帰った (異世界転移した人の終わり方。死ではない。毎年の確率には入らない)
 
 // 人生の段階。種族で成長の速さが違うので、人間換算の年齢 (stageOf) で決める
 export type Stage = 'infant' | 'child' | 'teen' | 'adult' | 'middle' | 'elder';
@@ -368,6 +369,87 @@ export interface Hero {
   worldHist?: string;   // 各年の世界の様子 (年齢ごとに1文字。16進で 1 戦争 / 2 大疫病 / 4 飢饉 / 8 魔王)。古いセーブには無い
   recent?: Record<string, number>; // 何度も起きる出来事が最後に起きた年齢 (id → 年齢。続けて起きないように)
   peopleLog?: { n: number; wait: LogEntry[] }; // 人物像が年表に足した件数と、翌年に差し込む行 (engine/people.ts。保存に残す)
+  train?: TrainState;   // 今の鍛え方 (engine/training.ts)。古いセーブには無い
+  learned?: string[];   // 生きている間に身につけた trait (traits にも入る。解放の「見た」には数えない)
+  transfer?: TransferState; // 異世界転移で来た人の、元の世界の持ち物と来かた (arrival が summoned のとき)
+  standing?: Status;    // 今の身分 (成り上がり・没落で変わる。無ければ生まれの身分 status のまま。engine/climb.ts)
+  climb?: { age: number; from: Status; to: Status }[]; // 身分が変わった記録
+}
+
+// ---- 鍛える (engine/training.ts、データは src/data/training/*.ts) ----------------
+
+type Cond = Pick<EventDef, 'tags' | 'not' | 'magic' | 'powers' | 'tech' | 'races' | 'status' | 'jobs' | 'cheat' | 'cheats' | 'arrival'>;
+
+// 鍛え方の1つ (剣の稽古・火の魔法の手ほどき・料理修業 …)。この数年に選べる道の候補
+export interface TrainPath extends Cond {
+  id: string;                 // 'tr.<名>'
+  name: Text;                 // 選択肢に出る名 (例 剣の稽古)
+  where?: Text;               // どこで・誰に (例 町の剣術道場)。選択肢の添え書きに出る
+  heq?: [number, number];     // 人間換算の年齢がこの範囲 (省略 7〜70)
+  talents?: Talent[];         // 才能が合えば選ばれやすく、身につきやすい
+  stats: Partial<Record<StatKey | 'level', number>>; // 1年ごとに伸びる能力
+  traits: string[];           // 身につきうる trait の id (その世界・種族で選べるものだけ)
+  cost?: number;              // 1年ごとの暮らし向きの減り (月謝・材料費)
+  risk?: { hazard: Hazard; p: number }; // 1年ごとの命の危険
+  w?: number;                 // 候補に出やすさ (省略 1)
+  start: Text;                // 選んだ年の一文
+  lines?: Text[];             // ふつうの年の一文 (たまに出る)
+  fails: Text[];              // うまくいかなかった年の一文 (笑える失敗)
+  got?: Text;                 // 身につけたときの一文 ({target} が身につけた trait の名)。省略なら決まった言い方
+}
+
+// 狙ったスキルへの近づき方 (弟子入り・独学・魔導書・ダンジョン・ズル …)
+export interface TrainMethod extends Cond {
+  id: string;
+  name: Text;
+  speed: number;              // 1年ごとの進み (100 で身につく)
+  cost?: number;
+  risk?: { hazard: Hazard; p: number };
+  failP: number;              // 1年ごとに失敗する確率
+  minHeq?: number;
+  start: Text;                // {target} が狙うスキル名 (steps・fails・done でも)
+  steps: [Text, Text];        // 3割・7割に来たときの一文
+  fails: Text[];
+  done: Text;                 // 身につけたときの一文
+}
+
+export interface TrainState {
+  kind: 'path' | 'goal' | 'climb' | 'rest';
+  id: string;                 // TrainPath.id / 狙う trait の id / ClimbRoute.id / 'rest'
+  method?: string;            // goal のとき TrainMethod.id
+  since: number;              // 始めた年齢
+  step: number;               // 何回目の見直しか (engine/training.ts の STEPS の番号)
+  prog: number;               // goal の進み (0〜100)
+  done?: boolean;             // goal を果たした / やめた (次の年に見直す)
+}
+
+// 成り上がり: 今の身分から一つ上へ、数年かけて近づく道 (engine/climb.ts、データは src/data/climb.ts)
+export interface ClimbRoute extends Cond {
+  id: string;                 // 'c.<名>'
+  from: Status[];             // 今の身分がこのどれか
+  to: Status;                 // 果たしたらこの身分に
+  name: Text;
+  speed: number;              // 1年の進み (100 で果たす)
+  failP: number;
+  cost?: number;
+  risk?: { hazard: Hazard; p: number };
+  heq?: [number, number];
+  need?: { stat?: [StatKey, number]; flag?: string; noFlag?: string; job?: boolean }; // 能力がこれ以上 / しるし / 職に就いている
+  set?: string;               // 果たしたら立てるしるし (knighted / lord …)
+  start: Text;
+  steps: [Text, Text];
+  fails: Text[];
+  done: Text;
+}
+
+// 異世界転移: 元の世界 (地球) の名前・仕事・持ち物を持ったまま来る
+export type TransferHow = 'hero' | 'caught' | 'vanish' | 'class' | 'accident';
+export interface TransferState {
+  how: TransferHow;
+  job: Text;                  // 元の世界の仕事 (高校生・会社員 …)
+  items: string[];            // 持ってきた物の id (src/data/transfer.ts)
+  battery?: number;           // スマホの電池が切れた年齢
+  returned?: boolean;         // 元の世界に帰った (一生の終わり方)
 }
 
 // その年の世界の様子 (戦争・疫病・飢饉・魔王)
@@ -398,6 +480,8 @@ export interface EventDef {
   needs?: ('skill' | 'ability' | 'blessing' | 'constitution')[]; // その種類の trait を1つ以上持つ (文の {skill} {ability} {blessing} {trait} が埋まる)
   memory?: boolean;           // true: 前世の記憶が今ある / false: ない
   arrival?: Arrival[];
+  pastCause?: PastLife['cause'][]; // 前世の死に方がこのどれか (トラック・過労 …)
+  standing?: Status[];        // 今の身分がこのどれか (成り上がり・没落の後の身分。status は生まれの身分)
   sex?: Sex;
   flag?: string;              // このしるしが立っている
   noFlag?: string;            // このしるしが立っていない
@@ -471,6 +555,7 @@ export interface Figure {
   status: Status;
   me?: boolean;
   dead?: boolean;
+  earth?: boolean;      // 異世界転移で来た人 (元の世界の髪と目の色のまま)
 }
 
 export interface SceneSpec {

@@ -3,7 +3,7 @@
 import type { Hazard, Policy, Setup } from './types';
 import { createHero } from './hero';
 import { liveOut } from './life';
-import { HAZARDS } from './mortality';
+import { END_KINDS } from './mortality';
 
 export const REACH_AGES = [20, 40, 60, 80, 100, 200, 500];
 
@@ -41,7 +41,7 @@ export interface TrialState {
 export function trialStart(setup: Setup, policy?: Policy, maxYears = TRIAL_MAX_YEARS): TrialState {
   return {
     fixed: { ...createHero(setup).setup, auto: true, ...(policy ? { policy } : {}) },
-    maxYears, ages: [], hz: Object.fromEntries(HAZARDS.map((k) => [k, 0])) as Record<Hazard, number>, causes: {}, alive: 0,
+    maxYears, ages: [], hz: Object.fromEntries(END_KINDS.map((k) => [k, 0])) as Record<Hazard, number>, causes: {}, alive: 0,
     longest: { seed: setup.seed, age: -1 },
   };
 }
@@ -65,8 +65,8 @@ export function trialAdd(st: TrialState, i: number): void {
 export function trialFinish(st: TrialState): TrialResult {
   const n = st.ages.length;
   const ages = [...st.ages].sort((a, b) => a - b);
-  const dead = HAZARDS.reduce((s, k) => s + st.hz[k], 0);
-  const byHazard = Object.fromEntries(HAZARDS.map((k) => [k, dead ? st.hz[k] / dead : 0])) as Record<Hazard, number>;
+  const dead = END_KINDS.reduce((s, k) => s + st.hz[k], 0);
+  const byHazard = Object.fromEntries(END_KINDS.map((k) => [k, dead ? st.hz[k] / dead : 0])) as Record<Hazard, number>;
   const reach: Record<number, number> = {};
   for (const x of REACH_AGES) reach[x] = n ? ages.filter((a) => a >= x).length / n : 0;
   return {

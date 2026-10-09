@@ -140,6 +140,14 @@ const FEAT: AchievementDef[] = [
   a('feat', 'beyond2', ['長すぎる余生', 'Overtime'], ['寿命の目安の1.5倍を生きる', 'Live one and a half times the expected lifespan.'], { fact: 'lifespanRatio', gte: 1.5 }, 2),
   a('feat', 'pacifist', ['剣を持たず', 'Never Drew a Blade'], ['一度も戦わずに60歳まで生きる', 'Reach 60 without a single fight.'], all({ fact: 'foesMet', eq: 0 }, ageGte(60)), 1),
   a('feat', 'scarred', ['二度目はなかった', 'No Second Rewind'], ['一度は死を取り消し、それでも老いる前に亡くなる', 'Undo your death once, and still die before old age.'], all(flag('revived'), { not: hazard('age') }), 1),
+  // 成り上がり (生まれの身分 status と、最後の身分 standing)
+  a('feat', 'slaveToNoble', ['鎖から冠へ', 'From Chains to Coronet'], ['奴隷に生まれ、貴族以上の身分になる', 'Be born a slave and rise to nobility or higher.'], all({ fact: 'status', eq: 'slave' }, { any: [{ fact: 'standing', eq: 'noble' }, { fact: 'standing', eq: 'royal' }] }), 3),
+  a('feat', 'orphanRise', ['孤児院から', 'From the Orphanage'], ['孤児に生まれ、郷士以上の身分になる', 'Be born an orphan and rise to the gentry or higher.'], all({ fact: 'status', eq: 'orphan' }, { any: [{ fact: 'standing', eq: 'gentry' }, { fact: 'standing', eq: 'noble' }, { fact: 'standing', eq: 'royal' }] }), 2),
+  a('feat', 'gekokujo', ['下剋上', 'The Usurper'], ['王族でない生まれから、王族の身分になる', 'Be born below royalty and end up royal.'], all({ fact: 'standing', eq: 'royal' }, { not: { fact: 'status', eq: 'royal' } }), 3),
+  a('feat', 'restored', ['再興', 'Restoration'], ['没落したあと、郷士以上の身分に返り咲く', 'Fall from your standing, then climb back to the gentry or higher.'], all({ fact: 'fell', eq: true }, { any: [{ fact: 'standing', eq: 'gentry' }, { fact: 'standing', eq: 'noble' }, { fact: 'standing', eq: 'royal' }] }), 2),
+  // 異世界転移
+  a('feat', 'wentHome', ['ただいま', "I'm Home"], ['異世界転移したあと、元の世界へ帰る', 'Be transported to another world, then find your way home.'], { fact: 'hazard', eq: 'return' }, 3),
+  a('feat', 'stayed', ['ここが居場所', 'This Is Home Now'], ['帰る道が開いたのに、異世界に残る', 'Stay in the other world when the way home opens.'], flag('stayed'), 1),
   // 作戦を一生変えずに通したもの (途中で変えると tactic は mixed)
   a('feat', 'safeLong', ['いのちだいじに', 'Safety First'], ['作戦「いのちだいじに」のまま、寿命の目安まで生きる', 'Keep "Play it safe" all life and reach the expected lifespan.'], all({ fact: 'tactic', eq: 'careful' }, { fact: 'lifespanRatio', gte: 1 }), 1),
   a('feat', 'allOut', ['ガンガンいこうぜ', 'All Out'], ['作戦「ガンガンいこうぜ」のまま、竜か魔王を討つ', 'Keep "Go all out" all life and slay a dragon or the Demon Lord.'], all({ fact: 'tactic', eq: 'bold' }, { any: [flag('dragonSlayer'), flag('demonKingSlain')] }), 2),

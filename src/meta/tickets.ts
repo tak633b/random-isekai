@@ -28,10 +28,11 @@ export function ticketsFor(f: LifeFacts, p: Progress): { gain: number; parts: Ti
 
 // おまかせの人生で見たもの (解放の値引きと「見た」の印)
 export function seenKeys(h: Hero): UnlockKey[] {
-  const keys: string[] = [`world:${h.world.id}`, `race:${h.race}`, `status:${h.status}`, ...h.traits.map((t) => `trait:${t}`)];
+  const keys: string[] = [`world:${h.world.id}`, `race:${h.race}`, `status:${h.status}`, ...h.traits.filter((t) => !h.learned?.includes(t)).map((t) => `trait:${t}`)]; // 鍛えて身につけたものは「見た」に数えない (値引きを増やさない)
   if (h.cheat) keys.push(`cheat:${h.cheat}`);
   if (h.setup.hero.startAge) keys.push(`startAge:${h.setup.hero.startAge}`);
   if (h.blessing) keys.push(BLESSING_KEY);
+  if (h.arrival === 'summoned') keys.push('arrival:summoned');
   return keys as UnlockKey[];
 }
 

@@ -809,4 +809,15 @@ export const DEATHS: DeathDef[] = [
   { id: 'd.age-slime', hazard: 'age', races: ['slime'], w: 3, label: L.faded,
     ja: '{age}歳、体が少しずつ乾いて小さくなり、最後は手のひらほどの雫になって止まった。',
     en: 'At {age}, {name}\'s body slowly dried and shrank, until only a drop the size of a palm was left.' },
+
+  // ---- 元の世界へ帰る (異世界転移した人だけ。死ではなく、一生の終わり方の一つ) ----
+  { id: 'd.return-circle', hazard: 'return', w: 3, label: { ja: '元の世界へ帰った', en: 'Went home' },
+    ja: '{age}歳、来たときと同じ光の陣が足もとに広がった。{name}は振り返って手を振り、元の世界へ帰っていった。',
+    en: 'At {age}, the same circle of light that had brought {name} here opened underfoot. {He} turned, waved, and went home.' },
+  { id: 'd.return-corner', hazard: 'return', w: 2, label: { ja: '元の世界へ帰った', en: 'Went home' },
+    ja: '{age}歳のある夕方、{name}はいつもの角を曲がった。その先は、懐かしい元の世界の帰り道だった。',
+    en: 'One evening at {age}, {name} turned an ordinary corner. On the other side was the old road home, in the old world.' },
+  { id: 'd.return-phone', hazard: 'return', w: 1, label: { ja: '元の世界へ帰った', en: 'Went home' },
+    ja: '{age}歳、とうに電池の切れたスマホが一度だけ鳴った。出た{name}の姿は、そのまま消えていた。',
+    en: 'At {age}, a phone whose battery had died years ago rang, just once. {name} answered it, and was gone.' },
 ];

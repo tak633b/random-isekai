@@ -127,12 +127,14 @@ describe('始まる年齢', () => {
     expect(h.age).toBeGreaterThanOrEqual(heqToAge(13, RACES.elf));
     expect(h.age).toBeLessThanOrEqual(heqToAge(16, RACES.elf));
   });
-  it('召喚は大人 (17〜30歳) が既定、転生は生まれた時から', () => {
+  it('異世界転移は元の世界の年齢 (15〜45歳) のまま、転生は生まれた時から', () => {
     for (let s = 1; s <= 50; s++) {
       const h = createHero({ seed: s, world: { preset: 'medieval' }, hero: { arrival: 'summoned' }, auto: true });
-      expect(h.age).toBeGreaterThanOrEqual(17);
-      expect(h.age).toBeLessThanOrEqual(30);
+      expect(h.age).toBeGreaterThanOrEqual(15);
+      expect(h.age).toBeLessThanOrEqual(45);
       expect(h.past!.age).toBe(h.age);
+      expect(h.transfer).toBeDefined();
+      expect(h.cheat).not.toBeNull(); // 転移した人は必ず何かの力を授かる
       expect(createHero({ seed: s, world: { preset: 'medieval' }, hero: { arrival: 'reborn' }, auto: true }).age).toBe(0);
     }
   });

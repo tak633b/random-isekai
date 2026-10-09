@@ -13,6 +13,8 @@ import { demonKingWorld, hasTag } from './worlds';
 import { reincarnatorYear } from './reincarnators';
 import { capLevel, jobHeld, LIVE, anchoredDeath, anchoredWorld, anchorsOf, anchorYear, canBear, deathBlocked, dressDeath, familyFixed } from './anchor';
 import { arcYear, ensureFightJob, fightJobFor, promote } from './arc';
+import { trainingByRef, trainingDecision, trainYear } from './training';
+import { fortuneYear } from './climb';
 import { alliesFor, peopleYear } from './people';
 import { onArc } from './events';
 import { endLovers } from './events';
@@ -25,7 +27,7 @@ import { TACTIC_NAME } from './tactic';
 // ---- 死 -------------------------------------------------------------------
 
 // 死の取り消し (死に戻り・不死の体) は回数が残る限り使う。老いは取り消せない。不死の体も封印 (処刑・魔法) には勝てない
-const unrevivable = (h: Hero, hz: Hazard) => hz === 'age' || (h.cheat === 'immortal_body' && (hz === 'execution' || hz === 'magic'));
+const unrevivable = (h: Hero, hz: Hazard) => hz === 'age' || hz === 'return' || (h.cheat === 'immortal_body' && (hz === 'execution' || hz === 'magic'));
 
 let forcing = false; // 錨の死 (anchor.ts) を起こしている間
 export const die: Die = (h, hz) => {
@@ -323,6 +325,13 @@ function drift(h: Hero): void {
     s.wealth += (j.wealth - s.wealth) * 0.1;
     if (FIGHTERS.includes(h.job!)) h.level += h.cheat === 'exp_boost' ? 2 : h.cheat === 'growth' ? 1.5 : 1;
   }
+  // 勝った戦いでもレベルが上がる (どの職でも)。大物 (竜・魔族) は4倍。レベルが高いほど1勝の伸びは小さい
+  for (let i = h.log.length - 1; i >= 0 && h.log[i].age === h.age; i--) {
+    const x = h.log[i];
+    if (!x.fight || x.fight.result === 'lose') continue;
+    const big = x.fight.foe === 'dragon' || x.fight.foe === 'demon' ? 4 : 1;
+    h.level += (big * 10) / (10 + h.level);
+  }
   s.happy += (55 - s.happy) * 0.05;
   for (const k of Object.keys(s) as (keyof typeof s)[]) s[k] = Math.round(Math.min(100, Math.max(0, s[k])) * 10) / 10;
   h.level = Math.round(h.level * 10) / 10;
@@ -364,6 +373,7 @@ function settlePending(h: Hero, decs: Decision[]): void {
 export function advanceYear(h: Hero): void {
   if (!h.alive) return;
   if (h.pending.length) { if (!h.auto) return; settlePending(h, []); if (!h.alive) return; }
+  if (h.flags.goHome !== undefined) { die(h, 'return'); return; } // 画面で「帰る」を選んだ次の一歩
   // 1. 生死 (ほかの人の一生では、錨の死の年にその死因で亡くなる)
   const fixed = anchoredDeath(h);
   if (fixed) { forcing = true; die(h, fixed); forcing = false; dressDeath(h); return; }
@@ -387,6 +397,15 @@ export function advanceYear(h: Hero): void {
   if (h.alive) arcYear(h, die, fill('{beast}', h));
   if (h.alive) decs.push(...drawEvents(h, die));
   settlePending(h, decs);
+  if (!h.alive) return;
+  // 異世界転移した人が「帰る」を選んだ (出来事のしるし goHome)。死ではない終わり方
+  if (h.flags.goHome !== undefined) { die(h, 'return'); return; }
+  // 鍛える: 今の道を1年ぶん進めて (その年の選択を済ませた後で。職業が決まる前に亡くならないように)、見直しの年なら「何を鍛える？」
+  trainYear(h, die);
+  if (!h.alive) return;
+  fortuneYear(h); // 身分: 騎士・領主・解放のしるしで上がり、暮らしが尽きたら落ちる
+  const td = trainingDecision(h);
+  if (td) settlePending(h, [td]);
   if (!h.alive) return;
   ensureFightJob(h); // 英雄の筋で登録した大人は、その年のうちに戦う職へ (登録が出来事でも節目でも)
   // 6. 能力
@@ -430,6 +449,7 @@ export function fromSaved(s: SavedHero): Hero {
   for (const ref of pendingRefs) {
     const ev = eventByRef(ref);
     if (ev?.choice) h.pending.push(eventDecision(h, ev, die));
+    else if (ref.startsWith('train:')) { const d = trainingByRef(h, ref); if (d) h.pending.push(d); }
     else if (ref.startsWith('job:')) { const d = jobDecision(h, ref.slice(4).split(',') as JobId[]); if (d) h.pending.push(d); }
   }
   return h;

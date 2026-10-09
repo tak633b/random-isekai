@@ -10,6 +10,7 @@ import { traitMult, traitOf } from './traits';
 import { jobOf } from './jobs';
 import { raceOf } from './races';
 import { CHEATS } from './cheats';
+import { standingOf } from './status';
 import { tacticAdv, tacticFight } from './tactic';
 import { hazardName } from './why';
 import { canBear, eventBlocked, jobHeld } from './anchor';
@@ -145,6 +146,8 @@ export function eventOk(h: Hero, d: EventDef, stage = stageOf(h), now = nowOf(h)
   if (d.alone && now.loggedThisYear) return false;
   if (d.jobs && !d.jobs.includes(h.job ?? 'none')) return false;
   if (d.memory !== undefined && d.memory !== h.memoryAwake) return false;
+  if (d.pastCause && (!h.past || h.transfer || !d.pastCause.includes(h.past.cause))) return false;
+  if (d.standing && !d.standing.includes(standingOf(h))) return false;
   if (d.flag && h.flags[d.flag] === undefined) return false;
   if (d.noFlag && h.flags[d.noFlag] !== undefined) return false;
   if (d.birth && !canBear(h)) return false;  // 子が生まれる出来事は、産む側が子を持てる年齢のときだけ
@@ -278,6 +281,10 @@ const scaled = (h: Hero, p: number, hz?: Hazard) => {
   }
   return p * k;
 };
+export const scaledRisk = scaled;
+// 主人公の trait が変わったとき (鍛えて身につけた) に、条件の鍵を作り直す
+export const forgetHeroKey = (h: Hero): void => { keyCache.delete(h); };
+
 function roll(h: Hero, risk: { hazard: Hazard; p: number } | undefined, die: Die): void {
   if (risk && h.alive && h.rng() < scaled(h, risk.p, risk.hazard)) die(h, risk.hazard);
 }
@@ -386,6 +393,8 @@ const arcEvent = (d: EventDef) => d.id.startsWith('he.') || !!d.flag?.startsWith
 const ARC_EVENT_W = 1.5;
 
 // trait の events は、その種類 (YearKind) の出来事の起きやすさに掛ける
+// 定番ネタの重みの倍率。実測 (2026-10-09, おまかせ300人): 1 倍だと定番ネタが1人 7.9件 (ねらいは2〜3件) で、ほかの出来事が2割減った。0.2 倍で 2.7件
+export const TROPE_W = 0.2;
 function weight(h: Hero, d: EventDef): number {
   const att = attentionOf(h);
   const targeted = d.risk && (d.risk.hazard === 'violence' || d.risk.hazard === 'execution');
@@ -393,6 +402,7 @@ function weight(h: Hero, d: EventDef): number {
   for (const id of h.traits) { const m = traitOf(id)?.events?.[d.kind]; if (m !== undefined) w *= m; }
   if (arcEvent(d)) w *= ARC_EVENT_W; // 筋の出来事は特典を持つ人にしか起きない (staticOk)
   if (d.kind === 'adventure' || d.kind === 'battle') w *= tacticAdv(h); // 作戦で冒険と戦いの出来事を寄せる
+  if (d.id.startsWith('tp')) w *= TROPE_W; // 定番ネタ (data/events/tropes*.ts) は味付け。普通の暮らしの出来事を押しのけないように
   return w;
 }
 

@@ -2,7 +2,7 @@
 import { WORLDS, RACES } from '../engine';
 import { getMemorial, listMemorial, lightCandle, memorialAvailable, reportMemorial, type MemorialEntry } from '../net/memorial';
 import { sceneHTML, paintAll } from './pixel';
-import { ROLE_NAME, ageText } from './labels';
+import { ROLE_NAME, ageText, endAge, endAgeShort } from './labels';
 import { esc, load, save } from './dom';
 import { screen, setBack, type Nav } from './nav';
 import { markGifts } from './records';
@@ -26,7 +26,7 @@ const num = (e: MemorialEntry): MemorialEntry => ({ ...e, id: Number(e.id), age:
   highlights: (e.highlights ?? []).map((h) => ({ age: Number(h.age), text: String(h.text) })), lastWith: e.lastWith ?? [] });
 
 function itemHTML(e: MemorialEntry): string {
-  return `<li><button data-id="${e.id}">${scene(e)}<span><b>${esc(e.name)}</b><small>${esc(worldName(e))}${L('・', ' · ')}${L(`享年${e.age}`, `died at ${e.age}`)}${e.gen && e.gen > 1 ? `${L('・', ' · ')}${esc(genWord(e.gen))}` : ''}</small>
+  return `<li><button data-id="${e.id}">${scene(e)}<span><b>${esc(e.name)}</b><small>${esc(worldName(e))}${L('・', ' · ')}${endAgeShort(e.age, e.hazard)}${e.gen && e.gen > 1 ? `${L('・', ' · ')}${esc(genWord(e.gen))}` : ''}</small>
     <small>${esc(e.causeLabel)}</small><small class="candles">${L(`ろうそく ${e.candles}`, `${e.candles} ${e.candles === 1 ? 'candle' : 'candles'}`)}</small></span></button></li>`;
 }
 
@@ -37,7 +37,7 @@ function detailHTML(e: MemorialEntry): string {
     ${scene(e)}
     <div class="recbody">
       <p class="kicker">${esc(worldName(e))}${L('・', ' · ')}${esc(raceName(e))}</p><h1>${esc(e.name)}</h1>
-      <p class="age">${L(`享年 <b>${e.age}</b>`, `Died at <b>${e.age}</b>`)}</p>
+      <p class="age">${endAge(e.age, e.hazard)}</p>
       ${e.gen && e.gen > 1 ? `<p class="lineage"><b>${esc(genWord(e.gen))}</b>${(e.lineage ?? []).map((n) => `<span>${esc(n)}</span>`).join('<i aria-hidden="true">→</i>')}<i aria-hidden="true">→</i><span class="me">${esc(e.name)}</span></p>` : ''}
       <div class="cause"><b>${esc(e.causeLabel)}</b><p>${esc(e.causeText)}</p>${e.why ? `<p class="why">${L('なぜ: ', 'Why: ')}${esc(e.why)}</p>` : ''}</div>
       ${e.note ? `<p class="message">${L('「', '“')}${esc(e.note)}${L('」', '”')}</p>` : ''}

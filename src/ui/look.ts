@@ -158,7 +158,8 @@ export function lookOf(f: Figure): Look {
   const grow = f.stage === 'adult' || mid || old;
 
   const humanHair = f.race === 'human' || f.race === 'half_elf' || f.race === 'cyborg' || f.race.startsWith('beast');
-  const hair0 = r.hairs ? at(r.hairs, u(1)) : humanHair && u(2) < 0.18 ? at(HAIR_ANIME, u(3)) : at(HAIR_NAT, u(1));
+  // 元の世界から来た人は、黒か焦げ茶の髪と茶色の目のまま
+  const hair0 = f.earth ? at(HAIR_NAT.slice(0, 3), u(1)) : r.hairs ? at(r.hairs, u(1)) : humanHair && u(2) < 0.18 ? at(HAIR_ANIME, u(3)) : at(HAIR_NAT, u(1));
   const grey = old ? 0.65 + u(4) * 0.35 : mid ? u(4) * 0.4 : 0;
   const jelly = !!fl.jelly;
   const skin = at(r.skins, u(5));
@@ -176,7 +177,7 @@ export function lookOf(f: Figure): Look {
     race: f.race, sex: f.sex, stage: f.stage,
     skin, skin2: r.skin2 ? at(r.skin2, u(11)) : mixc(skin, '#140c10', 0.35),
     hair: jelly ? mixc(skin, '#ffffff', 0.15) : mixc(hair0, '#e0dcd4', grey),
-    eye: r.eyes ? at(r.eyes, u(12)) : at(EYES_NAT, u(12)), pupil: r.pupil ?? 'round',
+    eye: f.earth ? at(EYES_NAT.slice(0, 2), u(12)) : r.eyes ? at(r.eyes, u(12)) : at(EYES_NAT, u(12)), pupil: r.pupil ?? 'round',
     style, ear: r.ear ?? 'round', beast: r.beast ? at(r.beast, u(13)) : undefined, fur: mixc(fur, '#e0dcd4', grey * 0.6),
     horn: r.horn ? at(r.horn, u(14)) : undefined, hornC: r.hornC ? at(r.hornC, u(15)) : '#e8dcc0',
     tail: r.tail, tails: f.race === 'beast_fox' && u(16) < 0.15 ? 3 : 1,

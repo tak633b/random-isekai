@@ -136,7 +136,10 @@ function lifeHTML(h: Hero, o: OtherLife): string {
     [L('強さ', 'Strength'), `Lv ${Math.round(o.level)}${o.rank ? L(`・ランク${o.rank}`, `, Rank ${o.rank}`) : ''}`],
     ...(o.cheat ? [[L('特典', 'Cheat skill'), L(`〈${T(CHEATS[o.cheat].name)}〉`, `"${T(CHEATS[o.cheat].name)}"`)] as [string, string]] : []),
     ...(o.past ? [[L('前世', 'Past life'), L(`${o.past.age}歳の${T(o.past.job)}。${pastText}`, `A ${o.past.age}-year-old ${T(o.past.job)}. ${pastText}`)] as [string, string]] : []),
-    [L('享年', 'Died at'), o.ageAtDeath !== undefined && !future ? L(`${o.ageAtDeath}歳(${whenText(h, o.diedAt!)})`, `${o.ageAtDeath} (${whenText(h, o.diedAt!)})`) : L('まだ生きている', 'Still alive')],
+    // 元の世界へ帰った人は享年と言わない (labels.ts の endAge と同じ言い方)
+    o.death?.hazard === 'return' && o.ageAtDeath !== undefined && !future
+      ? [L('元の世界へ', 'Went home'), L(`${o.ageAtDeath}歳で元の世界へ(${whenText(h, o.diedAt!)})`, `At ${o.ageAtDeath} (${whenText(h, o.diedAt!)})`)]
+      : [L('享年', 'Died at'), o.ageAtDeath !== undefined && !future ? L(`${o.ageAtDeath}歳(${whenText(h, o.diedAt!)})`, `${o.ageAtDeath} (${whenText(h, o.diedAt!)})`) : L('まだ生きている', 'Still alive')],
   ];
   // 主人公の今より後の年: 主人公が亡くなっていれば区切り線の後に、生きていれば畳んだ中に
   const cut = (age: number) => heroAt(age) > h.age;

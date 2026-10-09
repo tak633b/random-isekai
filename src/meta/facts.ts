@@ -2,6 +2,7 @@
 import type { Hero, RaceId, World } from '../engine/types';
 import { heqOf, lifeTableFor } from '../engine/mortality';
 import { foeKindOf } from './bestiary';
+import { statusRank } from '../engine/status';
 import { encountersOf, metFates } from './encounters';
 import type { LifeFacts, LifeId } from './types';
 
@@ -87,6 +88,9 @@ export function factsOf(h: Hero, random: boolean): LifeFacts {
     maxBond: others.reduce((m, t) => Math.max(m, t.bond), 0),
     outlivedAll: !h.alive && others.length >= 3 && others.every((t) => !t.alive),
     lifespanRatio: h.age / lifespanGuide(h.world, h.race),
+    standing: h.standing ?? h.status,
+    rose: (h.climb ?? []).filter((c) => c.age > from && statusRank(c.to) > statusRank(c.from)).length,
+    fell: (h.climb ?? []).some((c) => c.age > from && statusRank(c.to) < statusRank(c.from)),
     tactic: h.flags['tactic.changed'] !== undefined && h.flags['tactic.changed'] > from ? 'mixed' : h.policy,
     firstYearAdventure: !h.alive && !!firstAdv && firstAdv.age === h.age,
     eventIds,

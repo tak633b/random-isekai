@@ -6,6 +6,8 @@ import { L } from '../i18n';
 
 export const STATUSES: Status[] = ['slave', 'orphan', 'poor', 'commoner', 'merchant', 'gentry', 'noble', 'royal'];
 export const statusRank = (s: Status) => STATUSES.indexOf(s);
+// 今の身分 (成り上がり・没落の後)。生まれの身分は h.status のまま
+export const standingOf = (h: { status: Status; standing?: Status }): Status => h.standing ?? h.status;
 
 type Family = 'fantasy' | 'eastern' | 'industrial' | 'scifi' | 'modern' | 'ruin';
 const familyOf = (w: World): Family =>

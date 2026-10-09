@@ -18,6 +18,8 @@ import { L, T } from '../i18n';
 
 export const ARC_FLAGS = ['arc.notice', 'arc.first', 'guild', 'arc.deed', 'arc.saved', 'famous', 'arc.legend'] as const;
 const RANKS: GuildRank[] = ['F', 'E', 'D', 'C', 'B', 'A', 'S'];
+// ランクに上がったときの、レベルの下限 (ランク S の人はおおむね高いレベルに見えるように。勝った戦いでさらに上がる)
+const RANK_LV: Record<GuildRank, number> = { F: 1, E: 4, D: 7, C: 12, B: 20, A: 30, S: 40 };
 
 
 // 筋のうち、今いちばん先にある段階の番号 (-1 = まだ何も)
@@ -187,6 +189,7 @@ export function promote(h: Hero): void {
   const p = Math.max(0.02, (0.18 + (h.stats.power - 40) / 250) * boost * (i >= 3 ? 0.35 : 1) * (i >= 5 ? 0.3 : 1));
   if (h.rng() < p) {
     h.rank = RANKS[i + 1]; bump(h, { fame: 4 + i * 3, wealth: 3 });
+    h.level = Math.max(h.level, RANK_LV[h.rank]);
     log(h, L(`${rankWord(h, h.rank)}に上がった。`, `Promoted to ${rankWord(h, h.rank)}.`), 'fame', i >= 3); // 呼び名は世界の系統で (宗門の位・探索者の等級など)
   }
 }

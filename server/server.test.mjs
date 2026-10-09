@@ -6,7 +6,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { ENUMS, MAX_BODY, startServer } from './server.mjs';
-import { HAZARDS, JOBS, RACE_IDS, STATUSES, WORLD_IDS, createHero, liveOut } from '../src/engine';
+import { END_KINDS, JOBS, RACE_IDS, STATUSES, WORLD_IDS, createHero, liveOut } from '../src/engine';
 // src/ui/pixel.ts は読み込むときに window を触るので、置き換えを先に置いてから読む
 globalThis.window ??= { addEventListener() {} };
 const { getMemorial, lightCandle, listMemorial, memorialAvailable, postMemorial, toMemorialPost } = await import('../src/net/memorial');
@@ -42,7 +42,7 @@ it('値の一覧が src/engine と同じ', () => {
   same(ENUMS.world, WORLD_IDS);
   same(ENUMS.race, RACE_IDS);
   same(ENUMS.status, STATUSES);
-  same(ENUMS.hazard, HAZARDS);
+  same(ENUMS.hazard, END_KINDS); // 元の世界へ帰る 'return' も一生の終わり方として送れる
   same(ENUMS.job, Object.keys(JOBS));
 });
 
