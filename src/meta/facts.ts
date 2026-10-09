@@ -87,6 +87,7 @@ export function factsOf(h: Hero, random: boolean): LifeFacts {
     maxBond: others.reduce((m, t) => Math.max(m, t.bond), 0),
     outlivedAll: !h.alive && others.length >= 3 && others.every((t) => !t.alive),
     lifespanRatio: h.age / lifespanGuide(h.world, h.race),
+    tactic: h.flags['tactic.changed'] !== undefined && h.flags['tactic.changed'] > from ? 'mixed' : h.policy,
     firstYearAdventure: !h.alive && !!firstAdv && firstAdv.age === h.age,
     eventIds,
   };

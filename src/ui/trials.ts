@@ -55,9 +55,9 @@ function resultHTML(r: TrialResult, e0?: number): string {
 
 function compareHTML(rs: [Policy, TrialResult][]): string {
   const top = (r: TrialResult) => HAZARDS.reduce((b, k) => (r.byHazard[k] > r.byHazard[b] ? k : b), HAZARDS[0]);
-  return `<table class="cmp"><tr><th>${L('性格', 'Temperament')}</th><th>${L('平均', 'Mean')}</th><th>${L('中央値', 'Median')}</th><th>${L('最長', 'Longest')}</th><th>${L('60歳まで', 'Reach 60')}</th><th>${L('最多の死因', 'Top cause')}</th></tr>
+  return `<table class="cmp"><tr><th>${L('作戦', 'Tactics')}</th><th>${L('平均', 'Mean')}</th><th>${L('中央値', 'Median')}</th><th>${L('最長', 'Longest')}</th><th>${L('60歳まで', 'Reach 60')}</th><th>${L('最多の死因', 'Top cause')}</th></tr>
     ${rs.map(([p, r]) => `<tr><td>${POLICY_NAME[p]}</td><td>${yrs(r.mean)}</td><td>${yrs(r.median)}</td><td>${r.max}</td><td>${fmtPct(r.reach[60])}</td><td>${esc(hazardName(top(r)))}</td></tr>`).join('')}</table>
-    <p class="note">${L('慎重は危険の少ない選択肢と職業を、無謀は得の大きい方を選ぶ。ふつうは職業を人の多い順に、出来事の選択はくじで選ぶ。', 'Careful picks the safer option and trade. Reckless goes for the bigger reward. Normal takes the most common trade and picks event choices at random.')}</p>`;
+    <p class="note">${L('いのちだいじには危険の少ない選択肢と職業を選び、冒険と戦いを避ける。ガンガンいこうぜは得の大きい方を選び、冒険と戦いに自分から向かう。バランスよくは職業を人の多い順に、出来事の選択はくじで選ぶ。', 'Play it safe picks the safer option and trade and steers clear of adventure and fights. Go all out goes for the bigger reward and heads into adventure and fights. Balanced takes the most common trade and picks event choices at random.')}</p>`;
 }
 
 export function showTrials(setup: Setup, nav: Nav): void {
@@ -72,11 +72,11 @@ export function showTrials(setup: Setup, nav: Nav): void {
     <button class="back" data-go="title">${L('← タイトルへ', '← Back to title')}</button>
     <h1>${L('同じ設定で何回も生きる', 'The same setup, many lives')}</h1>
     <p class="lead">${esc(line)}</p>
-    <p class="note">${L('おまかせで決まった項目も固定して、運だけを変えて生き直す。選択はすべて性格に合わせて自動で選ぶ。', 'Everything decided at birth stays fixed; only luck changes. All choices are made automatically by temperament.')}</p>
+    <p class="note">${L('おまかせで決まった項目も固定して、運だけを変えて生き直す。選択はすべて作戦に合わせて自動で選ぶ。', 'Everything decided at birth stays fixed; only luck changes. All choices are made automatically by your tactics.')}</p>
     <div class="choices">
       <button class="primary" data-run="100">${L('100回', '100 lives')}</button>
       <button data-run="1000">${L('1000回', '1000 lives')}</button>
-      <button data-run="cmp" id="cmpbtn">${L('慎重・ふつう・無謀を比べる', 'Compare careful, normal, reckless')}</button>
+      <button data-run="cmp" id="cmpbtn">${L('3つの作戦を比べる', 'Compare the three tactics')}</button>
     </div>
     <div class="progress" id="prog" hidden><i><b id="progbar"></b></i><span id="progtext"></span></div>
     <section class="panel" id="result" hidden></section>
@@ -92,7 +92,7 @@ export function showTrials(setup: Setup, nav: Nav): void {
     if (go === 'one') { generation++; return nav.start({ ...f, seed: randomSeed() }); }
     const run = t.closest<HTMLButtonElement>('[data-run]')?.dataset.run;
     if (run) void start(run);
-  });
+  }, { back: () => { generation++; nav.title(); } });
 
   const $ = (id: string) => document.getElementById(id)!;
   let busy = false;
@@ -118,9 +118,9 @@ export function showTrials(setup: Setup, nav: Nav): void {
       if (!r) return; // 画面を離れた
       out.push([p ?? h.policy, r]);
     }
-    if (run === 'cmp') { $('compare').hidden = false; $('compare').innerHTML = `<h2>${L(`性格で比べる (各${n}回)`, `By temperament (${n} lives each)`)}</h2>${compareHTML(out)}`; }
+    if (run === 'cmp') { $('compare').hidden = false; $('compare').innerHTML = `<h2>${L(`作戦で比べる (各${n}回)`, `By tactics (${n} lives each)`)}</h2>${compareHTML(out)}`; }
     else { $('result').hidden = false; $('result').innerHTML = `<h2>${L(`${n}回の人生`, `${n} lives`)}</h2>${resultHTML(out[0][1], e0)}`; }
-    $('cmpbtn').textContent = L(`慎重・ふつう・無謀を比べる (各${n}回)`, `Compare careful, normal, reckless (${n} each)`);
+    $('cmpbtn').textContent = L(`3つの作戦を比べる (各${n}回)`, `Compare the three tactics (${n} each)`);
     prog.hidden = true;
     busy = false;
     document.querySelectorAll<HTMLButtonElement>('[data-run]').forEach((b) => (b.disabled = false));

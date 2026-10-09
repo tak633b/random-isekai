@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { allDeaths, createHero, liveOut, WORLDS, WORLD_IDS } from '../engine';
 import { continueAs, heirsOf } from '../engine/lineage';
 import { reincarnatorsOf } from '../engine/reincarnators';
-import type { Hero, HeroChoice, WorldId } from '../engine/types';
+import type { Hero, HeroChoice, Policy, WorldId } from '../engine/types';
 import { allAchievements, checkAchievements, evalCond, useAchievements } from './achievements';
 import { factsOf } from './facts';
 import { ACH_TICKETS_MAX_PER_LIFE, grantLife } from './tickets';
@@ -15,7 +15,7 @@ const REAL = allAchievements();
 afterAll(() => useAchievements(REAL));
 
 const facts = (over: Partial<LifeFacts> = {}): LifeFacts => ({
-  lifeId: '1', ended: true, random: true, name: 'A', world: 'medieval', race: 'human', sex: 'F', status: 'commoner', cheat: null,
+  lifeId: '1', ended: true, random: true, tactic: 'normal', name: 'A', world: 'medieval', race: 'human', sex: 'F', status: 'commoner', cheat: null,
   traits: [], arrival: 'reborn', blessing: false, age: 50, heq: 50, hazard: 'age', deathId: 'd.age', job: null, rank: null, level: 3,
   flags: ['famous'], marriages: 1, children: 2, foesMet: 3, foesWon: 2, foesLost: 0, foeKinds: ['slime'], foeKindsWon: ['slime'],
   encounters: [], reincMet: 0, reincFought: 0, gen: 1, maxBond: 80, outlivedAll: false, lifespanRatio: 0.8, firstYearAdventure: false,
@@ -82,15 +82,16 @@ describe('評価器 (見本の実績で)', () => {
 
 // ---- 本物の実績の一覧 (src/data/achievements.ts) ------------------------------------
 
-const live = (seed: number, world: WorldId | 'random', hero: HeroChoice = {}): Hero => liveOut(createHero({ seed, world: { preset: world }, hero, auto: true }));
+const live = (seed: number, world: WorldId | 'random', hero: HeroChoice = {}, policy?: Policy): Hero => liveOut(createHero({ seed, world: { preset: world }, hero, auto: true, ...(policy ? { policy } : {}) }));
 
 // 1つの人生だけで決まる条件か (合計・種類・集めた割合を含まない)
 const perLife = (c: Cond): boolean =>
   'all' in c ? c.all.every(perLife) : 'any' in c ? c.any.every(perLife) : 'not' in c ? perLife(c.not) : 'fact' in c || 'has' in c;
 
 // 条件から、探すときの設定を読む: 世界・種族・特典・身分・始まり方、死因の文の世界、図鑑の姿の世界
-function hintsOf(c: Cond): { worlds: WorldId[]; hero: HeroChoice } {
+function hintsOf(c: Cond): { worlds: WorldId[]; hero: HeroChoice; policy?: Policy } {
   const worlds = new Set<WorldId>(), hero: HeroChoice = {};
+  let policy: Policy | undefined;
   const walk = (x: Cond): void => {
     if ('all' in x) return x.all.forEach(walk);
     if ('any' in x) return walk(x.any[0]);
@@ -101,6 +102,7 @@ function hintsOf(c: Cond): { worlds: WorldId[]; hero: HeroChoice } {
       if (x.fact === 'cheat') hero.cheat = v;
       if (x.fact === 'status') hero.status = v;
       if (x.fact === 'arrival') hero.arrival = v;
+      if (x.fact === 'tactic' && x.eq !== 'mixed') policy = v; // 作戦を通した実績は、その作戦で生きる
       if (x.fact === 'deathId') {
         const d = allDeaths().find((y) => y.id === x.eq);
         if (d) {
@@ -113,7 +115,7 @@ function hintsOf(c: Cond): { worlds: WorldId[]; hero: HeroChoice } {
     if ('has' in x && (x.has === 'foeKinds' || x.has === 'foeKindsWon')) BESTIARY.find((b) => b.id === x.id)?.worlds.forEach((w) => worlds.add(w));
   };
   walk(c);
-  return { worlds: worlds.size ? [...worlds] : WORLD_IDS, hero };
+  return { worlds: worlds.size ? [...worlds] : WORLD_IDS, hero, policy };
 }
 
 // 見つけにくいものの手がかり (測って見つけた seed と設定)。seed が外れたら (データが変わったら) 同じ設定で探し直す
@@ -132,8 +134,8 @@ function search(a: AchievementDef, tries: number): number | null {
   const ok = (h: Hero) => evalCond(a.cond, factsOf(h, true), p);
   const hint = HINTS[a.id];
   if (hint && ok(live(hint.seed, hint.world, hint.hero))) return hint.seed;
-  const { worlds, hero } = hint ? { worlds: [hint.world], hero: hint.hero } : hintsOf(a.cond);
-  for (let i = 0; i < tries; i++) if (ok(live(i + 1, worlds[i % worlds.length], hero))) return i + 1;
+  const { worlds, hero, policy } = hint ? { worlds: [hint.world], hero: hint.hero, policy: undefined } : hintsOf(a.cond);
+  for (let i = 0; i < tries; i++) if (ok(live(i + 1, worlds[i % worlds.length], hero, policy))) return i + 1;
   return null;
 }
 

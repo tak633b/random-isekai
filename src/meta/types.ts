@@ -1,7 +1,7 @@
 // 遊びの積み重ね (チケット・解放・図鑑・実績) の形。
 // 記録はこのブラウザの localStorage にだけ置く (meta/store.ts)。使えなくても遊べる (何も残らないだけ)。
 // 1つの人生は lifeId で数え、同じ人生で二度チケットや実績を出さない。
-import type { CheatId, Foe, Hazard, RaceId, StartAge, Text, WorldId } from '../engine/types';
+import type { CheatId, Foe, Hazard, Policy, RaceId, StartAge, Text, WorldId } from '../engine/types';
 
 // 人生の id。最初の主人公の seed と、代を重ねたなら系譜の鍵の並びから決まる (meta/facts.ts の lifeIdOf)
 export type LifeId = string;
@@ -49,6 +49,7 @@ export interface LifeFacts {
   lifespanRatio: number;    // 享年 ÷ その世界・種族の寿命の目安
   firstYearAdventure: boolean; // 冒険に出たその年に亡くなった
   eventIds: string[];       // 起きた出来事の id (秘密の実績の条件に)
+  tactic: Policy | 'mixed'; // 一生を通した作戦 (途中で変えたら mixed)
 }
 
 // 一生を通した合計 (このブラウザでの)

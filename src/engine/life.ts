@@ -1,6 +1,6 @@
 // 一つの人生を、1年ずつ進める (DESIGN 4節)。
 // 1. ハザードで生死を引く → 2. 年を取る (輪の人も) → 3. 世界の状態を進める → 4. 節目 → 5. 出来事 → 6. 能力の自然な変化
-import type { Decision, Hazard, Hero, JobId, LogEntry, Tie } from './types';
+import type { Decision, Hazard, Hero, JobId, LogEntry, Policy, Tie } from './types';
 import { makeRng, pickWeighted } from './rng';
 import { agePeople, byRole, bump, closest, log, mourn, shared } from './bonds';
 import { traitFertility } from './traits';
@@ -20,6 +20,7 @@ import { deathRecord, fightOf, fill, foeFor, isClash, drawEvents, eventByRef, ev
 import { deathWhy, reviveWhy } from './why';
 import { styleOf, worldNames } from './names';
 import { L, T, an, pron } from '../i18n';
+import { TACTIC_NAME } from './tactic';
 
 // ---- 死 -------------------------------------------------------------------
 
@@ -340,6 +341,14 @@ function baseKind(h: Hero): Hero['kinds'][number] {
 // ---- 1年 ------------------------------------------------------------------
 
 // 選択肢を選ぶ (画面から)。選び終えたら次の年に進める
+/** 作戦を変える (人生の途中でいつでも)。年表に1行残し、しるし tactic.changed を立てる (実績の「通した」を見るため) */
+export function setTactic(h: Hero, p: Policy): void {
+  if (h.policy === p || !h.alive) return;
+  h.policy = p;
+  h.flags['tactic.changed'] = h.age;
+  log(h, L(`作戦を「${TACTIC_NAME[p]}」に変えた。`, `Changed tactics to "${TACTIC_NAME[p]}".`), 'hard');
+}
+
 export function choose(h: Hero, option: number): void {
   const d = h.pending.shift();
   if (!d) return;

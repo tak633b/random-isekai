@@ -1,5 +1,5 @@
 // 画面に出す呼び名。エンジンが名前を持っていないもの (才能・転生の型・記憶・性格・役・年の色) をここで訳す
-import type { Arrival, GuildRank, MemoryLevel, PastLife, Policy, Role, Sex, StatKey, Talent, YearKind } from '../engine/types';
+import type { Arrival, GuildRank, MemoryLevel, PastLife, Role, Sex, StatKey, Talent, YearKind } from '../engine/types';
 import { JOBS } from '../engine/jobs';
 import type { JobId } from '../engine/types';
 import { L } from '../i18n';
@@ -16,7 +16,7 @@ export const ARRIVAL_NAME: Record<Arrival, string> = {
 
 export const MEMORY_NAME: Record<MemoryLevel, string> = { none: L('なし', 'None'), faint: L('ぼんやり', 'Faint'), full: L('はっきり', 'Clear') };
 
-export const POLICY_NAME: Record<Policy, string> = { careful: L('慎重', 'Careful'), normal: L('ふつう', 'Normal'), bold: L('無謀', 'Reckless') };
+export { TACTIC_NAME as POLICY_NAME } from '../engine/tactic'; // 作戦 (前は「自動で選ぶときの性格」)
 
 export const SEX_NAME: Record<Sex, string> = { F: L('女', 'Female'), M: L('男', 'Male') };
 

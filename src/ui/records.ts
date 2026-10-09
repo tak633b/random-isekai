@@ -5,7 +5,7 @@ import { CHEATS, heqOf, raceOf, randomSeed, statusName, summary } from '../engin
 import { heroFigure, sceneOf, tieFigure, faceHTML, sceneHTML, paintAll } from './pixel';
 import { ARRIVAL_NAME, KIND_NAME, ROLE_NAME, SEX_NAME, ageText, jobName } from './labels';
 import { esc, load, save } from './dom';
-import { screen, type Nav } from './nav';
+import { screen, setBack, type Nav } from './nav';
 import { aiOf } from './ailog';
 import { kindIcon } from './icons';
 import { FOE_NAME, RESULT_NAME } from './stage';
@@ -147,6 +147,8 @@ export function showPast(nav: Nav, focus?: number): void {
     el.innerHTML = `${recordHTML(r)}<div class="choices"><button data-trials="${i}">${L('同じ設定で何回も試す', 'Run this setup many times')}</button><button data-again="${i}">${L('同じ設定で転生', 'Live this setup again')}</button></div>`;
     paintAll(el);
     el.scrollIntoView();
+    // 開いた記録からの戻るは、閉じて一覧の先頭へ
+    setBack(() => { el.innerHTML = ''; window.scrollTo(0, 0); setBack(nav.title); });
   };
   screen(`
   <main class="page">
@@ -164,7 +166,7 @@ export function showPast(nav: Nav, focus?: number): void {
     if (tr !== undefined) return nav.trials(list[Number(tr)].setup);
     const ag = t.closest<HTMLElement>('[data-again]')?.dataset.again;
     if (ag !== undefined) return nav.start({ ...list[Number(ag)].setup, seed: randomSeed() });
-  });
+  }, { back: nav.title });
   paintAll(document.getElementById('app')!);
   if (focus !== undefined && list[focus]) open(focus);
 }

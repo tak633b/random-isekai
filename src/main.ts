@@ -4,6 +4,7 @@ import { WORLD_IDS, createHero, randomSeed } from './engine';
 import { paintAll, sceneHTML } from './ui/pixel';
 import { records, showPast } from './ui/records';
 import { showArrival, showSetup } from './ui/setup';
+import { showReveal } from './ui/reveal';
 import { resumeLife, savedLife, showLife } from './ui/life';
 import { showDeath } from './ui/death';
 import { showTrials } from './ui/trials';
@@ -32,7 +33,13 @@ if (isEn) {
 const nav: Nav = {
   title,
   setup: () => showSetup(nav),
-  start(setup: Setup, random = false, asked?: Setup) { const h = createHero(setup); setRandom(h, random); showArrival(h, asked ?? setup, nav); },
+  start(setup: Setup, random = false, asked?: Setup) {
+    const h = createHero(setup);
+    setRandom(h, random);
+    const a = asked ?? setup;
+    // 演出のあと (飛ばしても) 転生の場面へ。戻るは、おまかせならタイトル、設定したなら設定へ
+    showReveal(h, a, () => showArrival(h, a, nav), random ? title : nav.setup);
+  },
   life: (h, resumed) => showLife(h, nav, resumed),
   death: (h) => showDeath(h, nav),
   trials: (setup) => showTrials(setup, nav),

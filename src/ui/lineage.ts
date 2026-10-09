@@ -87,7 +87,7 @@ export function showHandover(prev: Hero, h: Hero, nav: Nav): void {
         <div class="choices"><button class="primary" data-go="live">${L('人生を続ける', 'Live on')}</button></div>
       </div>
     </article>
-  </main>`, (t) => { if (t.closest('[data-go=live]')) nav.life(h); });
+  </main>`, (t) => { if (t.closest('[data-go=live]')) nav.life(h); }, { back: nav.title, esc: false });
   paintAll(document.getElementById('app')!);
   document.querySelector<HTMLElement>('[data-go=live]')?.focus();
 }

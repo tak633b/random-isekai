@@ -7,6 +7,7 @@
 import type { Foe, GuildRank, Hero, JobId, LogEntry } from './types';
 import { FIGHT_JOBS, JOBS, jobsFor } from './jobs';
 import { jobHeld } from './anchor';
+import { tacticAdv } from './tactic';
 import { bump, log } from './bonds';
 import { CHEATS } from './cheats';
 import { heqOf } from './mortality';
@@ -125,7 +126,7 @@ export function arcYear(h: Hero, die: Die, beast: string): void {
   }
   // ギルド (宗門・探索者の資格・傭兵の登録) に入る: 人間換算15歳から。遅くとも18歳
   if (f.guild === undefined) {
-    if (e >= 15 && (e >= 18 || h.rng() < 0.4) && f.retired === undefined) {
+    if (e >= 15 && (e >= 18 || h.rng() < 0.4 * tacticAdv(h)) && f.retired === undefined) {
       f.guild = now; h.rank = 'F';
       log(h, L(...joinLine(h)), 'adventure', true);
     }
@@ -135,7 +136,7 @@ export function arcYear(h: Hero, die: Die, beast: string): void {
   // 大きな手柄: ランク C 以上で年 2割。遅くとも ランク B か 人間換算30歳
   const ri = h.rank ? RANKS.indexOf(h.rank) : 0;
   if (f['arc.deed'] === undefined) {
-    if (ri >= 3 && (ri >= 4 || e >= 30 || h.rng() < 0.2)) {
+    if (ri >= 3 && (ri >= 4 || e >= 30 || h.rng() < 0.2 * tacticAdv(h))) {
       f['arc.deed'] = now;
       bump(h, { fame: 10, wealth: 8, level: 3 });
       fightLog(h, L(...deedLine(h, beast)), 'adventure', foeFor(h, 'monster', beast));
@@ -145,7 +146,7 @@ export function arcYear(h: Hero, die: Die, beast: string): void {
   }
   // 町や人々を救う: 手柄の後、年 2割。遅くとも 人間換算35歳
   if (f['arc.saved'] === undefined) {
-    if (e >= 35 || h.rng() < 0.2) {
+    if (e >= 35 || h.rng() < 0.2 * tacticAdv(h)) {
       f['arc.saved'] = now;
       bump(h, { fame: 12, happy: 6 });
       fightLog(h, L(`${worldNames(h).town}に${beast}の群れが押し寄せた夜、〈${gift(h)}〉で門を守り抜いた。朝、町の人々が{name}の名を呼んだ。`.replace('{name}', h.given),

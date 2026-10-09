@@ -10,6 +10,7 @@ import { traitMult, traitOf } from './traits';
 import { jobOf } from './jobs';
 import { raceOf } from './races';
 import { CHEATS } from './cheats';
+import { tacticAdv, tacticFight } from './tactic';
 import { hazardName } from './why';
 import { canBear, eventBlocked, jobHeld } from './anchor';
 import { fightHazard, fightOf, foeFor, FLEE, lastFight, settleFight } from './fight';
@@ -272,7 +273,7 @@ const scaled = (h: Hero, p: number, hz?: Hazard) => {
   let k = riskScale(h.world, h.age, heqOf(h));
   if (hz) {
     if (h.cheat) k *= CHEATS[h.cheat].mult[hz] ?? 1;
-    k *= traitMult(h, hz);
+    k *= traitMult(h, hz) * tacticFight(h, hz);
     if (h.blessing && heqOf(h) < 16 && (hz === 'infant' || hz === 'disease' || hz === 'monster' || hz === 'accident')) k *= BLESSING;
   }
   return p * k;
@@ -391,13 +392,14 @@ function weight(h: Hero, d: EventDef): number {
   let w = d.w * (targeted && att > 0 ? 1 + 0.3 * att : 1);
   for (const id of h.traits) { const m = traitOf(id)?.events?.[d.kind]; if (m !== undefined) w *= m; }
   if (arcEvent(d)) w *= ARC_EVENT_W; // 筋の出来事は特典を持つ人にしか起きない (staticOk)
+  if (d.kind === 'adventure' || d.kind === 'battle') w *= tacticAdv(h); // 作戦で冒険と戦いの出来事を寄せる
   return w;
 }
 
 // 段階の候補の重みの累積 (一生変わらない条件の組ごとに一度だけ作る)
 let cumCache = new Map<string, number[]>();
 function cumulative(h: Hero, st: Stage, list: EventDef[]): number[] {
-  const key = `${staticKey(h)}|${st}`;
+  const key = `${staticKey(h)}|${st}|${h.policy}`; // 作戦で重みが変わる
   let c = cumCache.get(key);
   if (!c) {
     let sum = 0;

@@ -9,6 +9,7 @@ import { buildErrors, buildHTML, listHTML, newBuild, onBuildClick, prune, traitT
 import { aiSettingsPanel } from './aipanel';
 import { esc, load, save } from './dom';
 import { screen, type Nav } from './nav';
+import { isRandom } from './mode';
 import { L, T } from '../i18n';
 import { BLESSING_KEY, isSeen, isUnlocked, priceOf, unlock, unlockedChoices } from '../meta/unlocks';
 import type { UnlockKey } from '../meta/types';
@@ -44,7 +45,7 @@ export function toSetup(c: Choice): Setup {
     .filter((k) => c[k] !== undefined && c[k] !== '').map((k) => [k, c[k]]));
   if (c.blessing) hero.blessing = true;
   if (c.build?.mode === 'pick') { hero.traits = [...c.build.traits]; hero.points = { ...c.build.points }; }
-  // 性格のおまかせはエンジンの既定 (ふつう)
+  // 作戦のおまかせはエンジンの既定 (バランスよく)
   return { seed: randomSeed(), world, hero, ...(c.policy ? { policy: c.policy } : {}) };
 }
 
@@ -119,7 +120,7 @@ function heroForm(c: Choice, w: World | null): string {
     ${row(L('始まる年齢', 'Starting age'), seg('startAge', c.startAge, START_AGES.map((a) => [a, START_NAME[a]]), true, true, (a) => `startAge:${a}`), L('おまかせは転生の型どおり (召喚なら大人、ほかは赤ちゃんから)。', 'Random follows the arrival type (adults when summoned, otherwise from birth).'))}
     ${row(L('女神の加護', "Goddess's blessing"), seg('blessing', c.blessing ? '1' : '0', [['0', L('なし', 'No')], ['1', L('あり', 'Yes')]], false, false, (v) => (v === '1' ? BLESSING_KEY : null)), blessingNote(w, c.race))}
     <div class="row"><label><h3>${L('名前 (任意)', 'Name (optional)')}</h3><input id="name" maxlength="24" value="${esc(c.name ?? '')}" placeholder="${L('空ならこの世界らしい名前', 'Leave empty for a local name')}" autocomplete="off"></label></div>
-    ${row(L('自動で選ぶときの性格', 'When choosing automatically'), seg('policy', c.policy, POLICIES.map((p) => [p, POLICY_NAME[p]])), L('「最後まで」や何回も試すときに、選択肢をどう選ぶか。', 'How choices are made when you skip ahead or run many lives.'))}`;
+    ${row(L('作戦', 'Tactics'), seg('policy', c.policy, POLICIES.map((p) => [p, POLICY_NAME[p]])), L('どんな生き方を重んじるか。冒険と戦いの起きやすさ、戦いの危うさ、自動で選ぶときの選び方がゆるく変わる。人生の途中でもいつでも変えられる。', 'What you lean toward. It loosely shifts how often adventure and fights come, how dangerous fights are, and how choices are made automatically. You can change it any time during a life.'))}`;
 }
 
 // 加護の説明。その世界・種族の生命表で、5歳までに亡くなる割合がおよそどう変わるか (5歳までの死はほぼ幼い日の病なので l5 の BLESSING 乗で近似)
@@ -187,7 +188,7 @@ export function showSetup(nav: Nav): void {
       (c as unknown as Record<string, unknown>)[k] = val;
       refresh(`[data-k="${k}"][data-v="${v}"]`);
     }
-  });
+  }, { back: nav.title });
   const app = document.getElementById('app')!;
   const paintMini = () => app.querySelectorAll<HTMLCanvasElement>('canvas[data-mini]').forEach((cv) =>
     paintScene({ seed: 11, world: cv.dataset.mini as WorldId, place: 'town', home: 'house', tod: 'day', season: 1, figures: [] }).put(cv));
@@ -256,7 +257,14 @@ export function showSetup(nav: Nav): void {
 
 // ---- 転生の場面 -------------------------------------------------------------
 
-function meeting(h: Hero): string {
+// 前世の終わりの1行 (前世の無い人は空)
+export function pastLine(h: Hero): string {
+  if (!h.past) return '';
+  const end = pastEnd(h.past.cause, h.arrival === 'summoned', h.seed).text;
+  return L(`前世は${h.past.age}歳の${T(h.past.job)}。${end}。`, `In a past life: a ${h.past.age}-year-old ${T(h.past.job)}. ${end}`);
+}
+
+export function meeting(h: Hero): string {
   const god = worldNames(h).god;
   const gift = h.cheat ? T(CHEATS[h.cheat].name) : '';
   switch (h.arrival) {
@@ -292,10 +300,9 @@ export function showArrival(h: Hero, asked: Setup, nav: Nav): void {
     [L('始まる年齢', 'Starting age'), ageText(h.age), !!a.startAge],
     [L('女神の加護', "Goddess's blessing"), h.blessing ? L('あり', 'Yes') : L('なし', 'No'), true],
     [L('名前', 'Name'), f.name ?? h.given, !!a.name],
-    [L('性格', 'Temperament'), POLICY_NAME[h.policy], !!asked.policy],
+    [L('作戦', 'Tactics'), POLICY_NAME[h.policy], !!asked.policy],
   ];
-  const end = h.past ? pastEnd(h.past.cause, h.arrival === 'summoned', h.seed).text : '';
-  const past = h.past ? L(`前世は${h.past.age}歳の${T(h.past.job)}。${end}。`, `In a past life: a ${h.past.age}-year-old ${T(h.past.job)}. ${end}`) : '';
+  const past = pastLine(h);
   screen(`
   <main class="page arrival">
     <article class="record">
@@ -309,12 +316,11 @@ export function showArrival(h: Hero, asked: Setup, nav: Nav): void {
         ${h.traits.length || h.blessing ? `<h3>${L(`持って生まれたもの${a.traits ? '' : ' (おまかせ)'}`, `Born with${a.traits ? '' : ' (random)'}`)}</h3>${traitTags(h.traits, h.blessing)}` : ''}
         <h3>${L('どう決まったか', 'How it was decided')}</h3>
         <dl class="facts decided">${items.map(([k, v, picked]) => `<div><dt>${esc(k)} ${rnd(picked)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>
-        <div class="choices"><button class="primary" data-go="live">${L('人生を始める', 'Begin this life')}</button><button data-go="setup">${L('設定に戻る', 'Back to setup')}</button></div>
+        <div class="choices"><button class="primary" data-go="live">${L('人生を始める', 'Begin this life')}</button></div>
       </div>
     </article>
   </main>`, (t) => {
     if (t.closest('[data-go=live]')) return nav.life(h);
-    if (t.closest('[data-go=setup]')) return nav.setup();
-  });
+  }, isRandom(h) ? { back: nav.title } : { back: nav.setup, label: L('← 設定に戻る', '← Back to setup') });
   paintAll(document.getElementById('app')!);
 }

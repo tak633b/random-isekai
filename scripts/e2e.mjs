@@ -71,8 +71,15 @@ async function chooseIfAny(page) {
 }
 const ageOf = async (page) => Number((await page.locator('#age').innerText({ timeout: 3000 })).replace(/\D/g, ''));
 const pressed = (page, sel) => page.locator(sel).getAttribute('aria-pressed');
+// 転生の演出 (ui/reveal.ts) が出ていれば押して飛ばす
+async function skipReveal(page) {
+  await page.locator('.reveal, [data-go=live]').first().waitFor();
+  if (await page.locator('.reveal').count()) await page.click('.reveal');
+  await page.waitForSelector('[data-go=live]');
+}
 // 人生の画面に入って、手で進める流れのために一時停止する (自動再生は別に確かめる)
 async function enterLife(page) {
+  await skipReveal(page);
   await page.click('[data-go=live]');
   await page.waitForSelector('#scenecv');
   await pause(page);
@@ -584,7 +591,9 @@ async function run(lang) {
   await widths(page, `${lang} title`);
   await shot(page, `title${sfx}.png`);
   await page.click('[data-go=random]');
-  await page.waitForSelector('[data-go=live]');
+  await page.waitForSelector('.reveal');
+  await widths(page, `${lang} reveal`);
+  await skipReveal(page);
   await widths(page, `${lang} arrival`);
   if (lang === 'ja') await shot(page, 'arrival.png');
   await page.click('[data-go=live]');
@@ -673,11 +682,11 @@ async function run(lang) {
   await widths(page, `${lang} setup`);
   await shot(page, `setup${sfx}.png`);
   await page.click('[data-go=start]');
-  await page.waitForSelector('[data-go=live]');
+  await skipReveal(page);
   notes.push(`[${lang}] arrival tags: ${await page.locator('.tags .tag').count()}, starts at ${await page.locator('.decided div').nth(10).innerText().then((t) => t.replace(/\s+/g, ' '))}`);
   let chosen = 0, lives = 1;
   for (;;) {
-    await page.waitForSelector('[data-go=live]');
+    await skipReveal(page);
     const decided = await page.locator('.decided em').count();
     if (decided > 3) notes.push(`[${lang}] setup: ${decided} items still random (expected 0-3)`);
     await enterLife(page);

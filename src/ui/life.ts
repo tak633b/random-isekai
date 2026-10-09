@@ -1,7 +1,8 @@
 // 人生の画面: 転生したら1年ずつ自動で流れる (速さ・一時停止・次の選択まで・自動で決める)。
 // 場面・顔と能力・年表・人の輪・その年の危険の内訳が年ごとに変わる。選択が来たらモーダルで止まる。手で 1年 / 10年 / 最後まで も残す
 import type { Hero, StatKey, Tie } from '../engine/types';
-import { advanceYear, choose, deathChance, fromSaved, heqOf, liveOut, raceOf, riskBreakdown, statusName, toSaved, CHEATS, type SavedHero } from '../engine';
+import { advanceYear, choose, deathChance, fromSaved, heqOf, liveOut, raceOf, riskBreakdown, setTactic, statusName, toSaved, CHEATS, TACTICS, TACTIC_NAME, type SavedHero } from '../engine';
+import type { Policy } from '../engine/types';
 import { faceHTML, heroFigure, paintAll, tieFigure } from './pixel';
 import { FIGHT_MS, Stage } from './stage';
 import { barList, fmtPct } from './charts';
@@ -57,7 +58,8 @@ export function showLife(h: Hero, nav: Nav, resumed = false): void {
       <button data-act="pause" id="pausebtn"></button>
       <span class="speeds" role="group" aria-label="${L('速さ', 'Speed')}">${SPEEDS.map((v) => `<button data-act="speed" data-v="${v}" aria-pressed="false">${v}×</button>`).join('')}</span>
       <button data-act="ff" id="ffbtn" title="${L('選択が来るまで早送り', 'Fast-forward to the next choice')}">${L('次の選択まで', 'Next choice')}</button>
-      <button data-act="auto" id="autobtn" aria-pressed="false" title="${L('ONなら選択で止まらず、性格で選ぶ', 'When on, choices are made by temperament without stopping')}">${L('自動で決める', 'Auto-choose')}</button>
+      <button data-act="auto" id="autobtn" aria-pressed="false" title="${L('ONなら選択で止まらず、作戦に合わせて選ぶ', 'When on, choices are made by your tactics without stopping')}">${L('自動で決める', 'Auto-choose')}</button>
+      <label class="tactic" title="${L('冒険と戦いの起きやすさ・戦いの危うさ・自動で選ぶときの選び方がゆるく変わる', 'Loosely shifts how often adventure and fights come, how dangerous fights are, and automatic choices')}">${L('作戦', 'Tactics')} <select id="tactic">${TACTICS.map((p) => `<option value="${p}"${p === h.policy ? ' selected' : ''}>${TACTIC_NAME[p]}</option>`).join('')}</select></label>
       <button data-act="exit" class="quiet" title="${L('タイトルの「続きから」で再開できる', 'Resume later from the title screen')}">${L('中断', 'Save & quit')}</button>
     </div>
     <div class="lifetrack" aria-hidden="true"><i id="lifebar"></i><b id="yearbar"></b></div>
@@ -65,7 +67,7 @@ export function showLife(h: Hero, nav: Nav, resumed = false): void {
   <main class="lifegrid">
     <section class="colmain">
       <div class="scenebox"><canvas class="pix scene" id="scenecv" width="320" height="100" role="img" aria-label="${L('今の場面', 'Current scene')}"></canvas><p class="scenecap" id="scenecap"></p></div>
-      <div class="manual"><span>${L('手で進める', 'Step by hand')}</span><button data-act="y1" id="b1">${L('1年', '+1 year')}</button><button data-act="y10" id="b10">${L('10年', '+10 years')}</button><button data-act="end" title="${L('選択は性格に合わせて自動で選ぶ', 'Choices are made automatically by temperament')}">${L('最後まで', 'To the end')}</button></div>
+      <div class="manual"><span>${L('手で進める', 'Step by hand')}</span><button data-act="y1" id="b1">${L('1年', '+1 year')}</button><button data-act="y10" id="b10">${L('10年', '+10 years')}</button><button data-act="end" title="${L('選択は作戦に合わせて自動で選ぶ', 'Choices are made automatically by your tactics')}">${L('最後まで', 'To the end')}</button></div>
       <div class="panel logpanel"><div class="loghead"><div class="tabs" role="tablist" aria-label="${L('記録', 'Records')}">
         <button role="tab" data-tab="log" class="on" aria-selected="true">${L('年表', 'Timeline')}</button>
         <button role="tab" data-tab="chron" aria-selected="false">${L('年代記', 'Chronicle')}</button>
@@ -109,7 +111,7 @@ export function showLife(h: Hero, nav: Nav, resumed = false): void {
         if (b.classList.contains('whobtn')) { sel = Number(b.dataset.id); jump = true; }
         else sel = sel === Number(b.dataset.id) ? undefined : Number(b.dataset.id);
         break;
-      case 'exit': stop(); persist(h); savePlay(play); nav.title(); return;
+      case 'exit': quit(); return;
       default: return;
     }
     savePlay(play);
@@ -123,7 +125,9 @@ export function showLife(h: Hero, nav: Nav, resumed = false): void {
       jump = false;
     }
     nextModal();
-  });
+  }, { back: () => (h.alive ? quit() : (stage.destroy(), nav.death(h))), esc: false, bar: false }); // ブラウザの戻るは「中断」と同じ (亡くなった後は死亡記録へ)
+  // 中断: タイトルの「続きから」で再開できる
+  function quit(): void { stop(); persist(h); savePlay(play); nav.title(); }
   const cv = document.getElementById('scenecv') as HTMLCanvasElement;
   const stage = new Stage(cv);
   const onScreen = () => document.getElementById('scenecv') === cv && !leaving;
@@ -219,6 +223,15 @@ export function showLife(h: Hero, nav: Nav, resumed = false): void {
     const j = e.shiftKey ? (i <= 0 ? opts.length - 1 : i - 1) : (i + 1) % opts.length;
     e.preventDefault();
     opts[j].focus();
+  };
+
+  // 作戦はいつでも変えられる (亡くなった後は変えない)。年表に1行残る
+  document.getElementById('tactic')!.onchange = (e) => {
+    const v = (e.target as HTMLSelectElement).value as Policy;
+    if (!h.alive || !TACTICS.includes(v)) return;
+    setTactic(h, v);
+    persist(h);
+    render();
   };
 
   function controls(): void {

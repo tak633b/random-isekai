@@ -9,6 +9,7 @@ import { jobOf, jobsIn } from './jobs';
 import { CHEATS } from './cheats';
 import { traitAging, traitAttention, traitMult } from './traits';
 import { hasTag } from './worlds';
+import { tacticFight } from './tactic';
 
 export const HAZARDS: Hazard[] = ['infant', 'disease', 'monster', 'violence', 'war', 'accident', 'childbirth', 'magic', 'execution', 'famine', 'plague', 'age'];
 export type Hazards = Record<Hazard, number>;
@@ -231,6 +232,8 @@ export function hazards(h: Hero): Hazards {
   }
   // スキル・体質・弱点の倍率。割り戻し (deflate) より後に掛けるので打ち消されない (trait を選んだ人生は表から外れてよい)
   if (h.traits.length) for (const k of HAZARDS) z[k] *= traitMult(h, k);
+  // 作戦: 挑むほど魔物・暴力・戦の危険が上がる (バランスは 1 倍)
+  z.monster *= tacticFight(h, 'monster'); z.violence *= tacticFight(h, 'violence'); z.war *= tacticFight(h, 'war');
   // 女神の加護: 主人公だけ、成人前の死を減らす
   if (h.blessing && e < ADULT_HEQ) { z.infant *= BLESSING; z.disease *= BLESSING; z.monster *= BLESSING; z.accident *= BLESSING; }
   return z;

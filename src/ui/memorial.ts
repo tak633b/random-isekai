@@ -4,7 +4,7 @@ import { getMemorial, listMemorial, lightCandle, memorialAvailable, reportMemori
 import { sceneHTML, paintAll } from './pixel';
 import { ROLE_NAME, ageText } from './labels';
 import { esc, load, save } from './dom';
-import { screen, type Nav } from './nav';
+import { screen, setBack, type Nav } from './nav';
 import { markGifts } from './records';
 import { genWord } from './lineage';
 import { L, T, lang } from '../i18n';
@@ -72,11 +72,12 @@ export function showMemorial(nav: Nav, id?: number): void {
       rp.disabled = true;
       void reportMemorial(Number(rp.dataset.report)).then((r) => { const m = document.getElementById('reportmsg'); if (m) m.textContent = r.ok ? L('報告しました。', 'Reported.') : L('報告できなかった。', 'Could not report.'); });
     }
-  });
+  }, { back: nav.title });
   const box = document.getElementById('mem')!;
   const alive = () => document.getElementById('mem') === box;
 
   async function list(reset: boolean): Promise<void> {
+    setBack(nav.title);
     if (reset) { offset = 0; box.innerHTML = `<ul class="memlist" id="memlist"></ul><div id="memmore"></div>`; }
     const r = await listMemorial(offset, PAGE, lang);
     if (!alive()) return;
@@ -93,6 +94,7 @@ export function showMemorial(nav: Nav, id?: number): void {
   async function detail(n: number): Promise<void> {
     const r = await getMemorial(n);
     if (!alive()) return;
+    setBack(() => void list(true));
     box.innerHTML = r.ok ? detailHTML(num(r.data)) : `<p class="warn">${L('見つからなかった。', 'Not found.')}</p><button data-list="1">${L('一覧へ', 'Back to the list')}</button>`;
     paintAll(box);
     window.scrollTo(0, 0);

@@ -84,7 +84,7 @@ export function showDeath(h: Hero, nav: Nav): void {
     if (go === 'post') void post();
     const m = t.closest<HTMLElement>('[data-mem]')?.dataset.mem;
     if (m) nav.memorial(Number(m));
-  });
+  }, { back: nav.title });
   const app = document.getElementById('app')!;
   paintAll(app);
   // 年表の全体を開いて、その年へ

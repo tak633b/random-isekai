@@ -96,7 +96,7 @@ export function showCollection(nav: Nav): void {
   </main>`, (t) => {
     if (t.closest('[data-go=title]')) return nav.title();
     if (t.closest('[data-go=achievements]')) return nav.achievements();
-  });
+  }, { back: nav.title });
   const paint = () => document.querySelectorAll<HTMLCanvasElement>('canvas[data-foe]').forEach((cv) => {
     const b = BESTIARY.find((x) => x.id === cv.dataset.foe);
     if (b) paintEntry(cv, b, cv.dataset.met === '1');
@@ -153,5 +153,5 @@ export function showAchievements(nav: Nav): void {
   </main>`, (t) => {
     if (t.closest('[data-go=title]')) return nav.title();
     if (t.closest('[data-go=collection]')) return nav.collection();
-  });
+  }, { back: nav.title });
 }

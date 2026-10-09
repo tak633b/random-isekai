@@ -140,6 +140,9 @@ const FEAT: AchievementDef[] = [
   a('feat', 'beyond2', ['長すぎる余生', 'Overtime'], ['寿命の目安の1.5倍を生きる', 'Live one and a half times the expected lifespan.'], { fact: 'lifespanRatio', gte: 1.5 }, 2),
   a('feat', 'pacifist', ['剣を持たず', 'Never Drew a Blade'], ['一度も戦わずに60歳まで生きる', 'Reach 60 without a single fight.'], all({ fact: 'foesMet', eq: 0 }, ageGte(60)), 1),
   a('feat', 'scarred', ['二度目はなかった', 'No Second Rewind'], ['一度は死を取り消し、それでも老いる前に亡くなる', 'Undo your death once, and still die before old age.'], all(flag('revived'), { not: hazard('age') }), 1),
+  // 作戦を一生変えずに通したもの (途中で変えると tactic は mixed)
+  a('feat', 'safeLong', ['いのちだいじに', 'Safety First'], ['作戦「いのちだいじに」のまま、寿命の目安まで生きる', 'Keep "Play it safe" all life and reach the expected lifespan.'], all({ fact: 'tactic', eq: 'careful' }, { fact: 'lifespanRatio', gte: 1 }), 1),
+  a('feat', 'allOut', ['ガンガンいこうぜ', 'All Out'], ['作戦「ガンガンいこうぜ」のまま、竜か魔王を討つ', 'Keep "Go all out" all life and slay a dragon or the Demon Lord.'], all({ fact: 'tactic', eq: 'bold' }, { any: [flag('dragonSlayer'), flag('demonKingSlain')] }), 2),
   a('feat', 'heroDemon', ['救世の勇者', 'Savior of the World'], ['勇者として魔王を討ち、老いて亡くなる', 'Slay the Demon Lord as the Hero and die of old age.'], all(flag('hero'), flag('demonKingSlain'), hazard('age')), 3),
   a('feat', 'orphanHero', ['孤児から勇者へ', 'From Orphan to Hero'], ['孤児として生まれ、勇者になる', 'Be born an orphan and become the Hero.'], all({ fact: 'status', eq: 'orphan' }, flag('hero')), 2),
   a('feat', 'slaveFame', ['鎖を越えて', 'Beyond the Chains'], ['奴隷として生まれ、名声を得る', 'Be born a slave and become famous.'], all({ fact: 'status', eq: 'slave' }, flag('famous')), 2),

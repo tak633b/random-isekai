@@ -48,7 +48,11 @@ button:focus-visible, select:focus-visible, input:focus-visible, summary:focus-v
 button.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
 button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 700; padding: 10px 24px; box-shadow: 0 0 24px var(--glow); }
 button.quiet, button.back { background: none; color: var(--sub); }
-button.back { border: 0; padding: 4px 0; min-height: 0; }
+/* 戻る: どの画面でも上と下に同じ形で。見落とさないよう枠つき */
+button.back { border: 1px solid var(--line); background: var(--bg2); color: var(--text); padding: 6px 14px; margin-bottom: 10px; min-height: 40px; }
+button.back:hover { border-color: var(--accent); color: var(--accent); }
+.backbar { margin: 28px 0 0; padding-top: 14px; border-top: 1px solid var(--line); }
+h1[tabindex="-1"]:focus { outline: none; }
 button:disabled { opacity: 0.45; cursor: default; border-color: var(--line); }
 input, select {
   font: inherit; color: var(--text); background: var(--bg2);
@@ -299,6 +303,8 @@ textarea { font: inherit; color: var(--text); background: var(--bg2); border: 1p
 
 /* 第4弾: 自動再生 */
 .speeds { display: inline-flex; gap: 2px; }
+.tactic { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; color: var(--sub); white-space: nowrap; }
+.tactic select { width: auto; padding: 4px 6px; font-size: 13px; }
 .speeds button { padding: 5px 8px; min-width: 38px; }
 .controls button.on { background: var(--accent); color: var(--accent-ink); }
 .lifetrack { flex-basis: 100%; position: relative; height: 6px; background: var(--bg2); border-radius: 3px; overflow: hidden; margin: 2px 0 0; }
@@ -475,3 +481,37 @@ h1 .tickets, h2 .tickets, .tickets { font-family: var(--dot); color: var(--accen
 .toast.out { opacity: 0; }
 @keyframes toastin { from { transform: translateY(12px); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .toast { animation: none; transition: none; } }
+
+/* 転生の演出 (ui/reveal.ts): 1場面ずつ出して、名札は回って止まる。珍しさで縁の色が変わる */
+.reveal { min-height: 80vh; display: grid; place-items: center; text-align: center; cursor: pointer; position: relative; }
+.rv-skip { position: absolute; top: 10px; right: 16px; margin: 0; font-size: 12px; color: var(--faint); }
+.rv-stage { grid-area: 1 / 1; width: 100%; max-width: 560px; opacity: 0; visibility: hidden; transform: translateY(10px); transition: opacity .2s, transform .2s, visibility 0s .2s; }
+.rv-stage.on { opacity: 1; visibility: visible; transform: none; transition: opacity .45s, transform .45s; }
+.rv-past, .rv-voice, .rv-scene, .rv-sub, .rv-line, #rv-cd, .rv-bless, .rv-traits li { opacity: 0; transition: opacity .5s, transform .5s; transform: translateY(6px); }
+.rv-past.on, .rv-voice.on, .rv-scene.on, .rv-sub.on, .rv-line.on, #rv-cd.on, .rv-bless.on, .rv-traits li.on { opacity: 1; transform: none; }
+.rv-past { color: var(--faint); font-size: 14px; }
+.rv-voice { font-size: 17px; line-height: 2; }
+.rv-spin { font-family: var(--dot); font-size: clamp(26px, 7vw, 40px); margin: 6px 0 12px; color: var(--sub); min-height: 1.4em; }
+.rv-spin.land { color: var(--accent); animation: rvland .5s ease-out; text-shadow: 0 0 18px var(--glow); }
+@keyframes rvland { 0% { transform: scale(1.35); } 60% { transform: scale(.95); } 100% { transform: none; } }
+.rv-scene .pix { max-width: 100%; height: auto; border-radius: 8px; border: 1px solid var(--line); }
+.rv-sub, .rv-line { color: var(--sub); }
+.rv-rar { display: inline-block; font-size: 11px; padding: 0 6px; border-radius: 4px; border: 1px solid currentColor; margin-left: 4px; vertical-align: middle; }
+.rv-pick { font-size: 11px; color: var(--good); }
+.rv-card { text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; margin: 8px 0; }
+.rv-card h2 { margin: 2px 0 6px; }
+.rv-card small { display: block; color: var(--sub); }
+.rv-card .rv-rar { display: inline-block; }
+.rv-traits { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+.rv-traits li { margin: 0; }
+.rv-rare { border-color: var(--magic); } .rv-rare .rv-rar, .rv-line.rv-rare .rv-rar { color: var(--magic); }
+.rv-legend { border-color: var(--accent); box-shadow: 0 0 22px var(--glow); } .rv-legend .rv-rar, .rv-line.rv-legend .rv-rar { color: var(--accent); }
+.rv-curse { border-color: var(--danger); } .rv-curse .rv-rar, .rv-line.rv-curse .rv-rar { color: var(--danger); }
+.rv-card.landed.rv-legend { animation: rvglow 1.2s ease-out; }
+@keyframes rvglow { 0% { box-shadow: 0 0 60px 10px rgb(232 180 74 / .6); } 100% { box-shadow: 0 0 22px var(--glow); } }
+.rv-spin.rv-legend, .rv-spin.rv-rare, .rv-spin.rv-curse { border: 0; box-shadow: none; }
+#rv-name .face { margin: 0 auto 8px; display: block; }
+@media (prefers-reduced-motion: reduce) {
+  .rv-stage, .rv-stage.on, .rv-past, .rv-voice, .rv-scene, .rv-sub, .rv-line, #rv-cd, .rv-bless, .rv-traits li { transition: none; transform: none; }
+  .rv-spin.land, .rv-card.landed.rv-legend { animation: none; }
+}
