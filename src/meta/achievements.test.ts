@@ -238,5 +238,5 @@ describe('実績の一覧', () => {
     }
     expect(missing).toEqual([]);
     for (const id of Object.keys(REASONS)) expect(REAL.some((a) => a.id === id), `理由の表に無い実績 ${id}`).toBe(true);
-  });
+  }, 300_000); // 手元で約20秒、GitHub Actions では70秒ほど (手がかりが外れた実績を4000人まで探すため)
 });
