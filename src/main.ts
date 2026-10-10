@@ -25,6 +25,7 @@ import { showAchievements, showCollection } from './ui/collection';
 import { toast } from './ui/toast';
 import { accountClick, accountHTML, paintAccount } from './ui/account';
 import { accountEnabled, initAccount } from './net/account';
+import { initMusic, musicEnd, musicLife, musicScene } from './ui/music';
 
 document.documentElement.lang = lang;
 if (isEn) {
@@ -40,20 +41,22 @@ const nav: Nav = {
     const h = createHero({ ...setup, hero: { ...setup.hero, soul: takeSoul() ?? undefined } });
     setRandom(h, random);
     const a = asked ?? setup;
+    musicScene('reveal');
     // 演出のあと (飛ばしても) 転生の場面へ。戻るは、おまかせならタイトル、設定したなら設定へ
     showReveal(h, a, () => showArrival(h, a, nav), random ? title : nav.setup);
   },
   life: (h, resumed) => showLife(h, nav, resumed),
-  death: (h) => showFinale(h, () => showDeath(h, nav)), // 最期の場面のあとに死亡記録
+  death: (h) => { musicEnd(h); showFinale(h, () => showDeath(h, nav)); }, // 最期の場面のあとに死亡記録
   trials: (setup) => showTrials(setup, nav),
   past: (focus) => showPast(nav, focus),
-  handover: (prev, h) => showHandover(prev, h, nav),
+  handover: (prev, h) => { musicLife(h); showHandover(prev, h, nav); },
   memorial: (id) => showMemorial(nav, id),
   collection: () => showCollection(nav),
   achievements: () => showAchievements(nav),
 };
 exposeDev(); // 開発ビルドでだけ window.__ri (本番では何もしない)
 void initAccount(); // ログイン済みなら記録の同期を始める (ログインを出さないビルドでは何もしない)
+initMusic(); // 左下の ♪ (既定は切)
 
 function title(): void {
   const s = randomSeed();
@@ -61,6 +64,7 @@ function title(): void {
   const spec: SceneSpec = { seed: s, world, place: (['town', 'temple', 'field', 'castle', 'wild'] as const)[hash(s, 1) % 5], home: 'house', tod: (['morning', 'day', 'dusk', 'night'] as const)[hash(s, 2) % 4], season: (hash(s, 3) % 4) as SceneSpec['season'], figures: [] };
   const n = records().length;
   const cur = savedLife();
+  musicScene('title');
   screen(`
   <main class="page title">
     <div class="langsw" role="group" aria-label="Language"><button data-lang="ja" class="${lang === 'ja' ? 'on' : ''}" lang="ja" aria-pressed="${lang === 'ja'}">日本語</button><button data-lang="en" class="${lang === 'en' ? 'on' : ''}" lang="en" aria-pressed="${lang === 'en'}">English</button></div>

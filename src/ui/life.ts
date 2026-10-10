@@ -26,6 +26,7 @@ import { toast } from './toast';
 import { AFTER_CHOICE_SEC, SPEEDS, lifeSpan, loadPlay, savePlay, scaledMs, yearSec, type PlayState } from './play';
 import { screen, type Nav } from './nav';
 import { L, T } from '../i18n';
+import { musicLife } from './music';
 
 // 途中の人生。1年進むたびに残し、亡くなったら消す
 const CURRENT = 'current';
@@ -311,6 +312,7 @@ export function showLife(h: Hero, nav: Nav, resumed = false): void {
     document.getElementById('age')!.textContent = ageText(h.age);
     document.getElementById('wholine')!.textContent = `${genOf(h) > 1 ? `${genWord(genOf(h))}${L('・', ' · ')}` : ''}${h.name}${heq !== h.age ? L(`・人間でいえば${heq}歳`, ` · about ${heq} in human years`) : ''}${L(`・寿命の目安 ${Math.round(span)}年`, ` · lifespan about ${Math.round(span)}`)}`;
     controls();
+    musicLife(h);
     stage.show(h, { budgetMs: scaledMs(yearMs, play.speed, ff), fast: ff || play.speed >= 8 });
     const st = h.state;
     const chips = [st.war > 0 && L('戦争中', 'At war'), st.plague > 0 && L('大疫病', 'Plague'), st.famine > 0 && L('飢饉', 'Famine'), st.demonKing && L('魔王がいる', 'A Demon Lord reigns')].filter(Boolean) as string[];

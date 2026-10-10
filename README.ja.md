@@ -117,3 +117,22 @@ npm start        # dist/ と追悼館を http://localhost:8790 で(PORT で変�
 ## ライセンス
 
 MIT
+
+### 音楽
+
+曲はすべて [OpenGameArt.org](https://opengameart.org/) から。ライセンスは各曲のページで確かめた。`public/audio/` の曲は、短く切り、音量をそろえ、72kbps にし、(もともとループする曲以外は)頭と終わりをフェードしている。
+
+- "Heroes Theme" Alexandr Zhelanov ([OpenGameArt](https://opengameart.org/content/heroes-theme))、[CC BY 3.0](https://creativecommons.org/licenses/by/3.0/)、タイトル
+- "Mystical Theme" Alexandr Zhelanov ([OpenGameArt](https://opengameart.org/content/mystical-theme))、[CC BY 3.0](https://creativecommons.org/licenses/by/3.0/)、転生の演出
+- "Town Theme RPG" cynicmusic ([OpenGameArt](https://opengameart.org/content/town-theme-rpg))、[CC0](https://creativecommons.org/publicdomain/zero/1.0/)、中世・学園の世界
+- "Woodland Fantasy" Matthew Pablo ([OpenGameArt](https://opengameart.org/content/woodland-fantasy))、[CC BY 3.0](https://creativecommons.org/licenses/by/3.0/)、ゲーム・獣人・神話・開拓地・現代の世界
+- "Dark Descent" Matthew Pablo ([OpenGameArt](https://opengameart.org/content/dark-descent))、[CC BY 3.0](https://creativecommons.org/licenses/by/3.0/)、ダーク・文明の後の世界
+- "Hot Springs Town" Kistol ([OpenGameArt](https://opengameart.org/content/hot-springs-town))、[CC0](https://creativecommons.org/publicdomain/zero/1.0/)、和の世界
+- "Liyan" elerya ([OpenGameArt](https://opengameart.org/content/liyan))、[CC BY 3.0](https://creativecommons.org/licenses/by/3.0/)、仙侠の世界
+- "Victoriana Loop" Joe Baxter-Webb (BossLevelVGM) ([OpenGameArt](https://opengameart.org/content/victoriana-loop))、[CC BY 3.0](https://creativecommons.org/licenses/by/3.0/)、スチームパンクの世界
+- "Welcome to Com-Mecha" Matthew Pablo ([OpenGameArt](https://opengameart.org/content/theme-of-com-mecha))、[CC BY 3.0](https://creativecommons.org/licenses/by/3.0/)、サイバーパンク・宇宙の世界
+- "The Eternal Sands" HitCtrl ([OpenGameArt](https://opengameart.org/content/fantasy-music-the-eternal-sands))、[CC BY 3.0](https://creativecommons.org/licenses/by/3.0/)、砂漠の世界
+- "A Sailor's Chant" Thimras ([OpenGameArt](https://opengameart.org/content/a-sailors-chant))、[CC0](https://creativecommons.org/publicdomain/zero/1.0/)、海の世界
+- "Battle Theme A" cynicmusic ([OpenGameArt](https://opengameart.org/content/battle-theme-a))、[CC0](https://creativecommons.org/publicdomain/zero/1.0/)、戦い
+- "Lament for a Warrior's Soul" RandomMind ([OpenGameArt](https://opengameart.org/content/fantasy-lament-for-a-warriors-soul))、[CC0](https://creativecommons.org/publicdomain/zero/1.0/)、最期
+- "Lively Meadow (Victory Fanfare and Song)" Matthew Pablo ([OpenGameArt](https://opengameart.org/content/lively-meadow-victory-fanfare-and-song))、[CC BY 3.0](https://creativecommons.org/licenses/by/3.0/)、帰還

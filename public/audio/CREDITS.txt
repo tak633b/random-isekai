@@ -1,0 +1,19 @@
+Music from OpenGameArt.org (license checked on each page)
+Edited: shortened, loudness-normalized, re-encoded at 72 kbps, faded in/out (except native loops).
+CC0: https://creativecommons.org/publicdomain/zero/1.0/
+CC BY 3.0: https://creativecommons.org/licenses/by/3.0/
+
+title.mp3  "Heroes Theme" by Alexandr Zhelanov  CC BY 3.0  https://opengameart.org/content/heroes-theme
+reveal.mp3  "Mystical Theme" by Alexandr Zhelanov  CC BY 3.0  https://opengameart.org/content/mystical-theme
+village.mp3  "Town Theme RPG" by cynicmusic  CC0  https://opengameart.org/content/town-theme-rpg
+field.mp3  "Woodland Fantasy" by Matthew Pablo  CC BY 3.0  https://opengameart.org/content/woodland-fantasy
+dark.mp3  "Dark Descent" by Matthew Pablo  CC BY 3.0  https://opengameart.org/content/dark-descent
+wa.mp3  "Hot Springs Town" by Kistol  CC0  https://opengameart.org/content/hot-springs-town
+xianxia.mp3  "Liyan" by elerya  CC BY 3.0  https://opengameart.org/content/liyan
+steampunk.mp3  "Victoriana Loop" by Joe Baxter-Webb (BossLevelVGM)  CC BY 3.0  https://opengameart.org/content/victoriana-loop
+scifi.mp3  "Welcome to Com-Mecha" by Matthew Pablo  CC BY 3.0  https://opengameart.org/content/theme-of-com-mecha
+desert.mp3  "The Eternal Sands" by HitCtrl  CC BY 3.0  https://opengameart.org/content/fantasy-music-the-eternal-sands
+ocean.mp3  "A Sailor's Chant" by Thimras  CC0  https://opengameart.org/content/a-sailors-chant
+battle.mp3  "Battle Theme A" by cynicmusic  CC0  https://opengameart.org/content/battle-theme-a
+death.mp3  "Lament for a Warrior's Soul" by RandomMind  CC0  https://opengameart.org/content/fantasy-lament-for-a-warriors-soul
+return.mp3  "Lively Meadow (Victory Fanfare and Song)" by Matthew Pablo  CC BY 3.0  https://opengameart.org/content/lively-meadow-victory-fanfare-and-song

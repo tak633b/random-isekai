@@ -115,3 +115,22 @@ The game is built from common isekai tropes. It does not use the settings, names
 ## License
 
 MIT
+
+### Music
+
+All music from [OpenGameArt.org](https://opengameart.org/); the license of each track was checked on its page. Files in `public/audio/` are shortened, loudness-normalized, re-encoded at 72 kbps and (except native loops) faded at both ends.
+
+- "Heroes Theme" by Alexandr Zhelanov ([OpenGameArt](https://opengameart.org/content/heroes-theme)), [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/), title
+- "Mystical Theme" by Alexandr Zhelanov ([OpenGameArt](https://opengameart.org/content/mystical-theme)), [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/), reincarnation reveal
+- "Town Theme RPG" by cynicmusic ([OpenGameArt](https://opengameart.org/content/town-theme-rpg)), [CC0](https://creativecommons.org/publicdomain/zero/1.0/), medieval and academy worlds
+- "Woodland Fantasy" by Matthew Pablo ([OpenGameArt](https://opengameart.org/content/woodland-fantasy)), [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/), game, beast, myth, frontier and modern worlds
+- "Dark Descent" by Matthew Pablo ([OpenGameArt](https://opengameart.org/content/dark-descent)), [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/), dark and post-apocalyptic worlds
+- "Hot Springs Town" by Kistol ([OpenGameArt](https://opengameart.org/content/hot-springs-town)), [CC0](https://creativecommons.org/publicdomain/zero/1.0/), Japanese-style world
+- "Liyan" by elerya ([OpenGameArt](https://opengameart.org/content/liyan)), [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/), xianxia world
+- "Victoriana Loop" by Joe Baxter-Webb (BossLevelVGM) ([OpenGameArt](https://opengameart.org/content/victoriana-loop)), [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/), steampunk world
+- "Welcome to Com-Mecha" by Matthew Pablo ([OpenGameArt](https://opengameart.org/content/theme-of-com-mecha)), [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/), cyberpunk and space worlds
+- "The Eternal Sands" by HitCtrl ([OpenGameArt](https://opengameart.org/content/fantasy-music-the-eternal-sands)), [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/), desert world
+- "A Sailor's Chant" by Thimras ([OpenGameArt](https://opengameart.org/content/a-sailors-chant)), [CC0](https://creativecommons.org/publicdomain/zero/1.0/), ocean world
+- "Battle Theme A" by cynicmusic ([OpenGameArt](https://opengameart.org/content/battle-theme-a)), [CC0](https://creativecommons.org/publicdomain/zero/1.0/), battles
+- "Lament for a Warrior's Soul" by RandomMind ([OpenGameArt](https://opengameart.org/content/fantasy-lament-for-a-warriors-soul)), [CC0](https://creativecommons.org/publicdomain/zero/1.0/), the end of a life
+- "Lively Meadow (Victory Fanfare and Song)" by Matthew Pablo ([OpenGameArt](https://opengameart.org/content/lively-meadow-victory-fanfare-and-song)), [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/), returning home
