@@ -25,7 +25,7 @@ import { showAchievements, showCollection } from './ui/collection';
 import { toast } from './ui/toast';
 import { accountClick, accountHTML, paintAccount } from './ui/account';
 import { accountEnabled, initAccount } from './net/account';
-import { initMusic, musicEnd, musicLife, musicScene } from './ui/music';
+import { initMusic, musicControl, musicEnd, musicLife, musicReveal, musicScene } from './ui/music';
 
 document.documentElement.lang = lang;
 if (isEn) {
@@ -41,7 +41,7 @@ const nav: Nav = {
     const h = createHero({ ...setup, hero: { ...setup.hero, soul: takeSoul() ?? undefined } });
     setRandom(h, random);
     const a = asked ?? setup;
-    musicScene('reveal');
+    musicReveal();
     // 演出のあと (飛ばしても) 転生の場面へ。戻るは、おまかせならタイトル、設定したなら設定へ
     showReveal(h, a, () => showArrival(h, a, nav), random ? title : nav.setup);
   },
@@ -56,7 +56,7 @@ const nav: Nav = {
 };
 exposeDev(); // 開発ビルドでだけ window.__ri (本番では何もしない)
 void initAccount(); // ログイン済みなら記録の同期を始める (ログインを出さないビルドでは何もしない)
-initMusic(); // 左下の ♪ (既定は切)
+initMusic(); // ♪ BGM (既定は切。タイトルと一生の画面に置く)
 
 function title(): void {
   const s = randomSeed();
@@ -67,7 +67,7 @@ function title(): void {
   musicScene('title');
   screen(`
   <main class="page title">
-    <div class="langsw" role="group" aria-label="Language"><button data-lang="ja" class="${lang === 'ja' ? 'on' : ''}" lang="ja" aria-pressed="${lang === 'ja'}">日本語</button><button data-lang="en" class="${lang === 'en' ? 'on' : ''}" lang="en" aria-pressed="${lang === 'en'}">English</button></div>
+    <div class="topctl">${musicControl()}<div class="langsw" role="group" aria-label="Language"><button data-lang="ja" class="${lang === 'ja' ? 'on' : ''}" lang="ja" aria-pressed="${lang === 'ja'}">日本語</button><button data-lang="en" class="${lang === 'en' ? 'on' : ''}" lang="en" aria-pressed="${lang === 'en'}">English</button></div></div>
     <div class="titlescene">${sceneHTML(spec, L('どこかの異世界', 'Some other world'))}</div>
     <h1 class="logo">Random <span>Isekai</span></h1>
     <p class="subtitle">${L('どの異世界に、何として生まれるかは選べない。', "You don't get to choose which world, or what you are born as.")}</p>

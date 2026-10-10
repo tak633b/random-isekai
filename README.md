@@ -118,7 +118,9 @@ MIT
 
 ### Music
 
-All music from [OpenGameArt.org](https://opengameart.org/); the license of each track was checked on its page. Files in `public/audio/` are shortened, loudness-normalized, re-encoded at 72 kbps and (except native loops) faded at both ends.
+Each life plays either the modern set or the retro (8-bit) set. Licenses were checked on each track's page. Files in `public/audio/` are shortened, loudness-normalized, re-encoded at 64–72 kbps and (except native loops) faded at both ends.
+
+Modern set:
 
 - "Heroes Theme" by Alexandr Zhelanov ([OpenGameArt](https://opengameart.org/content/heroes-theme)), [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/), title
 - "Mystical Theme" by Alexandr Zhelanov ([OpenGameArt](https://opengameart.org/content/mystical-theme)), [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/), reincarnation reveal
@@ -134,3 +136,20 @@ All music from [OpenGameArt.org](https://opengameart.org/); the license of each 
 - "Battle Theme A" by cynicmusic ([OpenGameArt](https://opengameart.org/content/battle-theme-a)), [CC0](https://creativecommons.org/publicdomain/zero/1.0/), battles
 - "Lament for a Warrior's Soul" by RandomMind ([OpenGameArt](https://opengameart.org/content/fantasy-lament-for-a-warriors-soul)), [CC0](https://creativecommons.org/publicdomain/zero/1.0/), the end of a life
 - "Lively Meadow (Victory Fanfare and Song)" by Matthew Pablo ([OpenGameArt](https://opengameart.org/content/lively-meadow-victory-fanfare-and-song)), [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/), returning home
+
+Retro (8-bit) set:
+
+- "Opening" by AVGVSTA ([OpenGameArt](https://opengameart.org/content/generic-8-bit-jrpg-soundtrack)), [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), title
+- "Sanctuary" by AVGVSTA ([OpenGameArt](https://opengameart.org/content/generic-8-bit-jrpg-soundtrack)), [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), reincarnation reveal
+- "Town" by AVGVSTA ([OpenGameArt](https://opengameart.org/content/generic-8-bit-jrpg-soundtrack)), [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), medieval and academy worlds
+- "Overworld" by AVGVSTA ([OpenGameArt](https://opengameart.org/content/generic-8-bit-jrpg-soundtrack)), [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), game, beast, myth, frontier and modern worlds
+- "Dungeon" by AVGVSTA ([OpenGameArt](https://opengameart.org/content/generic-8-bit-jrpg-soundtrack)), [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), dark and post-apocalyptic worlds
+- "Timeworn Pagoda" by AVGVSTA ([OpenGameArt](https://opengameart.org/content/generic-8-bit-jrpg-soundtrack)), [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), Japanese-style world
+- "Chipnese" by Spring Spring ([OpenGameArt](https://opengameart.org/content/chipnese)), [CC0](https://creativecommons.org/publicdomain/zero/1.0/), xianxia world
+- "Clockwork Jester" by Arold Valda (aroldv) ([OpenGameArt](https://opengameart.org/content/clockwork-jester)), [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), steampunk world
+- "Underclocked (underunderclocked mix)" by Eric Skiff ([Eric Skiff](https://ericskiff.com/music/)), [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), cyberpunk and space worlds
+- "Desert Theme (8bit chiptune)" by Wolfgang_ (Ted Kerr) ([OpenGameArt](https://opengameart.org/content/desert-theme-8bit-chiptune-theme)), [CC0](https://creativecommons.org/publicdomain/zero/1.0/), desert world
+- "Mere Baubles (Sailing the Mysterious Seas)" by Spring Spring ([OpenGameArt](https://opengameart.org/content/mere-baublessailing-the-mysterious-seas)), [CC0](https://creativecommons.org/publicdomain/zero/1.0/), ocean world
+- "Danger" by AVGVSTA ([OpenGameArt](https://opengameart.org/content/generic-8-bit-jrpg-soundtrack)), [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), battles
+- "Game Over" by AVGVSTA ([OpenGameArt](https://opengameart.org/content/generic-8-bit-jrpg-soundtrack)), [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), the end of a life
+- "Victory" by AVGVSTA ([OpenGameArt](https://opengameart.org/content/generic-8-bit-jrpg-soundtrack)), [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), returning home

@@ -1,7 +1,8 @@
-Music from OpenGameArt.org (license checked on each page)
-Edited: shortened, loudness-normalized, re-encoded at 72 kbps, faded in/out (except native loops).
+Music credits (license checked on each page)
+Edited: shortened, loudness-normalized, re-encoded at 64-72 kbps, faded in/out (except native loops).
 CC0: https://creativecommons.org/publicdomain/zero/1.0/
 CC BY 3.0: https://creativecommons.org/licenses/by/3.0/
+CC BY 4.0: https://creativecommons.org/licenses/by/4.0/
 
 title.mp3  "Heroes Theme" by Alexandr Zhelanov  CC BY 3.0  https://opengameart.org/content/heroes-theme
 reveal.mp3  "Mystical Theme" by Alexandr Zhelanov  CC BY 3.0  https://opengameart.org/content/mystical-theme
@@ -17,3 +18,17 @@ ocean.mp3  "A Sailor's Chant" by Thimras  CC0  https://opengameart.org/content/a
 battle.mp3  "Battle Theme A" by cynicmusic  CC0  https://opengameart.org/content/battle-theme-a
 death.mp3  "Lament for a Warrior's Soul" by RandomMind  CC0  https://opengameart.org/content/fantasy-lament-for-a-warriors-soul
 return.mp3  "Lively Meadow (Victory Fanfare and Song)" by Matthew Pablo  CC BY 3.0  https://opengameart.org/content/lively-meadow-victory-fanfare-and-song
+title-retro.mp3  "Opening" by AVGVSTA  CC BY 4.0  https://opengameart.org/content/generic-8-bit-jrpg-soundtrack
+reveal-retro.mp3  "Sanctuary" by AVGVSTA  CC BY 4.0  https://opengameart.org/content/generic-8-bit-jrpg-soundtrack
+village-retro.mp3  "Town" by AVGVSTA  CC BY 4.0  https://opengameart.org/content/generic-8-bit-jrpg-soundtrack
+field-retro.mp3  "Overworld" by AVGVSTA  CC BY 4.0  https://opengameart.org/content/generic-8-bit-jrpg-soundtrack
+dark-retro.mp3  "Dungeon" by AVGVSTA  CC BY 4.0  https://opengameart.org/content/generic-8-bit-jrpg-soundtrack
+wa-retro.mp3  "Timeworn Pagoda" by AVGVSTA  CC BY 4.0  https://opengameart.org/content/generic-8-bit-jrpg-soundtrack
+xianxia-retro.mp3  "Chipnese" by Spring Spring  CC0  https://opengameart.org/content/chipnese
+steampunk-retro.mp3  "Clockwork Jester" by Arold Valda (aroldv)  CC BY 4.0  https://opengameart.org/content/clockwork-jester
+scifi-retro.mp3  "Underclocked (underunderclocked mix)" by Eric Skiff  CC BY 4.0  https://ericskiff.com/music/
+desert-retro.mp3  "Desert Theme (8bit chiptune)" by Wolfgang_ (Ted Kerr)  CC0  https://opengameart.org/content/desert-theme-8bit-chiptune-theme
+ocean-retro.mp3  "Mere Baubles (Sailing the Mysterious Seas)" by Spring Spring  CC0  https://opengameart.org/content/mere-baublessailing-the-mysterious-seas
+battle-retro.mp3  "Danger" by AVGVSTA  CC BY 4.0  https://opengameart.org/content/generic-8-bit-jrpg-soundtrack
+death-retro.mp3  "Game Over" by AVGVSTA  CC BY 4.0  https://opengameart.org/content/generic-8-bit-jrpg-soundtrack
+return-retro.mp3  "Victory" by AVGVSTA  CC BY 4.0  https://opengameart.org/content/generic-8-bit-jrpg-soundtrack

@@ -26,7 +26,7 @@ import { toast } from './toast';
 import { AFTER_CHOICE_SEC, SPEEDS, lifeSpan, loadPlay, savePlay, scaledMs, yearSec, type PlayState } from './play';
 import { screen, type Nav } from './nav';
 import { L, T } from '../i18n';
-import { musicLife } from './music';
+import { musicControl, musicLife } from './music';
 
 // 途中の人生。1年進むたびに残し、亡くなったら消す
 const CURRENT = 'current';
@@ -65,6 +65,7 @@ export function showLife(h: Hero, nav: Nav, resumed = false): void {
       <button data-act="ff" id="ffbtn" title="${L('選択が来るまで早送り', 'Fast-forward to the next choice')}">${L('次の選択まで', 'Next choice')}</button>
       <button data-act="auto" id="autobtn" aria-pressed="false" title="${L('ONなら選択で止まらず、作戦に合わせて選ぶ', 'When on, choices are made by your tactics without stopping')}">${L('自動で決める', 'Auto-choose')}</button>
       <label class="tactic" title="${L('冒険と戦いの起きやすさ・戦いの危うさ・自動で選ぶときの選び方がゆるく変わる', 'Loosely shifts how often adventure and fights come, how dangerous fights are, and automatic choices')}">${L('作戦', 'Tactics')} <select id="tactic">${TACTICS.map((p) => `<option value="${p}"${p === h.policy ? ' selected' : ''}>${TACTIC_NAME[p]}</option>`).join('')}</select></label>
+      ${musicControl()}
       <button data-act="exit" class="quiet" title="${L('タイトルの「続きから」で再開できる', 'Resume later from the title screen')}">${L('中断', 'Save & quit')}</button>
     </div>
     <div class="lifetrack" aria-hidden="true"><i id="lifebar"></i><b id="yearbar"></b></div>
