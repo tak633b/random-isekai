@@ -2,8 +2,8 @@
 // 約束: 主人公の乱数 (h.rng) は一度も引かない。引くのは人と年ごとに決まる横の乱数 (sideRng) だけなので、
 // 同じ seed の人生の生死・出来事はそのままで、人物像だけが足される。
 // 例外は旅立ち (until を付ける): そばにいる人の顔ぶれが変わるので、その年から後の出来事の候補が変わりうる
-import type { GuildRank, Hero, JobId, LogEntry, Personality, PersonEvent, Profile, Role, Tie } from './types';
-import { makeRng, pick, pickWeighted, type Rng } from './rng';
+import type { GuildRank, Hero, JobId, LogEntry, Personality, PersonEvent, Profile, Role, Tie, TraitDef } from './types';
+import { makeRng, pick, pickByWeights, pickWeighted, type Rng } from './rng';
 import { JOBS, jobsIn, type JobDef } from './jobs';
 import { availableTraits, traitOf } from './traits';
 import { heq } from './mortality';
@@ -72,9 +72,21 @@ function drawJob(h: Hero, t: Tie, r: Rng): JobId | null {
   const all = jobsIn(h.world, status);
   if (!all.length) return null;
   if ((t.role === 'mentor' || t.role === 'disciple') && h.job && all.some((j) => j.id === h.job)) return h.job;
-  const fights = all.filter((j) => FIGHT_JOBS.has(j.id));
-  const pool: JobDef[] = FIGHT_ROLES.has(t.role) && fights.length ? fights : all;
-  return pickWeighted(r, pool, (j) => Math.max(0.05, j.w)).id;
+  const c = jobPool(all);
+  const [pool, ws] = FIGHT_ROLES.has(t.role) && c.fights.length ? [c.fights, c.wFights] : [all, c.wAll];
+  return pickByWeights(r, pool, ws).id;
+}
+// 就ける職業の並び (jobsIn が覚えている配列) ごとに、戦う職だけの並びと重みを一度だけ作る
+const jobPools = new WeakMap<JobDef[], { fights: JobDef[]; wAll: number[]; wFights: number[] }>();
+function jobPool(all: JobDef[]) {
+  let c = jobPools.get(all);
+  if (!c) {
+    const fights = all.filter((j) => FIGHT_JOBS.has(j.id));
+    const w = (j: JobDef) => Math.max(0.05, j.w);
+    c = { fights, wAll: all.map(w), wFights: fights.map(w) };
+    jobPools.set(all, c);
+  }
+  return c;
 }
 
 const rankJob = (id: JobId | null | undefined) => id === 'adventurer' || id === 'explorer';
@@ -110,6 +122,17 @@ function skillsFor(world: Hero['world'], race: Tie['race']) {
   return list;
 }
 
+// 技の重み (その人の職に向くものほど重い)。名簿と職ごとに一度だけ並べる
+const skillW = new WeakMap<TraitDef[], Map<string, number[]>>();
+function skillWeights(skills: TraitDef[], job: JobId | null | undefined): number[] {
+  let m = skillW.get(skills);
+  if (!m) { m = new Map(); skillW.set(skills, m); }
+  const k = job ?? '';
+  let ws = m.get(k);
+  if (!ws) { ws = skills.map((x) => (job ? x.jobs?.[job] ?? 1 : 1)); m.set(k, ws); }
+  return ws;
+}
+
 export function ensureProfile(h: Hero, t: Tie): void {
   if (t.profile) return;
   const r = sideRng(h, t, t.since, K_PROFILE);
@@ -125,7 +148,7 @@ export function ensureProfile(h: Hero, t: Tie): void {
   const skills = skillsFor(h.world, t.race);
   const roll = r();
   if (skills.length && e >= 12 && (fighter(t) || roll < 0.5)) {
-    p.skill = pickWeighted(r, skills, (x) => (t.job ? x.jobs?.[t.job] ?? 1 : 1)).id;
+    p.skill = pickByWeights(r, skills, skillWeights(skills, t.job)).id;
   }
   t.profile = p;
 }
@@ -277,10 +300,14 @@ export function alliesFor(h: Hero): Tie[] {
 // 亡くなった理由: 記録の文 (出産・戦い・疫病・飢饉の年) に合わせ、無ければ年齢と仕事から
 function causeOf(h: Hero, t: Tie): [string, string] {
   const at = t.diedAt ?? h.age;
-  const rec = h.log.find((x) => x.age === at && x.leave?.includes(t.id));
+  // その年の行 (年表は年の順に並ぶので、後ろから その年より前 まで見れば足りる)
+  let i = h.log.length;
+  while (i > 0 && h.log[i - 1].age >= at) i--;
+  const year: LogEntry[] = [];
+  for (let k = i; k < h.log.length; k++) if (h.log[k].age === at) year.push(h.log[k]);
+  const rec = year.find((x) => x.leave?.includes(t.id));
   if (rec && /出産|childbirth/.test(rec.text)) return ['出産で亡くなった', 'died in childbirth'];
   if (rec?.fight) return ['戦いで倒れた', 'fell in battle'];
-  const year = h.log.filter((x) => x.age === at);
   if (year.some((x) => /大疫病|great plague/.test(x.text))) return ['疫病で亡くなった', 'died of the plague'];
   if (year.some((x) => /飢饉|Famine/.test(x.text))) return ['飢えて亡くなった', 'died in the famine'];
   const e = heqT(t);

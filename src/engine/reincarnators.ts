@@ -149,9 +149,16 @@ export function reincarnatorsOf(h: Hero): Reincarnator[] {
     cache.set(key, roster);
   }
   // 名簿の年 (bornAt) は基準の主人公の年齢。今の主人公の年齢に直す (系譜の2代目以降は生まれた年ぶんずれる)
-  const met = new Map(stateOf(h).met);
-  return roster.map((p) => ({ ...p, bornAt: p.bornAt - b.offset, ...(met.has(p.id) ? { tieId: met.get(p.id) } : {}) }));
+  // 毎年呼ばれるので、名簿・ずれ・会った人 (met は会うたびに作り直される) が同じ間は同じ配列を返す。返す値は変えないこと
+  const metList = stateOf(h).met;
+  const v = viewCache.get(h);
+  if (v && v.roster === roster && v.offset === b.offset && v.met === metList) return v.out;
+  const met = new Map(metList);
+  const out = roster.map((p) => ({ ...p, bornAt: p.bornAt - b.offset, ...(met.has(p.id) ? { tieId: met.get(p.id) } : {}) }));
+  viewCache.set(h, { roster, offset: b.offset, met: metList, out });
+  return out;
 }
+const viewCache = new WeakMap<Hero, { roster: Reincarnator[]; offset: number; met: unknown; out: Reincarnator[] }>();
 
 // ---- 一生の筋 -----------------------------------------------------------------
 
@@ -183,7 +190,19 @@ const SPAN: Record<ReincarnatorFate, { deed?: [number, number]; death: [number, 
   villain: { deed: [22, 38], death: [0, 0] },
 };
 
+// 毎年その世界の転生者全員について引くので、世界 (主人公ごとに1つ) と人 (p.seed、年のずれ bornAt) ごとに覚える。
+// 乱数は p.seed からの別の並びなので、何度引いても同じ値になる。名簿 (reincarnatorsOf) は毎回作り直すので、人は seed で見分ける。返す値は変えないこと
+const courseCache = new WeakMap<World, Map<number, { bornAt: number; c: Course }>>();
 export function courseOf(h: Hero, p: Reincarnator): Course {
+  let m = courseCache.get(h.world);
+  if (!m) { m = new Map(); courseCache.set(h.world, m); }
+  const hit = m.get(p.seed);
+  if (hit && hit.bornAt === p.bornAt) return hit.c;
+  const c = courseUncached(h, p);
+  m.set(p.seed, { bornAt: p.bornAt, c });
+  return c;
+}
+function courseUncached(h: Hero, p: Reincarnator): Course {
   const x = makeRng(mix(p.seed, K_COURSE));
   const span = (a: number, b: number) => a + x() * (b - a);
   const arriveAge = p.arrival === 'summoned' ? p.past.age : 0;

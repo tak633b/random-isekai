@@ -257,8 +257,16 @@ export function lordName(rng: Rng, w: World): string {
 // その人生で使う固有名。seed から別の乱数で作るので、人生の乱数の並びを変えずに、何度呼んでも同じ名になる
 export interface WorldNames { town: string; god: string; guild: string; lord: string }
 const cache = new Map<string, WorldNames>();
+const byHero = new WeakMap<Hero, { seed: number; w: string; n: WorldNames }>(); // 毎年何度も呼ぶので、文字列の鍵を作る前に主人公ごとに
 export function worldNames(h: Hero): WorldNames {
   const seed = h.lineage?.rootSeed ?? h.seed; // 続けた主人公も、最初の主人公と同じ町・神・ギルド・領主
+  const fast = byHero.get(h);
+  if (fast && fast.seed === seed && fast.w === h.world.id) return fast.n;
+  const n = worldNamesOf(h, seed);
+  byHero.set(h, { seed, w: h.world.id, n });
+  return n;
+}
+function worldNamesOf(h: Hero, seed: number): WorldNames {
   const key = `${seed}|${h.world.id}`;
   const hit = cache.get(key);
   if (hit) return hit;

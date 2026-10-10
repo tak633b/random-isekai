@@ -3,7 +3,7 @@
 // を選ぶこともできる。月謝やけがの危険、笑える失敗もある。
 // データは src/data/training/*.ts の PATHS と METHODS (書き手が足せる)。乱数は主人公の rng (同じ seed は同じ人生)
 import type { ClimbRoute, Decision, Status, Hazard, Hero, Option, StatKey, TrainMethod, TrainPath, TraitDef } from './types';
-import { pickWeighted } from './rng';
+import { pickByWeights, pickWeighted } from './rng';
 import { bump, log } from './bonds';
 import { ADULT_HEQ, heqOf } from './mortality';
 import { availableTraits, traitOf } from './traits';
@@ -93,12 +93,24 @@ type Opt = { kind: 'path'; path: TrainPath } | { kind: 'goal'; trait: TraitDef; 
 const riskOf = (o: Opt): number => (o.kind === 'path' ? o.path.risk?.p ?? 0 : o.kind === 'goal' ? o.method.risk?.p ?? 0 : o.kind === 'climb' ? o.route.risk?.p ?? 0 : 0);
 const gainOf = (o: Opt): number => (o.kind === 'path' ? Object.values(o.path.stats).reduce((s, v) => s + (v ?? 0), 0) * 3 + o.path.traits.length : o.kind === 'goal' ? o.trait.cost * 3 + o.method.speed / 10 : o.kind === 'climb' ? 8 : 0);
 
+// 道の重み: 才能・職業・今の trait に合うものほど重い
+const pathW = new WeakMap<TrainPath[], { talent: string; traits: string[]; ws: number[] }>();
+function pathWeights(h: Hero, fit: TrainPath[]): number[] {
+  const c = pathW.get(fit);
+  if (c && c.talent === h.talent && c.traits === h.traits) return c.ws;
+  const ws = fit.map((p) => (p.w ?? 1) * (p.talents?.includes(h.talent) ? 2 : 1) * (p.jobs ? 2 : 1) * (p.traits.some((id) => h.traits.includes(id)) ? 1.5 : 1));
+  pathW.set(fit, { talent: h.talent, traits: h.traits, ws });
+  return ws;
+}
+
 // 候補を引く: 道を2〜3つ (才能・職業・今の trait に合うものほど出やすい)、大人なら狙うスキルを1つ、それと「のんびり」
 function drawOptions(h: Hero): Opt[] {
   const e = heqOf(h);
   const { paths: fit, targets: base } = candidates(h);
-  const paths = fit.filter((p) => e >= (p.heq?.[0] ?? 7) && e <= (p.heq?.[1] ?? 70)); // 身につくものが尽きた道でも、能力は伸びるので候補に残す
-  const wOf = (p: TrainPath) => (p.w ?? 1) * (p.talents?.includes(h.talent) ? 2 : 1) * (p.jobs ? 2 : 1) * (p.traits.some((id) => h.traits.includes(id)) ? 1.5 : 1);
+  // 身につくものが尽きた道でも、能力は伸びるので候補に残す。重みは才能と今の trait で決まるので、候補の並びごとに一度だけ
+  const fitW = pathWeights(h, fit);
+  const paths: TrainPath[] = [], pw: number[] = [];
+  fit.forEach((p, i) => { if (e >= (p.heq?.[0] ?? 7) && e <= (p.heq?.[1] ?? 70)) { paths.push(p); pw.push(fitW[i]); } });
   const out: Opt[] = [];
   const goalOk = e >= ADULT_HEQ - 4 && learnedCount(h) < LEARN_MAX;
   // 成り上がり: 今の身分から上へ行ける道があれば1つ (低い身分ほど、道の候補を一つ譲る)
@@ -106,10 +118,13 @@ function drawOptions(h: Hero): Opt[] {
   const offer = climbs.length > 0 && h.rng() < climbOffer(standingOf(h));
   const nPaths = (goalOk ? 2 : 3) - (offer ? 1 : 0);
   const pool = [...paths];
+  const ws = [...pw]; // 選んだものは重みごと外す
   for (let i = 0; i < nPaths && pool.length; i++) {
-    const p = pickWeighted(h.rng, pool, wOf);
+    const p = pickByWeights(h.rng, pool, ws);
     out.push({ kind: 'path', path: p });
-    pool.splice(pool.indexOf(p), 1);
+    const j = pool.indexOf(p);
+    pool.splice(j, 1);
+    ws.splice(j, 1);
   }
   if (goalOk) {
     const targets = learnable(h, base); // 世界・身分・職に合う道のどれかで身につくもの (年齢の幅は問わない)

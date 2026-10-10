@@ -131,16 +131,15 @@ export function closest(h: Hero, n = 3): Tie[] {
     .slice(0, n);
 }
 
-// 文の中での呼び方
+// 文の中での呼び方 (日本語は続柄 + の + 名。親は続柄だけ)。輪の人の一年ごとに呼ぶので、表は一度だけ作る
+const CALL_JA: Record<Role, string> = {
+  mother: '母', father: '父', sibling: 'きょうだいの', spouse: '連れ合いの', child: '子の', lover: '恋人の', fiance: '婚約者の',
+  friend: '友の', companion: '仲間の', mentor: '師の', rival: '好敵手の', nemesis: '宿敵の', familiar: '従魔の',
+  master: '主人の', servant: '従者の', disciple: '弟子の',
+};
 export function callName(t: Tie): string {
-  const n = t.name;
-  const ja: Record<Role, string> = {
-    mother: '母', father: '父', sibling: `きょうだいの${n}`, spouse: `連れ合いの${n}`, child: `子の${n}`, lover: `恋人の${n}`, fiance: `婚約者の${n}`,
-    friend: `友の${n}`, companion: `仲間の${n}`, mentor: `師の${n}`, rival: `好敵手の${n}`, nemesis: `宿敵の${n}`, familiar: `従魔の${n}`,
-    master: `主人の${n}`, servant: `従者の${n}`, disciple: `弟子の${n}`,
-  };
-  const en = t.role === 'mother' ? 'Mother' : t.role === 'father' ? 'Father' : n;
-  return L(ja[t.role], en);
+  const parent = t.role === 'mother' || t.role === 'father';
+  return L(parent ? CALL_JA[t.role] : CALL_JA[t.role] + t.name, t.role === 'mother' ? 'Mother' : t.role === 'father' ? 'Father' : t.name);
 }
 
 // ---- 年取りと死 -------------------------------------------------------------

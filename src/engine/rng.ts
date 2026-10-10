@@ -32,14 +32,22 @@ export function poisson(rng: Rng, lambda: number): number {
   return k - 1;
 }
 
+// 重みは1つにつき1回だけ計算する (重みの関数は乱数を引かないこと)。足し方と引き方の順は前と同じ (同じ seed で同じものを選ぶ)
 export function pickWeighted<T>(rng: Rng, items: readonly T[], weight: (t: T) => number): T {
-  const total = items.reduce((s, t) => s + weight(t), 0);
+  return pickByWeights(rng, items, items.map(weight));
+}
+
+// 重みを先に並べてあるとき (ws[i] が items[i] の重み)。pickWeighted と同じ引き方
+export function pickByWeights<T>(rng: Rng, items: readonly T[], ws: readonly number[]): T {
+  const n = items.length;
+  let total = 0;
+  for (let i = 0; i < n; i++) total += ws[i];
   let r = rng() * total;
-  for (const t of items) {
-    r -= weight(t);
-    if (r <= 0) return t;
+  for (let i = 0; i < n; i++) {
+    r -= ws[i];
+    if (r <= 0) return items[i];
   }
-  return items[items.length - 1];
+  return items[n - 1];
 }
 
 export const pick = <T>(rng: Rng, items: readonly T[]): T => items[Math.floor(rng() * items.length)];

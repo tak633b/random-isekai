@@ -1,6 +1,6 @@
 // 一つの人生を、1年ずつ進める (DESIGN 4節)。
 // 1. ハザードで生死を引く → 2. 年を取る (輪の人も) → 3. 世界の状態を進める → 4. 節目 → 5. 出来事 → 6. 能力の自然な変化
-import type { Decision, Hazard, Hero, JobId, LogEntry, Policy, Tie } from './types';
+import type { Decision, Hazard, Hero, JobId, LogEntry, Policy, StatKey, Tie } from './types';
 import { makeRng, pickWeighted } from './rng';
 import { agePeople, byRole, bump, closest, grow, log, mourn, shared } from './bonds';
 import { traitFertility } from './traits';
@@ -316,6 +316,7 @@ export function jobDecision(h: Hero, ids: JobId[]): Decision | null {
 
 const FIGHTERS: JobId[] = ['adventurer', 'hero', 'knight', 'soldier', 'mercenary', 'explorer', 'cultivator', 'samurai', 'ninja', 'raider'];
 
+const STAT_KEYS: StatKey[] = ['hp', 'power', 'mind', 'charm', 'luck', 'happy', 'wealth', 'fame'];
 function drift(h: Hero): void {
   const e = heqOf(h);
   const r = raceOf(h.race);
@@ -352,7 +353,7 @@ function drift(h: Hero): void {
     if (h.grown && g > h.grown.g[k]) { s[k] += h.grown.pot[k] * (g - h.grown.g[k]); h.grown.g[k] = g; }
     s[k] = Math.min(s[k], 100 * g);
   }
-  for (const k of Object.keys(s) as (keyof typeof s)[]) s[k] = Math.round(Math.min(100, Math.max(0, s[k])) * 10) / 10;
+  for (const k of STAT_KEYS) s[k] = Math.round(Math.min(100, Math.max(0, s[k])) * 10) / 10;
   h.level = Math.round(h.level * 10) / 10;
 }
 

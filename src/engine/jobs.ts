@@ -90,7 +90,22 @@ export const JOBS: Record<JobId, JobDef> = Object.fromEntries(LIST.map((j) => [j
 export const jobOf = (id: JobId | null): JobDef | null => (id ? JOBS[id] : null);
 
 // その世界で、その身分の主人公が就ける職業 (勇者・聖女は除く)
+// 世界 (一生変わらない) と身分ごとに覚える。返す配列は変えないこと
+const jobsCache = new WeakMap<World, Map<Status, JobDef[]>>();
+const jobsByKey = new Map<string, Map<Status, JobDef[]>>(); // 主人公ごとに World は作り直されるので、中身の鍵でも覚える
 export function jobsIn(world: World, status: Status): JobDef[] {
+  let m = jobsCache.get(world);
+  if (!m) {
+    const key = `${world.tags.join()}|${world.tech}|${world.magic}|${world.powers}`;
+    m = jobsByKey.get(key);
+    if (!m) { m = new Map(); if (jobsByKey.size > 500) jobsByKey.clear(); jobsByKey.set(key, m); }
+    jobsCache.set(world, m);
+  }
+  let out = m.get(status);
+  if (!out) { out = jobsInUncached(world, status); m.set(status, out); }
+  return out;
+}
+function jobsInUncached(world: World, status: Status): JobDef[] {
   const rank = statusRank(status);
   return LIST.filter((j) => !j.special
     && (!j.tags || j.tags.some((t) => world.tags.includes(t)))

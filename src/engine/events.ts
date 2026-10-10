@@ -42,6 +42,7 @@ export function useData(d: { events?: EventDef[]; deaths?: DeathDef[] }): void {
   keyCache = new WeakMap();
   cumCache = new Map();
   expCache = new Map();
+  expByHero = new WeakMap();
 }
 
 // ---- 条件 -----------------------------------------------------------------
@@ -118,10 +119,18 @@ function staticEvents(h: Hero, st: Stage): EventDef[] {
 
 // その年の判定に使う、主人公の今の様子 (使った出来事・そばにいる人の役)。候補を見るたびに作り直さないよう、まとめて一度だけ作る
 interface Now { used: Set<string>; roles: Set<Role>; loggedThisYear: boolean }
+// 使った出来事の集合。h.used は足すだけ (applyEvent の push) なので、長さが変わった分だけ足して使い回す
+const usedCache = new WeakMap<string[], Set<string>>();
+function usedSet(h: Hero): Set<string> {
+  let s = usedCache.get(h.used);
+  if (!s || s.size > h.used.length) { s = new Set(); usedCache.set(h.used, s); }
+  if (s.size !== h.used.length) for (const id of h.used) s.add(id);
+  return s;
+}
 export function nowOf(h: Hero): Now {
   const roles = new Set<Role>();
   for (const t of h.people) if (t.alive && t.until === undefined) roles.add(t.role);
-  return { used: new Set(h.used), roles, loggedThisYear: h.log.length > 0 && h.log[h.log.length - 1].age === h.age };
+  return { used: usedSet(h), roles, loggedThisYear: h.log.length > 0 && h.log[h.log.length - 1].age === h.age };
 }
 export const REPEAT_GAP = 5;
 // 繰り返しの間隔は「同じ出来事の書き分け」をまとめて数える (he.work.fantasy.1 と .2 は同じ依頼の出来事)。末尾の .番号 を外したものが組
@@ -293,10 +302,14 @@ function roll(h: Hero, risk: { hazard: Hazard; p: number } | undefined, die: Die
 // 1年に引く件数の平均 0.85 × 段階の候補の重み付き平均の p (選択肢は平均)。しるしや職業の条件は見ない (一生変わらない条件だけ)
 const AVG_EVENTS = 0.45 + 2 * 0.2;
 let expCache = new Map<string, number>();
+let expByHero = new WeakMap<Hero, { sk: string; st: Stage; v: number }>(); // 毎年の死の確率で引くので、鍵の文字列を作る前に主人公ごとに
 function expectedRisk(h: Hero): number {
   if (!EVENTS.length) return 0;
   const st = stageOf(h);
-  const key = `${staticKey(h)}|${st}`;
+  const sk = staticKey(h);
+  const memo = expByHero.get(h);
+  if (memo && memo.sk === sk && memo.st === st) return memo.v * riskScale(h.world, h.age, heqOf(h));
+  const key = `${sk}|${st}`;
   let v = expCache.get(key);
   if (v === undefined) {
     let w = 0, wp = 0;
@@ -309,6 +322,7 @@ function expectedRisk(h: Hero): number {
     if (expCache.size > 3000) expCache.clear();
     expCache.set(key, v);
   }
+  expByHero.set(h, { sk, st, v });
   return v * riskScale(h.world, h.age, heqOf(h));
 }
 setEventRisk(expectedRisk);
