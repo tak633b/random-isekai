@@ -1,7 +1,7 @@
 // 遊びの積み重ね (チケット・解放・図鑑・実績) の形。
 // 記録はこのブラウザの localStorage にだけ置く (meta/store.ts)。使えなくても遊べる (何も残らないだけ)。
 // 1つの人生は lifeId で数え、同じ人生で二度チケットや実績を出さない。
-import type { CheatId, Foe, Hazard, Policy, RaceId, StartAge, Text, WorldId } from '../engine/types';
+import type { CheatId, Foe, Hazard, Policy, RaceId, SoulCarry, StartAge, Text, WorldId } from '../engine/types';
 
 // 人生の id。最初の主人公の seed と、代を重ねたなら系譜の鍵の並びから決まる (meta/facts.ts の lifeIdOf)
 export type LifeId = string;
@@ -53,6 +53,9 @@ export interface LifeFacts {
   standing: string;         // 最後の身分 (成り上がり・没落の後)
   rose: number;             // 身分が上がった回数
   fell: boolean;            // 没落したことがある
+  inherited: number;        // 前世から魂に刻まれて引き継いだ技・特典の数 (meta/soul.ts)
+  soulChain: number;        // 引き継いだ技のうち、続けて引き継いだ回数の最大
+  soulCheat: boolean;       // 特典そのものを引き継いだ
 }
 
 // 一生を通した合計 (このブラウザでの)
@@ -131,4 +134,6 @@ export interface Progress {
   // ここから下は後から足したもの (古い記録には無い)
   distinctRandom?: Progress['distinct'];   // おまかせの人生だけで数えた種類 (Cond の distinct の random: true)
   worldBest?: Partial<Record<WorldId, Partial<Record<keyof LifeFacts, number>>>>; // 世界ごとの、数の事実の最大 (真偽は 1/0)。Cond の everyWorld に
+  // 魂に刻まれて次の転生を待っているもの (meta/soul.ts)。used: 使った (消さずに残す。同期で古い方が戻ってこないように)
+  soul?: { at: number; lifeId: LifeId; name: string; world: WorldId; carry: SoulCarry; used?: boolean };
 }

@@ -590,3 +590,13 @@ h1 .tickets, h2 .tickets, .tickets { font-family: var(--dot); color: var(--accen
 .fn-last { text-align: center; }
 .finale.home .fn-last p { color: var(--accent); }
 @media (prefers-reduced-motion: reduce) { .fn-step { transition: none; transform: none; } }
+
+/* 魂に刻まれたもの (前世の技): 青白い光 */
+.rv-soulcard { border-color: #9fd3ff; box-shadow: 0 0 28px rgba(140, 200, 255, .55); }
+.rv-soulcard.landed { animation: rvsoul 2.4s ease-in-out infinite alternate; }
+@keyframes rvsoul { from { box-shadow: 0 0 14px rgba(140, 200, 255, .35); } to { box-shadow: 0 0 36px rgba(140, 200, 255, .8); } }
+@media (prefers-reduced-motion: reduce) { .rv-soulcard.landed { animation: none; } }
+.soultag { display: inline-block; margin-left: 6px; padding: 0 6px; border-radius: 6px; font-size: .75em; font-style: normal; color: #0b1a2a; background: #9fd3ff; }
+.sskill li.soul b { color: #9fd3ff; }
+.soulnote { border-color: #9fd3ff; box-shadow: 0 0 18px rgba(140, 200, 255, .35); }
+.soulhint { margin: 8px auto 0; max-width: 520px; padding: 8px 12px; border: 1px solid #9fd3ff; border-radius: 10px; color: #cfe8ff; box-shadow: 0 0 14px rgba(140, 200, 255, .3); }

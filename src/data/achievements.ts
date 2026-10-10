@@ -146,6 +146,10 @@ const FEAT: AchievementDef[] = [
   a('feat', 'gekokujo', ['下剋上', 'The Usurper'], ['王族でない生まれから、王族の身分になる', 'Be born below royalty and end up royal.'], all({ fact: 'standing', eq: 'royal' }, { not: { fact: 'status', eq: 'royal' } }), 3),
   a('feat', 'restored', ['再興', 'Restoration'], ['没落したあと、郷士以上の身分に返り咲く', 'Fall from your standing, then climb back to the gentry or higher.'], all({ fact: 'fell', eq: true }, { any: [{ fact: 'standing', eq: 'gentry' }, { fact: 'standing', eq: 'noble' }, { fact: 'standing', eq: 'royal' }] }), 2),
   a('feat', 'closeCall', ['九死に一生', 'Close Call'], ['死ぬ寸前から生き延びる', 'Survive something that should have killed you.'], flag('closeCall'), 1),
+  // 魂に刻まれたもの (meta/soul.ts): 亡くなった人生からまれに次の転生へ技を持っていく
+  a('feat', 'soulMemory', ['魂の記憶', 'Soul Memory'], ['前世の技を魂に刻んだまま生まれる', 'Be born carrying a skill etched into your soul by a past life.'], { fact: 'inherited', gte: 1 }, 1),
+  a('feat', 'soulChain3', ['三代の技', 'Three Lives, One Skill'], ['同じ技を三度続けて次の人生へ持っていく', 'Carry the same skill into three lives in a row.'], { fact: 'soulChain', gte: 3 }, 2),
+  a('feat', 'soulCheat', ['魂の特典', 'A Gift That Remembers'], ['前世の転生特典を、そのまま持って生まれる', 'Be born with the cheat skill of your past life.'], { fact: 'soulCheat', eq: true }, 2),
   // お金 (engine/econ.ts)
   a('feat', 'debtFree', ['借金完済', 'Debt-Free'], ['借金をして、それを返し終える', 'Fall into debt and pay it all back.'], flag('debtFree'), 1),
   a('feat', 'tycoon', ['大富豪', 'Tycoon'], ['ひと財産 (中流の暮らし向きの4倍ほど) を築く', 'Build a fortune about four times a comfortable household\'s savings.'], flag('tycoon'), 2),

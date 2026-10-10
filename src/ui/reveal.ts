@@ -32,7 +32,9 @@ export function showReveal(h: Hero, asked: Setup, done: () => void, back: () => 
   const raceRar: Rarity = raceShare < 0.05 ? 'legend' : raceShare < 0.2 ? 'rare' : 'common';
   const cheat = h.cheat ? CHEATS[h.cheat] : null;
   const cheatRar: Rarity = h.cheat ? cheatRarity(cheatWeight(h.cheat)) : 'curse';
-  const traits = h.traits.map(traitOf).filter((t): t is TraitDef => !!t);
+  const traits = h.traits.filter((id) => !h.soul?.traits.includes(id)).map(traitOf).filter((t): t is TraitDef => !!t);
+  // 前世から魂に刻まれて引き継いだもの (meta/soul.ts)。授けられたものの前に、光る札で
+  const soulDefs = (h.soul?.traits ?? []).map(traitOf).filter((t): t is TraitDef => !!t);
   const picked = `<small class="rv-pick">${L('選んだ', 'Your pick')}</small>`;
   const past = pastLine(h);
   const tf = h.transfer; // 異世界転移: 魔法陣か、角を曲がるか。種族と生まれは回さず、元の世界の自分を出す
@@ -61,6 +63,12 @@ export function showReveal(h: Hero, asked: Setup, done: () => void, back: () => 
         : `<p class="rv-line rv-${statusRarity(h.status)}" id="rv-st">${esc(born)} ${tag(statusRarity(h.status))}</p>`}
       <p class="rv-line" id="rv-ta">${L('才能', 'Talent')}: <b>${esc(TALENT_NAME[h.talent])}</b></p>
     </section>
+    ${h.soul ? `<section class="rv-stage" id="rv-soul">
+      <p class="kicker">${L('前世から引き継いだもの', 'Carried over from a past life')}</p>
+      <div class="rv-card rv-legend rv-soulcard" id="rv-sc"><small>${esc(L(`${h.soul.from}の魂に刻まれていた`, `Etched into ${h.soul.from}'s soul`))}</small>
+        ${soulDefs.map((t) => `<h2>${esc(T(t.name))}</h2><p>${esc(T(t.desc))}</p>`).join('')}
+        ${h.soul.cheat ? `<h2>${esc(T(CHEATS[h.soul.cheat].name))}</h2><p>${esc(T(CHEATS[h.soul.cheat].desc))}</p>` : ''}</div>
+    </section>` : ''}
     <section class="rv-stage" id="rv-gift">
       <p class="kicker">${L('授けられたもの', 'What you were given')}</p>
       ${tf ? `<div class="rv-card rv-common" id="rv-lang"><small>${L('転移の定番', 'Standard issue')}</small><h2>${L('言語理解', 'Language comprehension')}</h2><p>${L('なぜか言葉が分かる。文字はまだ読めない。', 'Somehow you understand the language. Reading it is another matter.')}</p></div>` : ''}
@@ -134,9 +142,15 @@ export function showReveal(h: Hero, asked: Setup, done: () => void, back: () => 
     show('rv-st'); show('rv-ta');
     await wait(readMs(textOf('rv-st') + textOf('rv-ta')));
     if (over) return;
+    if (h.soul) {
+      stage('rv-soul');
+      $('rv-sc')?.classList.add('landed');
+      await wait(0, true);
+      if (over) return;
+    }
     stage('rv-gift');
     if (tf) { show('rv-lang'); await wait(1500); }
-    await spin('rv-cn', availableCheats(h.world).map((c) => T(c.name)), cheat ? T(cheat.name) : L('なし', 'None'), !a.cheat, 1000);
+    await spin('rv-cn', availableCheats(h.world).map((c) => T(c.name)), cheat ? T(cheat.name) : L('なし', 'None'), !a.cheat && !h.soul?.cheat, 1000);
     show('rv-cd'); $('rv-cheat')?.classList.add('landed');
     await wait(readMs(textOf('rv-cd')));
     if (h.blessing) { show('rv-bl'); await wait(1500); }

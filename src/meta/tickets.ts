@@ -1,10 +1,11 @@
 // 人生の終わりの精算: チケット、見たもの、合計、種類、図鑑、実績をまとめて記録に入れる。同じ人生 (lifeId) は二度精算しない
-import type { Hero } from '../engine/types';
+import type { Hero, SoulCarry } from '../engine/types';
 import { L } from '../i18n';
 import { factsOf } from './facts';
 import { checkAchievements } from './achievements';
 import { loadProgress, saveProgress } from './store';
 import { BLESSING_KEY } from './unlocks';
+import { rollSoul } from './soul';
 import type { AchievementDef, LifeFacts, Progress, UnlockKey } from './types';
 
 export const TICKETS_MAX_PER_LIFE = 4;
@@ -28,8 +29,9 @@ export function ticketsFor(f: LifeFacts, p: Progress): { gain: number; parts: Ti
 
 // おまかせの人生で見たもの (解放の値引きと「見た」の印)
 export function seenKeys(h: Hero): UnlockKey[] {
-  const keys: string[] = [`world:${h.world.id}`, `race:${h.race}`, `status:${h.status}`, ...h.traits.filter((t) => !h.learned?.includes(t)).map((t) => `trait:${t}`)]; // 鍛えて身につけたものは「見た」に数えない (値引きを増やさない)
-  if (h.cheat) keys.push(`cheat:${h.cheat}`);
+  // 鍛えて身につけたもの・前世から引き継いだものは「見た」に数えない (値引きを増やさない)
+  const keys: string[] = [`world:${h.world.id}`, `race:${h.race}`, `status:${h.status}`, ...h.traits.filter((t) => !h.learned?.includes(t) && !h.soul?.traits.includes(t)).map((t) => `trait:${t}`)];
+  if (h.cheat && h.cheat !== h.soul?.cheat) keys.push(`cheat:${h.cheat}`);
   if (h.setup.hero.startAge) keys.push(`startAge:${h.setup.hero.startAge}`);
   if (h.blessing) keys.push(BLESSING_KEY);
   if (h.arrival === 'summoned') keys.push('arrival:summoned');
@@ -100,6 +102,7 @@ export interface GrantResult {
   bestiary: string[];              // 図鑑に新しく載った姿
   encounters: string[];            // 出会い図鑑に新しく載った id
   ticketsNow: number;           // 精算の後に持っている枚数
+  soul: SoulCarry | null;       // 魂に刻まれて、次の転生へ持っていくもの (meta/soul.ts)
 }
 
 // 亡くなった主人公の精算。random: おまかせ転生 (と、その代を継いだ人生)。試行の人生には呼ばない
@@ -108,7 +111,7 @@ export function grantLife(h: Hero, random: boolean, now = Date.now()): GrantResu
   const facts = factsOf(h, random);
   const empty = { gain: 0, parts: [] as TicketPart[] };
   if (!facts.ended || before.granted.includes(facts.lifeId)) {
-    return { already: before.granted.includes(facts.lifeId), facts, tickets: empty, achievements: [], achTickets: 0, bestiary: [], encounters: [], ticketsNow: before.tickets };
+    return { already: before.granted.includes(facts.lifeId), facts, tickets: empty, achievements: [], achTickets: 0, bestiary: [], encounters: [], ticketsNow: before.tickets, soul: null };
   }
   const tickets = ticketsFor(facts, before);
   let p = tally(before, facts, h, now);
@@ -119,13 +122,16 @@ export function grantLife(h: Hero, random: boolean, now = Date.now()): GrantResu
     granted: [...p.granted, facts.lifeId],
     ticketLog: tickets.gain ? [...p.ticketLog, { at: now, lifeId: facts.lifeId, name: facts.name, world: facts.world, gain: tickets.gain, parts: tickets.parts }] : p.ticketLog,
   };
+  // 魂に刻まれるもの: 引いたら次の転生を待つものを置き換える (使っていないものがあっても、新しい方)
+  const soul = rollSoul(h, facts.lifeId);
+  if (soul) p = { ...p, soul: { at: now, lifeId: facts.lifeId, name: facts.name, world: facts.world, carry: soul } };
   const { p: done, got, bonus } = award(p, facts, 'end', now);
   saveProgress(done);
   return {
     already: false, facts, tickets, achievements: got, achTickets: bonus,
     bestiary: facts.foeKinds.filter((k) => !before.bestiary[k]),
     encounters: facts.encounters.filter((id) => !before.encounters[id]),
-    ticketsNow: done.tickets,
+    ticketsNow: done.tickets, soul,
   };
 }
 

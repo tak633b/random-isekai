@@ -10,7 +10,7 @@ import { availableCheats, CHEATS, cheatWeight } from './cheats';
 import { personName, styleOf, withFamily, worldNames } from './names';
 import { AGE_CAPPED, ageOfHeq, growBase, growFrac, heq } from './mortality';
 import { anchorFamily, anchorYear } from './anchor';
-import { ALLOT_KEYS, POINT_STEP, randomBuild, traitOf } from './traits';
+import { ALLOT_KEYS, availableTraits, POINT_STEP, randomBuild, traitOf } from './traits';
 import { addTie, COIN, grow, log } from './bonds';
 import { earthName, howText, itemName, rollTransfer } from './transfer';
 import { L, T, cap, pron } from '../i18n';
@@ -122,7 +122,12 @@ export function createHero(setup: Setup): Hero {
   const start = setup.anchors?.arriveAge ?? (tr && startAge === 'adult' ? tr.age : startAge === 'birth' ? 0 : heqToAge(startHeq, r));
   const build = randomBuild(side, world, race, { traits: c.traits, points: c.points });
   for (const k of ALLOT_KEYS) stats[k] = clamp(grow(stats[k], (build.points[k] ?? 0) * POINT_STEP), 0, 100);
-  for (const id of build.traits) for (const [k, v] of Object.entries(traitOf(id)?.stats ?? {})) stats[k as keyof Stats] = clamp(grow(stats[k as keyof Stats], v ?? 0), 0, 100);
+  // 魂に刻まれた技: この世界・種族で使えて、生まれ持ったものとぶつからないものだけ持っていく (乱数は引かない)
+  const ok = new Set(availableTraits(world, race).map((t) => t.id));
+  const inh = (c.soul?.traits ?? []).filter((id) => ok.has(id) && !build.traits.includes(id) && !build.traits.some((b) => traitOf(b)?.excl?.includes(id) || traitOf(id)?.excl?.includes(b)));
+  const soulCheat = !cheat && c.soul?.cheat && availableCheats(world).some((x) => x.id === c.soul!.cheat) ? c.soul.cheat : undefined;
+  const heroCheat = cheat ?? soulCheat ?? null;
+  for (const id of [...build.traits, ...inh]) for (const [k, v] of Object.entries(traitOf(id)?.stats ?? {})) stats[k as keyof Stats] = clamp(grow(stats[k as keyof Stats], v ?? 0), 0, 100);
   const blessing = c.blessing ?? false;
 
   const filled: Setup = {
@@ -133,13 +138,14 @@ export function createHero(setup: Setup): Hero {
   const h: Hero = {
     seed: setup.seed, rng, setup: filled, world,
     // 名を選んだとき (埋めた後の設定で生き直すときも) は、引いた家名をその名に付ける
-    name: tr ? earthName(given, tr.family) : c.name ? withFamily(world, c.name, nm.family) : nm.full, given, sex, race, status, talent, cheat, traits: build.traits, blessing, arrival: arr, memory,
+    name: tr ? earthName(given, tr.family) : c.name ? withFamily(world, c.name, nm.family) : nm.full, given, sex, race, status, talent, cheat: heroCheat, traits: [...build.traits, ...inh], blessing, arrival: arr, memory,
     // 途中の年齢の体で目を覚ますときは、思い出すのはその時 (awaken でも最初から記憶がある)
     memoryAwake: (arr !== 'awaken' || start > 0) && memory !== 'none',
     age: start, alive: true, stats, level: 1, job: null, jobYears: 0,
-    flags: {}, revives: cheat ? CHEATS[cheat].revive ?? 0 : 0, people: [], nextId: 1, log: [], pending: [], kinds: [],
+    flags: {}, revives: heroCheat ? CHEATS[heroCheat].revive ?? 0 : 0, people: [], nextId: 1, log: [], pending: [], kinds: [],
     state: { war: 0, plague: 0, famine: 0, demonKing }, auto: setup.auto ?? false, policy: setup.policy ?? 'normal', used: [],
   };
+  if (inh.length || soulCheat) h.soul = { traits: inh, ...(soulCheat ? { cheat: soulCheat } : {}), from: c.soul!.from, ...(c.soul!.chain ? { chain: c.soul!.chain } : {}) };
   { // 幼いうちは生まれ持った値の一部だけが出ている (mortality.ts の growFrac)。毎年 life.ts の drift で育つ
     const e0 = heq(start, r);
     const pot = { power: stats.power, mind: stats.mind, charm: stats.charm }, g = { ...pot };
@@ -174,11 +180,18 @@ export function createHero(setup: Setup): Hero {
     sibAges.forEach((a, i) => addTie(h, { name: sibNames[i], role: 'sibling', race, sex: sibSex[i], age: a }));
   }
   anchorFamily(h); // ほかの人の一生: 親を錨に合わせる
-  const first = log(h, birthStory(h), 'arrival', true, h.people.filter((t) => t.role === 'mother' || t.role === 'father').map((t) => t.id));
+  const first = log(h, birthStory(h) + soulLine(h), 'arrival', true, h.people.filter((t) => t.role === 'mother' || t.role === 'father').map((t) => t.id));
   if (h.people.length) first.join = h.people.map((t) => t.id); // 最初の家族
   h.worldHist = worldCharOf(h); // 生まれた年の世界の様子 (以後は advanceYear が毎年足す)
   if (setup.anchors) anchorYear(h); // ほかの人の一生: 0歳の錨 (生まれた年に共有した出来事)
   return h;
+}
+
+// 魂に刻まれて引き継いだもの (年表の最初の行に添える)
+function soulLine(h: Hero): string {
+  if (!h.soul) return '';
+  const names = [...h.soul.traits.map((id) => T(traitOf(id)!.name)), ...(h.soul.cheat ? [T(CHEATS[h.soul.cheat].name)] : [])];
+  return L(`魂には、前世の${names.map((n) => `〈${n}〉`).join('')}が刻まれていた。`, ` Etched into the soul from a past life: ${names.map((n) => `"${n}"`).join(', ')}.`);
 }
 
 // 英語では仕事を小文字で (a 25-year-old office worker)

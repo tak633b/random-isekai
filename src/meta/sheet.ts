@@ -25,8 +25,8 @@ export interface Sheet {
   hp: { now: number; max: number };
   mp: { max: number | null } | null;        // 魔法の無い世界では出さない。null は尽きない (無限の魔力)
   attrs: { key: string; label: string; v: number }[];
-  skills: { name: string; kind: TraitDef['kind']; learned: boolean }[];
-  cheat?: { name: string; desc: string };
+  skills: { name: string; kind: TraitDef['kind']; learned: boolean; soul?: boolean }[]; // soul: 前世から魂に刻まれて引き継いだ技
+  cheat?: { name: string; desc: string; soul?: boolean };
   blessing: boolean;
   titles: string[];
   tactic: string;
@@ -99,8 +99,8 @@ export function sheetOf(h: Hero): Sheet {
     hp: hpOf(h), mp: mpOf(h),
     // 健康は HP の今の割合として出しているので、亡くなった人には出さない (HP 0 と食い違わないように)
     attrs: (['power', 'mind', 'hp', 'charm', 'luck', 'fame', 'wealth'] as const).filter((k) => h.alive || k !== 'hp').map((k) => ({ key: k, label: L(...SHORT[k]), v: Math.round(h.stats[k]) })),
-    skills: h.traits.map((id) => traitOf(id)).filter((x): x is TraitDef => !!x).map((x) => ({ name: T(x.name), kind: x.kind, learned: !!h.learned?.includes(x.id) })),
-    ...(h.cheat ? { cheat: { name: T(CHEATS[h.cheat].name), desc: T(CHEATS[h.cheat].desc) } } : {}),
+    skills: h.traits.map((id) => traitOf(id)).filter((x): x is TraitDef => !!x).map((x) => ({ name: T(x.name), kind: x.kind, learned: !!h.learned?.includes(x.id), ...(h.soul?.traits.includes(x.id) ? { soul: true } : {}) })),
+    ...(h.cheat ? { cheat: { name: T(CHEATS[h.cheat].name), desc: T(CHEATS[h.cheat].desc), ...(h.soul?.cheat === h.cheat ? { soul: true } : {}) } } : {}),
     blessing: h.blessing,
     titles: titlesOf(h),
     tactic: TACTIC_NAME[h.policy],

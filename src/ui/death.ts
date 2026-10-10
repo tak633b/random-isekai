@@ -19,6 +19,7 @@ import { CUSTOM, isUnlocked } from '../meta/unlocks';
 import { bestiaryEntry } from '../meta/bestiary';
 import { encounterOf } from '../meta/encounters';
 import { isRandom, setRandom } from './mode';
+import { soulNames } from '../meta/soul';
 import { esc } from './dom';
 import { T } from '../i18n';
 
@@ -49,6 +50,7 @@ export function showDeath(h: Hero, nav: Nav): void {
   screen(`
   <main class="page death">
     ${recordHTML(r)}
+    ${g.soul ? `<section class="panel soulnote"><p>${esc(L(`${soulNames(g.soul)}が魂に刻まれた。次の転生へ持っていける。`, `${soulNames(g.soul)} ${g.soul.traits.length + (g.soul.cheat ? 1 : 0) > 1 ? 'were' : 'was'} etched into the soul. It will carry into your next rebirth.`))}</p></section>` : ''}
     ${grantHTML(g, isRandom(h))}
     ${heirsHTML(h)}
     <details class="panel chronbox"><summary>${L('年代記 (この世界の歴史)', 'Chronicle (the history of this world)')}</summary>${chronicleHTML(h)}</details>

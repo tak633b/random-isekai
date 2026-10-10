@@ -19,10 +19,11 @@ export function sheetHTML(s: Sheet, h: Hero): string {
   const vit = `<div class="svit"><div><span>HP</span>${bar(s.hp.now, s.hp.max, 'hp')}<em>${s.hp.now}/${s.hp.max}</em></div>
     ${s.mp ? `<div><span>MP</span>${bar(1, 1, 'mp')}<em>${s.mp.max === null ? '∞' : s.mp.max}</em></div>` : ''}</div>`;
   const attrs = `<ul class="sattr">${s.attrs.map((a) => `<li><span>${esc(a.label)}</span>${bar(a.v, 100, 'at')}<em>${a.v}</em></li>`).join('')}</ul>`;
+  const soulTag = `<em class="soultag">${L('前世の技', 'From a past life')}</em>`;
   const skills = s.skills.length || s.cheat || s.blessing ? `<ul class="sskill">
-    ${s.cheat ? `<li class="cheat"><b>${esc(s.cheat.name)}</b><small>${L('転生特典・', 'Cheat skill · ')}${esc(s.cheat.desc)}</small></li>` : ''}
+    ${s.cheat ? `<li class="cheat${s.cheat.soul ? ' soul' : ''}"><b>${esc(s.cheat.name)}</b>${s.cheat.soul ? soulTag : ''}<small>${L('転生特典・', 'Cheat skill · ')}${esc(s.cheat.desc)}</small></li>` : ''}
     ${s.blessing ? `<li class="cheat"><b>${L('女神の加護', "Goddess's blessing")}</b></li>` : ''}
-    ${s.skills.map((k) => `<li><b>${esc(k.name)}</b><small>${L(...KIND[k.kind])}${k.learned ? L('・鍛えて身につけた', ' · learned in this life') : ''}</small></li>`).join('')}</ul>` : '';
+    ${s.skills.map((k) => `<li${k.soul ? ' class="soul"' : ''}><b>${esc(k.name)}</b>${k.soul ? soulTag : ''}<small>${L(...KIND[k.kind])}${k.learned ? L('・鍛えて身につけた', ' · learned in this life') : ''}</small></li>`).join('')}</ul>` : '';
   const fights = s.kills.length || s.battles.lost ? `<p>${L(`勝った戦い ${s.battles.won}・傷を負って勝った ${s.battles.hurt}・負けた ${s.battles.lost}`, `Won ${s.battles.won} · won but wounded ${s.battles.hurt} · lost ${s.battles.lost}`)}</p>
     ${s.strongest ? `<p>${L('倒した中でいちばんの強敵', 'Strongest foe defeated')}: <b>${esc(s.strongest.name)}</b> ${'◆'.repeat(s.strongest.danger)}</p>` : ''}
     <ul class="kills">${s.kills.map((k) => `<li><span>${esc(k.name)}</span><em>×${k.n}</em></li>`).join('')}</ul>` : '';

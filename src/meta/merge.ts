@@ -43,7 +43,31 @@ export function normalizeProgress(raw: unknown): Progress | null {
     bestiary: isObj(raw.bestiary) ? (raw.bestiary as Progress['bestiary']) : {},
     encounters: isObj(raw.encounters) ? (raw.encounters as Progress['encounters']) : {},
     achievements: isObj(raw.achievements) ? (raw.achievements as Progress['achievements']) : {},
+    ...(soulOf(raw.soul) ? { soul: soulOf(raw.soul) } : {}),
   };
+}
+
+// 魂に刻まれたもの (meta/soul.ts)。形が違えば捨てる
+type Soul = NonNullable<Progress['soul']>;
+function soulOf(x: unknown): Soul | undefined {
+  if (!isObj(x) || !isObj(x.carry)) return undefined;
+  const c = x.carry;
+  const traits = strs(c.traits).filter((t) => t.length <= KEY_MAX).slice(0, 3);
+  const chain = isObj(c.chain) ? Object.fromEntries(Object.entries(c.chain).filter(([k, v]) => traits.includes(k) && typeof v === 'number').map(([k, v]) => [k, Math.max(1, Math.floor(v as number))])) : undefined;
+  const cheat = typeof c.cheat === 'string' && c.cheat.length <= KEY_MAX ? c.cheat : undefined;
+  if (!traits.length && !cheat) return undefined;
+  return {
+    at: nn(x.at), lifeId: str(x.lifeId), name: str(x.name), world: str(x.world) as Soul['world'],
+    carry: { traits, ...(cheat ? { cheat: cheat as Soul['carry']['cheat'] } : {}), from: str(c.from), ...(chain ? { chain } : {}) },
+    ...(x.used === true ? { used: true } : {}),
+  };
+}
+// 新しい方。同じ人生のものなら使った方 (片方の端末で使ったものが、もう片方から戻ってこないように)
+function newerSoul(a: unknown, b: unknown): Soul | undefined {
+  const x = soulOf(a), y = soulOf(b);
+  if (!x || !y) return x ?? y;
+  if (x.lifeId === y.lifeId && x.at === y.at) return x.used || y.used ? { ...(cmp(x, y) <= 0 ? x : y), used: true } : cmp(x, y) <= 0 ? x : y;
+  return x.at !== y.at ? (x.at > y.at ? x : y) : cmp(x, y) <= 0 ? x : y;
 }
 
 // ---- 合わせ方 ----------------------------------------------------------------
@@ -119,5 +143,6 @@ export function mergeProgress(a: Progress, b: Progress): Progress {
       return f ? { n: Math.max(nn(p.n), nn(q.n)), first: f as Progress['encounters'][string]['first'] } : null;
     }),
     achievements: byKey(a.achievements, b.achievements, (x, y) => earlier(first(x), first(y)) as Progress['achievements'][string] | null),
+    ...(newerSoul(a.soul, b.soul) ? { soul: newerSoul(a.soul, b.soul) } : {}),
   };
 }

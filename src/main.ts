@@ -18,6 +18,7 @@ import { isEn, L, T, lang, setLang } from './i18n';
 import { ageText, lockIcon } from './ui/labels';
 import { adHTML } from './ui/ads';
 import { exposeDev, loadProgress } from './meta/store';
+import { pendingSoul, soulNames, takeSoul } from './meta/soul';
 import { CUSTOM, isUnlocked, priceOf, unlock } from './meta/unlocks';
 import { setRandom } from './ui/mode';
 import { showAchievements, showCollection } from './ui/collection';
@@ -35,7 +36,8 @@ const nav: Nav = {
   title,
   setup: () => showSetup(nav),
   start(setup: Setup, random = false, asked?: Setup) {
-    const h = createHero(setup);
+    // 魂に刻まれたものを、この転生の始まりに一度だけ受け取る (meta/soul.ts)。前の setup に残っているものは使わない
+    const h = createHero({ ...setup, hero: { ...setup.hero, soul: takeSoul() ?? undefined } });
     setRandom(h, random);
     const a = asked ?? setup;
     // 演出のあと (飛ばしても) 転生の場面へ。戻るは、おまかせならタイトル、設定したなら設定へ
@@ -76,6 +78,7 @@ function title(): void {
       <button data-go="collection">${L('図鑑', 'Collection')} <small>${loadProgress().tickets}${L('枚', ' tickets')}</small></button>
       <button data-go="achievements">${L('実績', 'Achievements')}</button>
     </div>
+    ${soulHint()}
     <div id="unlockask" role="alertdialog" aria-live="polite" hidden></div>
     ${accountHTML()}
     <p class="note">${L(`絵も人生もその場で作る。${accountEnabled ? '記録はこの端末に残る (ログインすると、チケット・解放・図鑑・実績はアカウントにも)。' : '記録はこの端末にだけ残る。'}幼い子の死や戦争など重い出来事も、その世界の確率どおりに起きる。`, `Every picture and life is made on the spot. ${accountEnabled ? 'Records stay on this device (sign in to also keep tickets, unlocks, collection and achievements in your account).' : 'Records stay on this device only.'} Hard things, like children dying or war, happen at that world’s odds.`)}</p>
@@ -98,6 +101,14 @@ function title(): void {
   });
   paintAll(document.getElementById('app')!);
   paintAccount();
+}
+
+// 魂に刻まれて、次の転生を待っているもの
+function soulHint(): string {
+  const c = pendingSoul();
+  if (!c) return '';
+  const names = soulNames(c);
+  return `<p class="soulhint">${esc(L(`${c.from}の魂に刻まれた${names}が、次の転生を待っている。`, `${names} etched into ${c.from}'s soul waits for your next rebirth.`))}</p>`;
 }
 
 // 「設定して転生」: 閉じているあいだは鍵とチケットの進み具合 (例 6/10)

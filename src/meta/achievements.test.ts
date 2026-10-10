@@ -15,7 +15,7 @@ const REAL = allAchievements();
 afterAll(() => useAchievements(REAL));
 
 const facts = (over: Partial<LifeFacts> = {}): LifeFacts => ({
-  lifeId: '1', ended: true, random: true, tactic: 'normal', standing: 'commoner', rose: 0, fell: false, name: 'A', world: 'medieval', race: 'human', sex: 'F', status: 'commoner', cheat: null,
+  lifeId: '1', ended: true, random: true, tactic: 'normal', standing: 'commoner', rose: 0, fell: false, inherited: 0, soulChain: 0, soulCheat: false, name: 'A', world: 'medieval', race: 'human', sex: 'F', status: 'commoner', cheat: null,
   traits: [], arrival: 'reborn', blessing: false, age: 50, heq: 50, hazard: 'age', deathId: 'd.age', job: null, rank: null, level: 3,
   flags: ['famous'], marriages: 1, children: 2, foesMet: 3, foesWon: 2, foesLost: 0, foeKinds: ['slime'], foeKindsWon: ['slime'],
   encounters: [], reincMet: 0, reincFought: 0, gen: 1, maxBond: 80, outlivedAll: false, lifespanRatio: 0.8, firstYearAdventure: false,
@@ -196,6 +196,9 @@ const REASONS: Record<string, string> = {
   'a.collection.won100': '同上 (3000人で全81種に勝った)',
   'a.feat.gekokujo': '王族への下剋上は、中世の貴族を作戦ガンガンいこうぜで生きても4000人に1人ほど (2026-10-09 に seed 3818 で実測)。長く遊べば届く',
   'a.collection.achievements100': '上の届かない実績と秘密の実績を含む',
+  'a.feat.soulMemory': '前の人生から魂に刻まれた技が要る (meta/soul.ts。おまかせで1割強が引き、9割ほどが次の人生に乗る)。おまかせの seed だけでは起きない。soul.test.ts で確かめる',
+  'a.feat.soulChain3': '同じ技を3回続けて引き継ぐ。1回の引き継ぎが約1割なので、長く遊んだ人にだけ届く',
+  'a.feat.soulCheat': '特典ごと引き継ぐのは0.5%で、次の人生が特典なしのときだけ。長く遊べば届く',
 };
 
 describe('実績の一覧', () => {

@@ -91,6 +91,10 @@ export function factsOf(h: Hero, random: boolean): LifeFacts {
     standing: h.standing ?? h.status,
     rose: (h.climb ?? []).filter((c) => c.age > from && statusRank(c.to) > statusRank(c.from)).length,
     fell: (h.climb ?? []).some((c) => c.age > from && statusRank(c.to) < statusRank(c.from)),
+    // 魂に刻まれて引き継いだもの (系譜を続けた主人公は前の代のものなので数えない)
+    inherited: h.lineage ? 0 : (h.soul?.traits.length ?? 0) + (h.soul?.cheat ? 1 : 0),
+    soulChain: h.lineage ? 0 : Math.max(0, ...(h.soul?.traits ?? []).map((id) => h.soul!.chain?.[id] ?? 1)),
+    soulCheat: !h.lineage && !!h.soul?.cheat,
     tactic: h.flags['tactic.changed'] !== undefined && h.flags['tactic.changed'] > from ? 'mixed' : h.policy,
     firstYearAdventure: !h.alive && !!firstAdv && firstAdv.age === h.age,
     eventIds,

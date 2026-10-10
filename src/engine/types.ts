@@ -132,6 +132,16 @@ export interface HeroChoice {
   startAge?: StartAge;         // この世界で人生が始まる年齢 (省略 = 転生の型どおり)
   traits?: string[];           // 選んだスキル・能力・加護・体質・弱点の id (省略 = おまかせ。[] = 何も持たない)
   points?: Partial<Record<AllotKey, number>>; // 能力へのポイント配分 (省略 = おまかせ)
+  soul?: SoulCarry;            // 前の人生から魂に刻まれて引き継いだもの (meta/soul.ts が転生の始まりに付ける。乱数は引かない)
+}
+
+// 魂に刻まれたもの: 亡くなった人生からまれに次の転生へ持っていく技 (と、ごくまれに特典)。
+// chain は技ごとに「何回続けて引き継いだか」(三代の剣の実績に)
+export interface SoulCarry {
+  traits: string[];
+  cheat?: CheatId;
+  from: string;                // 前の人生の名前
+  chain?: Record<string, number>;
 }
 
 // 人生が始まる年齢。child/teen は「その年齢の子の体で目を覚ます」、adult は成人として召喚・転移される
@@ -372,6 +382,7 @@ export interface Hero {
   recent?: Record<string, number>; // 何度も起きる出来事が最後に起きた年齢 (id → 年齢。続けて起きないように)
   peopleLog?: { n: number; wait: LogEntry[] }; // 人物像が年表に足した件数と、翌年に差し込む行 (engine/people.ts。保存に残す)
   train?: TrainState;   // 今の鍛え方 (engine/training.ts)。古いセーブには無い
+  soul?: SoulCarry;     // 前の人生から実際に引き継いだもの (この世界で使えないものは落とす)。無ければ引き継ぎなし
   learned?: string[];   // 生きている間に身につけた trait (traits にも入る。解放の「見た」には数えない)
   transfer?: TransferState; // 異世界転移で来た人の、元の世界の持ち物と来かた (arrival が summoned のとき)
   standing?: Status;    // 今の身分 (成り上がり・没落で変わる。無ければ生まれの身分 status のまま。engine/climb.ts)
