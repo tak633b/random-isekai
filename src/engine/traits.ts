@@ -23,6 +23,7 @@ export const traitOf = (id: string): TraitDef | undefined => byId.get(id);
 export function useTraits(list: TraitDef[]): void {
   TRAITS = list;
   byId = new Map(list.map((t) => [t.id, t]));
+  memo = new WeakMap();
 }
 
 // その世界・種族で選べるもの
@@ -73,10 +74,10 @@ export function validateBuild(world: World, race: RaceId, choice: Build, pool: T
 // おまかせの組み立て。弱点を確率で0〜3つ、その後に枠と予算の中で能力を重みつきで足し、残りのポイントを能力値に振る。
 // 決めてある方 (fixed.traits / fixed.points) はそのまま使い、もう一方だけを埋める
 export function randomBuild(rng: Rng, world: World, race: RaceId, fixed: Build = {}, pool: TraitDef[] = TRAITS): Required<Build> {
-  const avail = availableTraits(world, race, pool);
   let traits: string[];
-  if (fixed.traits) traits = [...fixed.traits];
+  if (fixed.traits) traits = [...fixed.traits]; // 決まっていれば選べるものの一覧は要らない (試行は毎回ここを通る)
   else {
+    const avail = availableTraits(world, race, pool);
     const picked: TraitDef[] = [];
     const fits = (t: TraitDef) => !picked.includes(t) && !picked.some((p) => clash(p, t));
     const r = rng();
@@ -129,17 +130,31 @@ export const TRAIT_MULT_RANGE: [number, number] = [0.25, 3];
 export const TRAIT_AGING_RANGE: [number, number] = [0.7, 1.5];
 const within = (v: number, [lo, hi]: [number, number]) => Math.min(hi, Math.max(lo, v));
 
+// 倍率の積は毎年・死因ごとに何度も引くので、trait の並び (配列) ごとに覚える。並びは身につけるたびに作り直される (training.ts) ので古くならない
+type Memo = { n: number; aging?: number; mult: Partial<Record<Hazard, number>> };
+let memo = new WeakMap<readonly string[], Memo>();
+function memoOf(h: Hero): Memo {
+  let m = memo.get(h.traits);
+  if (!m || m.n !== h.traits.length) { m = { n: h.traits.length, mult: {} }; memo.set(h.traits, m); }
+  return m;
+}
+
 // trait が掛ける倍率の積 (その死因)
 export function traitMult(h: Hero, hz: Hazard): number {
+  const c = memoOf(h);
+  const hit = c.mult[hz];
+  if (hit !== undefined) return hit;
   let m = 1;
   for (const id of h.traits) { const v = byId.get(id)?.mult?.[hz]; if (v !== undefined) m *= v; }
-  return m === 1 ? 1 : within(m, TRAIT_MULT_RANGE);
+  return (c.mult[hz] = m === 1 ? 1 : within(m, TRAIT_MULT_RANGE));
 }
 
 export function traitAging(h: Hero): number {
+  const c = memoOf(h);
+  if (c.aging !== undefined) return c.aging;
   let m = 1;
   for (const id of h.traits) { const v = byId.get(id)?.aging; if (v !== undefined) m *= v; }
-  return m === 1 ? 1 : within(m, TRAIT_AGING_RANGE);
+  return (c.aging = m === 1 ? 1 : within(m, TRAIT_AGING_RANGE));
 }
 
 export function traitAttention(h: Hero): number {

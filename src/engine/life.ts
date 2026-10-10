@@ -4,7 +4,7 @@ import type { Decision, Hazard, Hero, JobId, LogEntry, Policy, Tie } from './typ
 import { makeRng, pickWeighted } from './rng';
 import { agePeople, byRole, bump, closest, grow, log, mourn, shared } from './bonds';
 import { traitFertility } from './traits';
-import { growBase, growFrac, AGE_CAPPED, attentionOf, deathChance, hazards, heq, HAZARDS, maternalRisk, mustDie, agingOf, heqOf, warStartP, WAR_MEAN_YEARS, plagueP, famineP, FAMINE_MEAN_YEARS, ADULT_HEQ } from './mortality';
+import { growBase, growFrac, GROWN_AT, AGE_CAPPED, attentionOf, deathChance, hazards, heq, HAZARDS, maternalRisk, mustDie, agingOf, heqOf, warStartP, WAR_MEAN_YEARS, plagueP, famineP, FAMINE_MEAN_YEARS, ADULT_HEQ } from './mortality';
 import { raceOf } from './races';
 import { CHEATS } from './cheats';
 import { FIGHT_JOBS, jobOf, jobsFor, jobWeight, JOBS, type JobDef } from './jobs';
@@ -345,7 +345,9 @@ function drift(h: Hero): void {
   econYear(h); // お金の1年 (職の稼ぎ・依頼・懸賞金・領地・利息・取り立て・遺産)。暮らし向きはお金から決まる
   s.happy += (55 - s.happy) * 0.05;
   // 子どもの能力が育つ: 生まれ持った値のうち、今年ぶん新たに出た割合を足す。出来事で伸びた分はそのまま残し、上限で抑える (mortality.ts)
-  for (const k of AGE_CAPPED) {
+  // 育ちきった後 (人間換算18歳から、出ている割合がどれも1) は何もしない。上限 100 は次の行で抑える
+  const gr = h.grown?.g;
+  if (e < GROWN_AT || (gr && (gr.power < 1 || gr.mind < 1 || gr.charm < 1))) for (const k of AGE_CAPPED) {
     const g = growFrac(growBase(h, k), e);
     if (h.grown && g > h.grown.g[k]) { s[k] += h.grown.pot[k] * (g - h.grown.g[k]); h.grown.g[k] = g; }
     s[k] = Math.min(s[k], 100 * g);

@@ -123,7 +123,7 @@ export function createHero(setup: Setup): Hero {
   const build = randomBuild(side, world, race, { traits: c.traits, points: c.points });
   for (const k of ALLOT_KEYS) stats[k] = clamp(grow(stats[k], (build.points[k] ?? 0) * POINT_STEP), 0, 100);
   // 魂に刻まれた技: この世界・種族で使えて、生まれ持ったものとぶつからないものだけ持っていく (乱数は引かない)
-  const ok = new Set(availableTraits(world, race).map((t) => t.id));
+  const ok = new Set(c.soul?.traits.length ? availableTraits(world, race).map((t) => t.id) : []);
   const inh = (c.soul?.traits ?? []).filter((id) => ok.has(id) && !build.traits.includes(id) && !build.traits.some((b) => traitOf(b)?.excl?.includes(id) || traitOf(id)?.excl?.includes(b)));
   const soulCheat = !cheat && c.soul?.cheat && availableCheats(world).some((x) => x.id === c.soul!.cheat) ? c.soul.cheat : undefined;
   const heroCheat = cheat ?? soulCheat ?? null;

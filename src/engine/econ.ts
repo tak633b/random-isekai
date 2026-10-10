@@ -24,18 +24,21 @@ const RANK_PAY = [0, 0.2, 0.5, 1, 1.6, 2.4, 3.5]; // ギルドのランク (F〜
 const moneyOf = (w: WorldId): WorldMoney => MONEY[w] ?? MONEY.medieval;
 const tx = ([ja, en]: [string, string]) => L(ja, en);
 
+// 桁区切り。toLocaleString は呼ぶたびに書式を作り直して重い (試行の自動の人生では、選択肢の文に毎年何度も出る)
+const NF_EN = new Intl.NumberFormat('en-US'), NF_JA = new Intl.NumberFormat('ja-JP');
+
 /** お金をその世界の言い方で (例: 3金貨25銀貨 / 5,000G / 借金 12両) */
 export function formatGold(w: WorldId, coins: number): string {
   const m = moneyOf(w);
   const v = Math.round(Math.abs(coins) * m.rate);
   const neg = coins < 0 ? L('借金 ', 'debt ') : '';
-  if (m.symbol) return `${neg}${v.toLocaleString('en-US')}${m.symbol}`;
-  if (w === 'modern') return `${neg}${isEn ? `${v.toLocaleString('en-US')} yen` : v >= 10000 ? `${Math.floor(v / 10000).toLocaleString('ja-JP')}万円` : `${v}円`}`;
+  if (m.symbol) return `${neg}${NF_EN.format(v)}${m.symbol}`;
+  if (w === 'modern') return `${neg}${isEn ? `${NF_EN.format(v)} yen` : v >= 10000 ? `${NF_JA.format(Math.floor(v / 10000))}万円` : `${v}円`}`;
   const parts: string[] = [];
   let rest = v;
   for (const [ja, en, unit] of m.coins) {
     const n = Math.floor(rest / unit);
-    if (n > 0 && parts.length < 2) { parts.push(isEn ? `${n.toLocaleString('en-US')} ${en}` : `${n.toLocaleString('ja-JP')}${ja}`); rest -= n * unit; }
+    if (n > 0 && parts.length < 2) { parts.push(isEn ? `${NF_EN.format(n)} ${en}` : `${NF_JA.format(n)}${ja}`); rest -= n * unit; }
   }
   return neg + (parts.join(isEn ? ', ' : '') || (isEn ? `0 ${m.coins.at(-1)?.[1] ?? ''}` : `0${m.coins.at(-1)?.[0] ?? ''}`));
 }
