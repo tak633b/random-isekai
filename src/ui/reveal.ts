@@ -10,6 +10,7 @@ import { itemName } from '../engine/transfer';
 import { screen } from './nav';
 import { esc } from './dom';
 import { isEn, L, T } from '../i18n';
+import { sfx } from './sfx';
 
 type Rarity = 'common' | 'rare' | 'legend' | 'curse';
 const RARITY: Record<Rarity, string> = {
@@ -151,7 +152,7 @@ export function showReveal(h: Hero, asked: Setup, done: () => void, back: () => 
     stage('rv-gift');
     if (tf) { show('rv-lang'); await wait(1500); }
     await spin('rv-cn', availableCheats(h.world).map((c) => T(c.name)), cheat ? T(cheat.name) : L('なし', 'None'), !a.cheat && !h.soul?.cheat, 1000);
-    show('rv-cd'); $('rv-cheat')?.classList.add('landed');
+    show('rv-cd'); $('rv-cheat')?.classList.add('landed'); if (cheat) sfx('gift');
     await wait(readMs(textOf('rv-cd')));
     if (h.blessing) { show('rv-bl'); await wait(1500); }
     for (let i = 0; i < traits.length && !over; i++) { show(`rv-t${i}`); await wait(900); }

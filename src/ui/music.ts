@@ -5,7 +5,7 @@ import type { Hero, WorldId } from '../engine/types';
 import { L } from '../i18n';
 import { load, save } from './dom';
 
-export type Track = 'title' | 'reveal' | 'village' | 'field' | 'dark' | 'wa' | 'xianxia' | 'steampunk' | 'scifi' | 'desert' | 'ocean' | 'battle' | 'death' | 'return';
+export type Track = 'title' | 'reveal' | 'village' | 'field' | 'dark' | 'wa' | 'xianxia' | 'steampunk' | 'scifi' | 'desert' | 'ocean' | 'battle' | 'crisis' | 'death' | 'return';
 
 export interface Credit { file: string; title: string; artist: string; url: string; license: string; licenseUrl: string }
 // 曲は OpenGameArt.org と Eric Skiff (ericskiff.com) から。ライセンスは各ページで確かめたもの
@@ -25,6 +25,7 @@ export const TRACKS: Record<Track, Credit> = {
   desert: { file: 'desert.mp3', title: 'The Eternal Sands', artist: 'HitCtrl', url: oga('fantasy-music-the-eternal-sands'), ...BY3 },
   ocean: { file: 'ocean.mp3', title: "A Sailor's Chant", artist: 'Thimras', url: oga('a-sailors-chant'), ...CC0 },
   battle: { file: 'battle.mp3', title: 'Battle Theme A', artist: 'cynicmusic', url: oga('battle-theme-a'), ...CC0 },
+  crisis: { file: 'crisis.mp3', title: 'Perpetual Tension', artist: 'Zander Noriega', url: oga('perpetual-tension'), ...BY3 },
   death: { file: 'death.mp3', title: "Lament for a Warrior's Soul", artist: 'RandomMind', url: oga('fantasy-lament-for-a-warriors-soul'), ...CC0 },
   return: { file: 'return.mp3', title: 'Lively Meadow (Victory Fanfare and Song)', artist: 'Matthew Pablo', url: oga('lively-meadow-victory-fanfare-and-song'), ...BY3 },
 };
@@ -43,7 +44,8 @@ export const RETRO: Record<Track, Credit> = {
   scifi: { file: 'scifi-retro.mp3', title: 'Underclocked (underunderclocked mix)', artist: 'Eric Skiff', url: 'https://ericskiff.com/music/', license: 'CC BY 4.0', licenseUrl: 'https://creativecommons.org/licenses/by/4.0/' },
   desert: { file: 'desert-retro.mp3', title: 'Desert Theme (8bit chiptune)', artist: 'Wolfgang_ (Ted Kerr)', url: oga('desert-theme-8bit-chiptune-theme'), ...CC0 },
   ocean: { file: 'ocean-retro.mp3', title: 'Mere Baubles (Sailing the Mysterious Seas)', artist: 'Spring Spring', url: oga('mere-baublessailing-the-mysterious-seas'), ...CC0 },
-  battle: { file: 'battle-retro.mp3', title: 'Danger', ...AV },
+  battle: { file: 'battle-retro.mp3', title: 'Barbarian King', ...AV },
+  crisis: { file: 'crisis-retro.mp3', title: 'Danger', ...AV },
   death: { file: 'death-retro.mp3', title: 'Game Over', ...AV },
   return: { file: 'return-retro.mp3', title: 'Victory', ...AV },
 };
@@ -64,9 +66,13 @@ let on = false;
 let vol = clampVol(load('musicVol', 35)); // 0〜100
 let want: Track = 'title';
 let battleAt = -Infinity;
+let crisis = false; // 死にかけの演出の間は、ほかの場面の曲に替えない
 let cur: { file: string; el: HTMLAudioElement; gain: GainNode } | null = null;
 let retro = Math.random() < 0.5; // 昔の RPG 風 (RETRO) で流すか。人生ごとに選び直す
 let blocked: string | null = null;
+let se = load<boolean>('sfx', true); // 効果音 (BGM を入れているときだけ鳴る)
+let seOut: GainNode | null = null;
+const SE_K = 1.3; // 効果音は曲より少し前に
 let started = false; // 前に入れていた人の音楽を、最初の操作で始めたか
 
 function fadeTo(g: GainNode, v: number): void {
@@ -103,7 +109,7 @@ function play(el: HTMLAudioElement, gain: GainNode): void {
 export const musicBlocked = (): string | null => blocked;
 // 画面に触れるたびに: 止まっている AudioContext と曲を起こす。前に入れていた人は、ここで鳴り始める
 function wake(e: Event): void {
-  if ((e.target as Element | null)?.closest?.('[data-music]')) return; // ♪ そのものは toggle が扱う
+  if ((e.target as Element | null)?.closest?.('[data-music], [data-sfx]')) return; // ♪ と SE そのものは toggle が扱う
   if (!on && load('music', false) && !started) { started = true; setMusic(true); return paintAll(); }
   started = true;
   if (!on || !ctx) return;
@@ -121,8 +127,15 @@ export function musicReveal(): void {
   retro = Math.random() < 0.5;
   musicScene('reveal');
 }
+/** 死にかけの演出 (ui/suspense.ts): 始まりで張りつめた曲へ。持ち直したら、その世界の曲へ戻す */
+export function musicCrisis(h: Hero, on: boolean): void {
+  crisis = on;
+  if (on) musicScene('crisis');
+  else musicScene(WORLD_TRACK[h.world.id]);
+}
 /** 一生の画面: この年に戦いがあれば戦いの曲、なければその世界の曲 */
 export function musicLife(h: Hero): void {
+  if (crisis) return;
   if (h.alive && h.log.some((e) => e.age === h.age && e.fight)) {
     battleAt = performance.now();
     musicScene('battle');
@@ -130,6 +143,7 @@ export function musicLife(h: Hero): void {
 }
 /** 最期の場面: 帰還なら帰還の曲 */
 export function musicEnd(h: Hero): void {
+  crisis = false;
   musicScene(h.death?.hazard === 'return' ? 'return' : 'death');
 }
 
@@ -157,11 +171,18 @@ export function setVolume(v: number): void {
   vol = clampVol(v);
   save('musicVol', vol);
   if (ctx && master) master.gain.setTargetAtTime(gainOf(vol), ctx.currentTime, 0.05);
+  if (ctx && seOut) seOut.gain.setTargetAtTime(gainOf(vol) * SE_K, ctx.currentTime, 0.05);
+}
+/** 効果音の出口 (ui/sfx.ts)。BGM を切っているか、効果音を切っていれば null */
+export function seOutput(): { ctx: AudioContext; out: GainNode } | null {
+  if (!on || !se || !ctx) return null;
+  if (!seOut) { seOut = ctx.createGain(); seOut.gain.value = gainOf(vol) * SE_K; seOut.connect(ctx.destination); }
+  return { ctx, out: seOut };
 }
 
 /** 音楽の ♪ BGM と音量 (タイトルと一生の画面に置く)。操作は initMusic がまとめて受ける */
 export function musicControl(): string {
-  return `<span class="musicctl"><button type="button" data-music aria-pressed="${on}" title="${on ? L('BGMを止める', 'Turn music off') : L('BGMを流す', 'Turn music on')}">♪ BGM</button><input type="range" class="musicvol" min="0" max="100" step="5" value="${vol}" aria-label="${L('BGMの音量', 'Music volume')}"${on ? '' : ' hidden'}></span>`;
+  return `<span class="musicctl"><button type="button" data-music aria-pressed="${on}" title="${on ? L('BGMを止める', 'Turn music off') : L('BGMを流す', 'Turn music on')}">♪ BGM</button><input type="range" class="musicvol" min="0" max="100" step="5" value="${vol}" aria-label="${L('BGMの音量', 'Music volume')}"${on ? '' : ' hidden'}><button type="button" data-sfx aria-pressed="${se}" title="${L('効果音', 'Sound effects')}"${on ? '' : ' hidden'}>SE</button></span>`;
 }
 function paintAll(): void {
   document.querySelectorAll<HTMLElement>('.musicctl').forEach((c) => { c.outerHTML = musicControl(); });
@@ -170,7 +191,14 @@ function paintAll(): void {
 /** 一度だけ呼ぶ。♪ の押下・音量・最初の操作 (前に入れていた人はここで鳴り始める) を受ける */
 export function initMusic(): void {
   document.addEventListener('click', (e) => {
-    if (!(e.target as Element | null)?.closest?.('[data-music]')) return;
+    const t = e.target as Element | null;
+    if (t?.closest?.('[data-sfx]')) {
+      se = !se;
+      save('sfx', se);
+      paintAll();
+      return document.querySelector<HTMLElement>('[data-sfx]')?.focus();
+    }
+    if (!t?.closest?.('[data-music]')) return;
     setMusic(!on);
     paintAll();
     document.querySelector<HTMLElement>('[data-music]')?.focus();

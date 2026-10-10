@@ -27,6 +27,7 @@ import { AFTER_CHOICE_SEC, SPEEDS, lifeSpan, loadPlay, savePlay, scaledMs, yearS
 import { screen, type Nav } from './nav';
 import { L, T } from '../i18n';
 import { musicControl, musicLife } from './music';
+import { sfx, sfxLife } from './sfx';
 
 // 途中の人生。1年進むたびに残し、亡くなったら消す
 const CURRENT = 'current';
@@ -145,7 +146,7 @@ export function showLife(h: Hero, nav: Nav, resumed = false): void {
   function yearChecks(): void {
     if (!h.alive) return;
     const t0 = performance.now();
-    for (const a of checkYear(h, isRandom(h))) toast(L(`実績「${T(a.name)}」`, `Achievement: ${T(a.name)}`), T(a.desc));
+    for (const a of checkYear(h, isRandom(h))) { toast(L(`実績「${T(a.name)}」`, `Achievement: ${T(a.name)}`), T(a.desc)); sfx('achieve'); }
     const ms = performance.now() - t0, app = document.getElementById('app')!;
     app.dataset.checkMs = ms.toFixed(2);
     app.dataset.checkMax = Math.max(Number(app.dataset.checkMax ?? 0), ms).toFixed(2);
@@ -314,6 +315,7 @@ export function showLife(h: Hero, nav: Nav, resumed = false): void {
     document.getElementById('wholine')!.textContent = `${genOf(h) > 1 ? `${genWord(genOf(h))}${L('・', ' · ')}` : ''}${h.name}${heq !== h.age ? L(`・人間でいえば${heq}歳`, ` · about ${heq} in human years`) : ''}${L(`・寿命の目安 ${Math.round(span)}年`, ` · lifespan about ${Math.round(span)}`)}`;
     controls();
     musicLife(h);
+    sfxLife(h, ff || play.speed >= 8);
     stage.show(h, { budgetMs: scaledMs(yearMs, play.speed, ff), fast: ff || play.speed >= 8 });
     const st = h.state;
     const chips = [st.war > 0 && L('戦争中', 'At war'), st.plague > 0 && L('大疫病', 'Plague'), st.famine > 0 && L('飢饉', 'Famine'), st.demonKing && L('魔王がいる', 'A Demon Lord reigns')].filter(Boolean) as string[];

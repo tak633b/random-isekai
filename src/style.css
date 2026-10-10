@@ -605,6 +605,6 @@ h1 .tickets, h2 .tickets, .tickets { font-family: var(--dot); color: var(--accen
 .topctl { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
 .topctl .langsw { margin-bottom: 0; }
 .musicctl { display: inline-flex; align-items: center; gap: 6px; }
-.musicctl [data-music] { padding: 3px 12px; font-size: 13px; min-height: 30px; }
-.musicctl [data-music][aria-pressed=true] { border-color: #9fd3ff; color: #cfe8ff; box-shadow: 0 0 10px rgba(140, 200, 255, .35); }
+.musicctl [data-music], .musicctl [data-sfx] { padding: 3px 12px; font-size: 13px; min-height: 30px; }
+.musicctl [data-music][aria-pressed=true], .musicctl [data-sfx][aria-pressed=true] { border-color: #9fd3ff; color: #cfe8ff; box-shadow: 0 0 10px rgba(140, 200, 255, .35); }
 .musicvol { width: 90px; padding: 0; accent-color: #9fd3ff; }

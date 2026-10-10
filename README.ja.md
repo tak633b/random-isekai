@@ -120,7 +120,7 @@ MIT
 
 ### 音楽
 
-人生ごとに、今風の曲と昔のRPG風(8ビット)の曲のどちらかで流れる。ライセンスは各曲のページで確かめた。`public/audio/` の曲は、短く切り、音量をそろえ、64〜72kbps にし、(もともとループする曲以外は)頭と終わりをフェードしている。
+効果音はブラウザの中で合成している(音声ファイルは使わない)。人生ごとに、今風の曲と昔のRPG風(8ビット)の曲のどちらかで流れる。ライセンスは各曲のページで確かめた。`public/audio/` の曲は、短く切り、音量をそろえ、64〜72kbps にし、(もともとループする曲以外は)頭と終わりをフェードしている。
 
 今風:
 
@@ -136,6 +136,7 @@ MIT
 - "The Eternal Sands" HitCtrl ([OpenGameArt](https://opengameart.org/content/fantasy-music-the-eternal-sands))、[CC BY 3.0](https://creativecommons.org/licenses/by/3.0/)、砂漠の世界
 - "A Sailor's Chant" Thimras ([OpenGameArt](https://opengameart.org/content/a-sailors-chant))、[CC0](https://creativecommons.org/publicdomain/zero/1.0/)、海の世界
 - "Battle Theme A" cynicmusic ([OpenGameArt](https://opengameart.org/content/battle-theme-a))、[CC0](https://creativecommons.org/publicdomain/zero/1.0/)、戦い
+- "Perpetual Tension" Zander Noriega ([OpenGameArt](https://opengameart.org/content/perpetual-tension))、[CC BY 3.0](https://creativecommons.org/licenses/by/3.0/)、死にかけた場面
 - "Lament for a Warrior's Soul" RandomMind ([OpenGameArt](https://opengameart.org/content/fantasy-lament-for-a-warriors-soul))、[CC0](https://creativecommons.org/publicdomain/zero/1.0/)、最期
 - "Lively Meadow (Victory Fanfare and Song)" Matthew Pablo ([OpenGameArt](https://opengameart.org/content/lively-meadow-victory-fanfare-and-song))、[CC BY 3.0](https://creativecommons.org/licenses/by/3.0/)、帰還
 
@@ -152,6 +153,7 @@ MIT
 - "Underclocked (underunderclocked mix)" Eric Skiff ([Eric Skiff](https://ericskiff.com/music/))、[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)、サイバーパンク・宇宙の世界
 - "Desert Theme (8bit chiptune)" Wolfgang_ (Ted Kerr) ([OpenGameArt](https://opengameart.org/content/desert-theme-8bit-chiptune-theme))、[CC0](https://creativecommons.org/publicdomain/zero/1.0/)、砂漠の世界
 - "Mere Baubles (Sailing the Mysterious Seas)" Spring Spring ([OpenGameArt](https://opengameart.org/content/mere-baublessailing-the-mysterious-seas))、[CC0](https://creativecommons.org/publicdomain/zero/1.0/)、海の世界
-- "Danger" AVGVSTA ([OpenGameArt](https://opengameart.org/content/generic-8-bit-jrpg-soundtrack))、[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)、戦い
+- "Barbarian King" AVGVSTA ([OpenGameArt](https://opengameart.org/content/generic-8-bit-jrpg-soundtrack))、[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)、戦い
+- "Danger" AVGVSTA ([OpenGameArt](https://opengameart.org/content/generic-8-bit-jrpg-soundtrack))、[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)、死にかけた場面
 - "Game Over" AVGVSTA ([OpenGameArt](https://opengameart.org/content/generic-8-bit-jrpg-soundtrack))、[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)、最期
 - "Victory" AVGVSTA ([OpenGameArt](https://opengameart.org/content/generic-8-bit-jrpg-soundtrack))、[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)、帰還

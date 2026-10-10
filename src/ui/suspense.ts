@@ -3,6 +3,8 @@
 import type { Hazard, Hero } from '../engine/types';
 import { hpOf } from '../meta/sheet';
 import { L } from '../i18n';
+import { musicCrisis } from './music';
+import { sfx } from './sfx';
 
 // 死因ごとの、迫ってくる三つの拍
 const BEATS: Partial<Record<Hazard, [string, string][]>> = {
@@ -43,6 +45,8 @@ export function playSuspense(h: Hero, hz: Hazard, survive: boolean): Promise<voi
   setHp(from);
   let done = false;
   const timers: number[] = [];
+  musicCrisis(h, true); // 張りつめた曲へ (持ち直したら、その世界の曲へ戻す)
+  sfx('alarm');
   playing = new Promise<void>((ok) => {
     const finish = () => {
       if (done) return;
@@ -50,6 +54,7 @@ export function playSuspense(h: Hero, hz: Hazard, survive: boolean): Promise<voi
       timers.forEach(clearTimeout);
       document.removeEventListener('keydown', key);
       el.classList.add('out');
+      if (survive) musicCrisis(h, false);
       setTimeout(() => { el.remove(); playing = null; ok(); }, quick ? 0 : 400);
     };
     const key = (e: KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ' || e.key === 'Escape') { e.preventDefault(); finish(); } };
@@ -59,17 +64,19 @@ export function playSuspense(h: Hero, hz: Hazard, survive: boolean): Promise<voi
     // 三つの拍で、HP が少しずつ減っていく (ここまでは助かる時も倒れる時も同じ)
     beats.forEach(([ja, en], i) => at(300 + i * 1100, () => {
       $('spbeat').textContent = L(ja, en);
+      sfx('heart');
       el.style.setProperty('--rate', `${0.9 - i * 0.2}s`);
       setHp(from * (1 - (i + 1) * 0.28));
     }));
     at(300 + 3 * 1100, () => {
       if (survive) {
         setHp(max * 0.06);
-        at(500, () => { el.classList.add('saved'); setHp(max * 0.22); $('spend').textContent = L('……生きてる。', '...Still alive.'); });
+        at(500, () => { el.classList.add('saved'); setHp(max * 0.22); $('spend').textContent = L('……生きてる。', '...Still alive.'); sfx('saved'); });
         at(2400, finish);
       } else {
         setHp(0);
         el.classList.add('fall');
+        sfx('fall');
         $('spend').textContent = L('……', '...');
         at(1800, finish);
       }

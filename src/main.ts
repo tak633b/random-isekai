@@ -26,6 +26,7 @@ import { toast } from './ui/toast';
 import { accountClick, accountHTML, paintAccount } from './ui/account';
 import { accountEnabled, initAccount } from './net/account';
 import { initMusic, musicControl, musicEnd, musicLife, musicReveal, musicScene } from './ui/music';
+import { sfx } from './ui/sfx';
 
 document.documentElement.lang = lang;
 if (isEn) {
@@ -46,7 +47,7 @@ const nav: Nav = {
     showReveal(h, a, () => showArrival(h, a, nav), random ? title : nav.setup);
   },
   life: (h, resumed) => showLife(h, nav, resumed),
-  death: (h) => { musicEnd(h); showFinale(h, () => showDeath(h, nav)); }, // 最期の場面のあとに死亡記録
+  death: (h) => { musicEnd(h); sfx(h.death?.hazard === 'return' ? 'portal' : 'soul'); showFinale(h, () => showDeath(h, nav)); }, // 最期の場面のあとに死亡記録
   trials: (setup) => showTrials(setup, nav),
   past: (focus) => showPast(nav, focus),
   handover: (prev, h) => { musicLife(h); showHandover(prev, h, nav); },
