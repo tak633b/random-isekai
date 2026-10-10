@@ -5,7 +5,7 @@ import type { Hero, Status } from '../engine/types';
 import { seOutput } from './music';
 
 export type Sfx =
-  | 'encounter' | 'slash' | 'magic' | 'victory' | 'hurt' | 'flee'
+  | 'encounter' | 'slash' | 'magic' | 'strike' | 'defeat' | 'victory' | 'hurt' | 'flee'
   | 'levelup' | 'statup' | 'skill' | 'coin' | 'rank' | 'achieve' | 'climb'
   | 'alarm' | 'heart' | 'saved' | 'fall' | 'soul' | 'portal' | 'gift';
 
@@ -18,6 +18,8 @@ export const SOUNDS: Record<Sfx, Note[]> = {
   encounter: arp([72, 76, 79, 84, 79, 84], 0.05, 0.06),
   slash: [[0, 0.09, [3000, 600], 'noise', 0.35], [0.11, 0.08, [2500, 500], 'noise', 0.3]],
   magic: [[0, 0.35, [400, 1800], 'triangle', 0.3], ...arp([88, 91, 96], 0.07, 0.12, 'triangle', 0.15).map((x): Note => [x[0] + 0.2, x[1], x[2], x[3], x[4]])],
+  strike: [[0, 0.12, [900, 200], 'noise', 0.3], [0, 0.1, [180, 90], 'square', 0.15]],
+  defeat: [[0, 0.18, [2000, 200], 'noise', 0.35], [0.05, 0.3, [400, 60], 'square', 0.2]],
   victory: [...arp([67, 67, 67], 0.1, 0.08), [0.32, 0.5, n(72), 'square', 0.25], [0.32, 0.5, n(64), 'triangle', 0.25]],
   hurt: [[0, 0.22, [320, 90], 'square', 0.3], [0, 0.12, [1500, 300], 'noise', 0.2]],
   flee: arp([79, 74, 71, 67], 0.05, 0.07, 'triangle', 0.25),
@@ -40,11 +42,15 @@ export const SOUNDS: Record<Sfx, Note[]> = {
 let noiseBuf: AudioBuffer | null = null;
 /** 鳴らした音の名前 (確かめる用。新しいものが後ろ、20件まで) */
 export const played: Sfx[] = [];
+/** 鳴らした音と時刻 (performance.now、確かめる用。20件まで) */
+export const playLog: [Sfx, number][] = [];
 
 /** 1つ鳴らす。BGM か SE が切ってあれば何もしない (名前だけ played に残す) */
-export function sfx(name: Sfx): void {
+export function sfx(name: Sfx, k = 1): void {
   played.push(name);
   if (played.length > 20) played.shift();
+  playLog.push([name, Math.round(performance.now())]);
+  if (playLog.length > 20) playLog.shift();
   const o = seOutput();
   if (!o) return;
   const { ctx, out } = o;
@@ -53,7 +59,7 @@ export function sfx(name: Sfx): void {
     const g = ctx.createGain();
     const s = t0 + at;
     g.gain.setValueAtTime(0.0001, s);
-    g.gain.exponentialRampToValueAtTime(v, s + 0.01);
+    g.gain.exponentialRampToValueAtTime(Math.max(0.0002, v * k), s + 0.01);
     g.gain.exponentialRampToValueAtTime(0.0001, s + len);
     g.connect(out);
     const [f0, f1] = typeof f === 'number' ? [f, f] : f;
@@ -108,11 +114,7 @@ export function pickSfx(a: Snap, b: Snap): Pick | null {
   if (b.standing > a.standing) return { seq: ['climb'], big: true };
   if (b.rank > a.rank && a.rank >= 0) return { seq: ['rank'], big: true };
   const fight = h.log.slice(a.logLen).reverse().find((e) => e.fight)?.fight;
-  if (fight) {
-    const hit: Sfx = h.stats.mind > h.stats.power ? 'magic' : 'slash';
-    const end: Sfx = fight.result === 'win' ? 'victory' : fight.result === 'flee' ? 'flee' : 'hurt';
-    return { seq: ['encounter', hit, end], big: fight.result === 'lose' };
-  }
+  if (fight) return { seq: [], big: false }; // 戦いの音は場面の動きに合わせて鳴らす (ui/stage.ts → fightSfx)。この年はほかの音を鳴らさない
   // レベルが表に出る世界では毎回、ほかの世界では5の区切りを越えたときだけ
   if (b.level > a.level && (h.world.tags.includes('gamey') || Math.floor(b.level / 5) > Math.floor(a.level / 5))) return { seq: ['levelup'], big: false };
   if (b.learned > a.learned) return { seq: ['skill'], big: false };
@@ -135,4 +137,23 @@ export function sfxLife(h: Hero, fast: boolean): void {
   if (!allowed(p, fast, now, lastRoutine)) return;
   if (!p.big) lastRoutine = now;
   sfxSeq(p.seq, 260);
+}
+
+// ---- 戦いの場面 (ui/stage.ts): 動きの区切りごとに鳴らす ----
+// 区切り: -1 敵が来る / 0・2 こちらが打つ / 1・3 敵が打つ / 4 結果。打ち合いは4回だけなので、鳴りっぱなしにならない
+export type FightPhase = -2 | -1 | 0 | 1 | 2 | 3 | 4;
+export const FIGHT_HIT_K = 0.6; // 打ち合いの音は小さめ
+/** 区切り from から to へ進んだときの音。いくつも飛び越えたら最後の区切りの音だけ */
+export function fightSfx(from: FightPhase, to: FightPhase, result: 'win' | 'hurt' | 'flee' | 'lose', magic: boolean): Sfx[] {
+  if (to <= from) return [];
+  if (to === -1) return ['encounter'];
+  if (to === 0 || to === 2) return [magic ? 'magic' : 'slash'];
+  if (to === 1) return ['strike'];
+  if (to === 3) return [result === 'hurt' || result === 'lose' ? 'hurt' : 'strike'];
+  if (to === 4) return result === 'win' || result === 'hurt' ? ['defeat', 'victory'] : result === 'flee' ? ['flee'] : [];
+  return [];
+}
+/** 戦いの場面から呼ぶ。結果の音はふつうの大きさ、打ち合いは小さめ */
+export function playFight(names: Sfx[]): void {
+  names.forEach((n, i) => setTimeout(() => sfx(n, n === 'victory' || n === 'encounter' ? 1 : FIGHT_HIT_K), i * 220));
 }

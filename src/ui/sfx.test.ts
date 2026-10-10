@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { advanceYear, createHero } from '../engine';
-import { ROUTINE_GAP_MS, SOUNDS, allowed, pickSfx, snap } from './sfx';
+import { ROUTINE_GAP_MS, SOUNDS, allowed, fightSfx, pickSfx, snap, type FightPhase } from './sfx';
 
 const hero = (seed = 8) => createHero({ seed, world: { preset: 'medieval' }, hero: { cheat: 'none' }, auto: true });
 
@@ -18,7 +18,7 @@ describe('効果音', () => {
     h.gold = (h.gold ?? 0) + 1000;
     expect(pickSfx(a, snap(h))).toEqual({ seq: ['levelup'], big: false });
     h.log.push({ age: h.age, text: '', kind: 'battle', fight: { foe: 'monster', result: 'win' } });
-    expect(pickSfx(a, snap(h))?.seq).toEqual(['encounter', h.stats.mind > h.stats.power ? 'magic' : 'slash', 'victory']);
+    expect(pickSfx(a, snap(h))).toEqual({ seq: [], big: false }); // 戦いの音は場面 (stage.ts) が鳴らす。この年はほかの音を止める
     h.standing = 'royal';
     expect(pickSfx(a, snap(h))).toEqual({ seq: ['climb'], big: true });
   });
@@ -46,13 +46,32 @@ describe('効果音', () => {
     expect(allowed(big, true, 10_000, 9_999)).toBe(true);
   });
   it('ふつうに一生を進めると、何かしらの音が選ばれる年がある', () => {
-    const h = hero(8); // 60歳まで生きる人生 (測って選んだ)
-    let n = 0;
-    for (let i = 0; i < 60 && h.alive; i++) {
-      const a = snap(h);
-      advanceYear(h);
-      if (h.alive && pickSfx(a, snap(h))) n++;
+    // 40歳まで生きる人生を探す (シードを決め打ちしない。エンジンが変わっても通るように)
+    let n = 0, lived = 0;
+    for (let seed = 1; seed <= 200 && lived < 40; seed++) {
+      const h = hero(seed);
+      n = 0;
+      for (let i = 0; i < 60 && h.alive; i++) {
+        const a = snap(h);
+        advanceYear(h);
+        if (h.alive && pickSfx(a, snap(h))) n++;
+      }
+      lived = h.age;
     }
+    expect(lived).toBeGreaterThanOrEqual(40);
     expect(n).toBeGreaterThan(0);
+  });
+  it('戦いの場面: 区切りごとに1つずつ、打ち合いは4回で止まる', () => {
+    const run = (result: 'win' | 'hurt' | 'flee' | 'lose', magic = false) => {
+      const out: string[] = [];
+      let at: FightPhase = -2;
+      for (const ph of [-1, -1, 0, 0, 1, 2, 3, 3, 4, 4, 4] as FightPhase[]) { out.push(...fightSfx(at, ph, result, magic)); at = ph > at ? ph : at; }
+      return out;
+    };
+    expect(run('win')).toEqual(['encounter', 'slash', 'strike', 'slash', 'strike', 'defeat', 'victory']);
+    expect(run('hurt', true)).toEqual(['encounter', 'magic', 'strike', 'magic', 'hurt', 'defeat', 'victory']);
+    expect(run('flee').at(-1)).toBe('flee');
+    expect(run('lose')).toEqual(['encounter', 'slash', 'strike', 'slash', 'hurt']); // 倒れたあとは死にかけの演出が鳴らす
+    expect(fightSfx(-1, 4, 'win', false)).toEqual(['defeat', 'victory']); // 飛び越えたら最後の区切りだけ
   });
 });

@@ -9,6 +9,7 @@ import { ENEMY_H, enemyFor, paintEnemy, type EnemyPose, type EnemySpec } from '.
 import { castOf, fit, heroFigure } from './pixel';
 import { hash, Pix } from './raster';
 import { L } from '../i18n';
+import { fightSfx, playFight, type FightPhase } from './sfx';
 
 const FRAME_MS = 100;        // 10fps
 // 戦いの演出: 1×で5秒。ただしその年の時間 (速さで割った後) の 85% に収め、年を待たせない
@@ -84,6 +85,8 @@ export class Stage {
   private foe: EnemySpec | null = null;
   private mode: Mode = 'full';
   private fightMs = FIGHT_MS;
+  private phase: FightPhase = -2; // 戦いの音を鳴らした区切り (sfx.ts の fightSfx)
+  private magic = false;          // 主人公が魔法で打つか (知恵が強さより上)
   private key = '';
   private clock = 0;           // その年の演出の経過 (止まっているあいだは進まない)
   private tick = 0;
@@ -147,6 +150,10 @@ export class Stage {
     const room = o.budgetMs * FIGHT_SHARE;
     this.mode = !fight ? 'full' : o.fast ? 'skip' : this.reduced || room < FIGHT_MIN_MS ? 'key' : 'full';
     this.fightMs = Math.min(FIGHT_MS, room);
+    this.phase = -2;
+    this.magic = h.stats.mind > h.stats.power;
+    // 動きを1コマに縮めたときは、結果の音だけ
+    if (fight && this.mode === 'key') playFight(fightSfx(3, 4, fight.result, this.magic));
     if (o.fast) this.joining.clear();
     const names = [...this.joining].map((id) => h.people.find((t: Tie) => t.id === id)?.name).filter(Boolean) as string[];
     const lines = [...names.map((n) => L(`${n}が仲間になった`, `${n} joined you`)),
@@ -255,6 +262,10 @@ export class Stage {
     const ours = beat === 0 || beat === 2, theirs = beat === 1 || beat === 3;
     const blink = (this.tick & 1) === 0;
     const fleeDx = f?.result === 'flee' && end ? -lerp(0, 90, (p - 0.6) / 0.4) : 0;
+    if (f && mode === 'full' && !this.paused) {
+      const ph: FightPhase = end ? 4 : beat >= 0 ? (beat as FightPhase) : -1;
+      if (ph > this.phase) { playFight(fightSfx(this.phase, ph, f.result, this.magic)); this.phase = ph; }
+    }
 
     for (const a of this.actors) {
       let x = this.xOf(a), pose: Pose = 'idle', frame = Math.floor(tick / 2) + a.phase;
