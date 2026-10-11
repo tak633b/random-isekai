@@ -251,8 +251,11 @@ function adultLife(h: Hero, e: number): void {
   }
   // 子 (結婚していて、人間換算 16〜45歳)。女性の主人公は翌年に産む (その年の出産の危険を受ける)
   // 子: 産む側 (主人公か連れ合いの女性) が人間換算45歳まで (anchor.ts の canBear)
+  // 子が増えるほど授かりにくく (1人目は fertility × 0.7、5人目はその4割ほど)、前の子から2年はあける。不死の体で連れ合いを替えながら百人の子、を避ける
   const sp = byRole(h, 'spouse');
-  if (sp && !familyFixed(h) && h.flags.pregnant === undefined && canBear(h) && h.rng() < raceOf(h.race).fertility * 0.7 * traitFertility(h)) {
+  const kids = h.people.filter((t) => t.role === 'child').length;
+  const spaced = h.flags.lastBirth === undefined || h.age - h.flags.lastBirth >= 2;
+  if (sp && !familyFixed(h) && h.flags.pregnant === undefined && spaced && canBear(h) && h.rng() < (raceOf(h.race).fertility * 0.7 * traitFertility(h)) / (1 + 0.4 * kids)) {
     if (h.sex === 'F') h.flags.pregnant = h.age;
     else born(h, sp);
   }
@@ -261,6 +264,7 @@ function adultLife(h: Hero, e: number): void {
 // 子が生まれる。男性の主人公なら、母 (連れ合い) が出産の危険を受ける
 function born(h: Hero, mother?: Tie): void {
   const c = newTie(h, 'child');
+  h.flags.lastBirth = h.age;
   const sp = byRole(h, 'spouse');
   shared(h, sp && sp !== c ? [c, sp] : [c], L(`子の${c.name}が生まれた。`, `A ${c.sex === 'F' ? 'daughter' : 'son'}, ${c.name}, was born.`), 'family', 0, true).join = [c.id];
   bump(h, { happy: 8 });

@@ -160,7 +160,9 @@ export function moneyDue(h: Hero): void {
     h.money = { ...h.money, lent: undefined };
     const t = tieOf(h, ln.tie);
     const nm = t?.name ?? L('あの人', 'they');
-    if (ln.out === 'repay') { addGold(h, ln.amt * 1.2); log(h, L(`${nm}が、礼を添えて ${g(h, ln.amt * 1.2)} を返しに来た。`, `${nm} came to repay ${g(h, ln.amt * 1.2)}, with thanks.`), 'love', false, t ? [t.id] : undefined); }
+    // 返す前に亡くなった・輪を離れた人からは戻らない (亡くなった人が返しに来ないように)
+    if (!t || !t.alive || t.until !== undefined) { if (t && !t.alive) log(h, L(`${nm}に貸した ${g(h, ln.amt)} は、戻らないままになった。`, `The ${g(h, ln.amt)} lent to ${nm} was never coming back.`), 'loss'); }
+    else if (ln.out === 'repay') { addGold(h, ln.amt * 1.2); log(h, L(`${nm}が、礼を添えて ${g(h, ln.amt * 1.2)} を返しに来た。`, `${nm} came to repay ${g(h, ln.amt * 1.2)}, with thanks.`), 'love', false, t ? [t.id] : undefined); }
     else if (ln.out === 'part') { addGold(h, ln.amt * 0.4); log(h, L(`${nm}は、半分も返せないと詫びた。${g(h, ln.amt * 0.4)} だけ受け取った。`, `${nm} apologized, unable to repay even half. {name} took ${g(h, ln.amt * 0.4)}.`).replace('{name}', h.given), 'hard', false, t ? [t.id] : undefined); }
     else if (t && t.alive) { t.until = h.age; t.bond = Math.max(0, t.bond - 30); const e = log(h, L(`${nm}は、借りた金を返さないまま町から姿を消した。`, `${nm} vanished from town without repaying a coin.`), 'loss', true, [t.id]); e.leave = [t.id]; }
   }
