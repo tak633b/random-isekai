@@ -34,3 +34,6 @@ battle-retro.mp3  "Barbarian King" by AVGVSTA  CC BY 4.0  https://opengameart.or
 crisis-retro.mp3  "Danger" by AVGVSTA  CC BY 4.0  https://opengameart.org/content/generic-8-bit-jrpg-soundtrack
 death-retro.mp3  "Game Over" by AVGVSTA  CC BY 4.0  https://opengameart.org/content/generic-8-bit-jrpg-soundtrack
 return-retro.mp3  "Victory" by AVGVSTA  CC BY 4.0  https://opengameart.org/content/generic-8-bit-jrpg-soundtrack
+
+Sound effect (not covered by the repository's MIT license)
+se/slash.mp3  効果音：Springin' Sound Stock (Shikumi Design Inc.)  https://www.springin.org/sound-stock/  Shortened to 0.2 s and normalized. Copyright is retained by Shikumi Design Inc.; redistribution as a standalone asset is prohibited by its terms: https://www.springin.org/sound-stock/guideline/

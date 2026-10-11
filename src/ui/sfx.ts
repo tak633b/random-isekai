@@ -1,4 +1,5 @@
-// 効果音。音源ファイルは持たず、WebAudio の矩形波・三角波・雑音で昔の RPG 風に作る (ライセンスの心配がない)。
+// 効果音。ほとんどは音源ファイルを持たず、WebAudio の矩形波・三角波・雑音で昔の RPG 風に作る。
+// こちらの攻撃が当たる音だけは録った音 (SAMPLES、Springin' Sound Stock。public/audio/CREDITS.txt)。読み込むまでは合成の音で鳴らす。
 // 鳴るのは BGM と SE を入れているときだけ (music.ts の seOutput)。音量は BGM のつまみに合わせる。
 // 一生の画面では、毎年の変化を前の年と比べて1つだけ選ぶ。ふだんの音は続けて鳴らさず、8倍速以上では鳴らさない。大きな場面はいつも鳴らす
 import type { Hero, Status } from '../engine/types';
@@ -40,6 +41,18 @@ export const SOUNDS: Record<Sfx, Note[]> = {
   gift: arp([84, 88, 91, 96, 91, 96], 0.06, 0.4, 'triangle', 0.22),
 };
 
+// 録った音: [ファイル (public/audio/ から), 大きさ]
+const SAMPLES: Partial<Record<Sfx, [string, number]>> = { slash: ['se/slash.mp3', 0.45] };
+const bufs = new Map<string, AudioBuffer | 'loading' | 'failed'>();
+function loadSamples(ctx: AudioContext): void {
+  for (const [file] of Object.values(SAMPLES) as [string, number][]) {
+    if (bufs.has(file)) continue;
+    bufs.set(file, 'loading');
+    fetch(`${import.meta.env.BASE_URL}audio/${file}`).then((r) => r.arrayBuffer()).then((a) => ctx.decodeAudioData(a))
+      .then((b) => { bufs.set(file, b); }, () => { bufs.set(file, 'failed'); }); // 読めなければ合成の音のまま
+  }
+}
+
 let noiseBuf: AudioBuffer | null = null;
 /** 鳴らした音の名前 (確かめる用。新しいものが後ろ、20件まで) */
 export const played: Sfx[] = [];
@@ -55,7 +68,18 @@ export function sfx(name: Sfx, k = 1): void {
   const o = seOutput();
   if (!o) return;
   const { ctx, out } = o;
+  loadSamples(ctx);
   const t0 = ctx.currentTime + 0.02;
+  const sample = SAMPLES[name], buf = sample && bufs.get(sample[0]);
+  if (sample && buf instanceof AudioBuffer) {
+    const g = ctx.createGain();
+    g.gain.value = sample[1] * k;
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    src.connect(g).connect(out);
+    src.start(t0);
+    return;
+  }
   for (const [at, len, f, w, v] of SOUNDS[name]) {
     const g = ctx.createGain();
     const s = t0 + at;

@@ -114,11 +114,11 @@ The game is built from common isekai tropes. It does not use the settings, names
 
 ## License
 
-MIT
+MIT (code). Music and sound files in `public/audio/` are not covered by MIT; each follows its own license.
 
 ### Music
 
-Sound effects are synthesized in the browser (no audio files). Each life plays either the modern set or the retro (8-bit) set. Licenses were checked on each track's page. Files in `public/audio/` are shortened, loudness-normalized, re-encoded at 64–72 kbps and (except native loops) faded at both ends.
+Sound effects are synthesized in the browser, except the player's hit sound (`public/audio/se/slash.mp3`), a shortened sound from [Springin' Sound Stock](https://www.springin.org/sound-stock/) (copyright Shikumi Design Inc.; redistribution as a standalone asset is not allowed). Each life plays either the modern set or the retro (8-bit) set. Licenses were checked on each track's page. Files in `public/audio/` are shortened, loudness-normalized, re-encoded at 64–72 kbps and (except native loops) faded at both ends.
 
 Modern set:
 
