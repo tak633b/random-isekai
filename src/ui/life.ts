@@ -68,6 +68,7 @@ export function showLife(h: Hero, nav: Nav, resumed = false): void {
       <button data-act="pause" id="pausebtn"></button>
       <span class="speeds" role="group" aria-label="${L('速さ', 'Speed')}">${SPEEDS.map((v) => `<button data-act="speed" data-v="${v}" aria-pressed="false">${v}×</button>`).join('')}</span>
       <button data-act="ff" id="ffbtn" title="${L('選択が来るまで早送り', 'Fast-forward to the next choice')}">${L('次の選択まで', 'Next choice')}</button>
+      <button data-act="bg" id="bgbtn" aria-pressed="false" title="${L('ONなら別のタブに移っても進み続ける (選択が来たら止まる。自動で決めるなら止まらない)', 'When on, keeps going in a background tab (stops at choices unless auto-choose is on)')}">${L('裏でも進める', 'Run in background')}</button>
       <button data-act="auto" id="autobtn" aria-pressed="false" title="${L('ONなら選択で止まらず、作戦に合わせて選ぶ', 'When on, choices are made by your tactics without stopping')}">${L('自動で決める', 'Auto-choose')}</button>
       <label class="tactic" title="${L('冒険と戦いの起きやすさ・戦いの危うさ・自動で選ぶときの選び方がゆるく変わる', 'Loosely shifts how often adventure and fights come, how dangerous fights are, and automatic choices')}">${L('作戦', 'Tactics')} <select id="tactic">${TACTICS.map((p) => `<option value="${p}"${p === h.policy ? ' selected' : ''}>${TACTIC_NAME[p]}</option>`).join('')}</select></label>
       ${musicControl()}
@@ -110,6 +111,7 @@ export function showLife(h: Hero, nav: Nav, resumed = false): void {
       case 'speed': play.speed = Number(b.dataset.v); ff = false; break;
       case 'ff': ff = true; play.paused = false; break;
       case 'auto': h.auto = !h.auto; break;
+      case 'bg': play.bg = !play.bg; savePlay(play); break;
       case 'y1': step(1); yearChecks(); break;
       case 'y10': step(10); yearChecks(); break;
       case 'end': liveOut(h); break;
@@ -178,14 +180,15 @@ export function showLife(h: Hero, nav: Nav, resumed = false): void {
 
   function frame(t: number): void {
     if (!onScreen()) return;
-    const dt = Math.min(250, t - last);
+    // 裏で回すタイマーはブラウザに間引かれる (1秒〜1分おき) ので、そのあいだの時間をまとめて進める
+    const dt = Math.min(document.hidden ? 60_000 : 250, t - last);
     last = t;
     const waiting = h.pending.length > 0 && !h.auto;
-    if (!play.paused && !waiting && h.alive && !document.hidden && !suspended) {
+    if (!play.paused && !waiting && h.alive && (!document.hidden || play.bg) && !suspended) {
       progress += dt / scaledMs(yearMs, play.speed, ff);
       let n = 0;
       // 速いときは1フレームに何年か進め、描くのは最後に1回
-      while (progress >= 1 && n < 8 && h.alive) {
+      while (progress >= 1 && n < (document.hidden ? 200 : 8) && h.alive) {
         advanceYear(h);
         n++;
         newYear();
@@ -204,9 +207,11 @@ export function showLife(h: Hero, nav: Nav, resumed = false): void {
     if (bar) bar.style.width = `${Math.min(100, progress * 100).toFixed(1)}%`;
     raf = requestAnimationFrame(frame);
   }
-  const stop = () => { leaving = true; cancelAnimationFrame(raf); document.removeEventListener('visibilitychange', onVis); };
-  // タブが隠れているあいだは止まる (戻ったときに時間が飛ばないよう、基準の時刻を取り直す)
-  const onVis = () => { last = performance.now(); if (document.hidden) { persist(h); savePlay(play); } };
+  // タブが隠れると requestAnimationFrame が止まる。裏でも進めるときは、1秒ごとのタイマーで同じ frame を回す
+  const bgTimer = window.setInterval(() => { if (!onScreen()) return window.clearInterval(bgTimer); if (play.bg && document.hidden) { cancelAnimationFrame(raf); frame(performance.now()); } }, 1000);
+  const stop = () => { leaving = true; cancelAnimationFrame(raf); window.clearInterval(bgTimer); document.removeEventListener('visibilitychange', onVis); };
+  // タブが隠れているあいだは止まる (戻ったときに時間が飛ばないよう、基準の時刻を取り直す)。裏でも進めるときは取り直さない
+  const onVis = () => { if (!play.bg) last = performance.now(); if (document.hidden) { persist(h); savePlay(play); } };
   document.addEventListener('visibilitychange', onVis);
 
   let ending = false;
@@ -275,6 +280,9 @@ export function showLife(h: Hero, nav: Nav, resumed = false): void {
     pb.setAttribute('aria-pressed', String(play.paused));
     document.querySelectorAll<HTMLButtonElement>('[data-act=speed]').forEach((b) => { const on = Number(b.dataset.v) === play.speed && !ff; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); });
     document.getElementById('ffbtn')!.classList.toggle('on', ff);
+    const bb = document.getElementById('bgbtn')!;
+    bb.classList.toggle('on', play.bg);
+    bb.setAttribute('aria-pressed', String(play.bg));
     const ab = document.getElementById('autobtn')!;
     ab.classList.toggle('on', h.auto);
     ab.setAttribute('aria-pressed', String(h.auto));

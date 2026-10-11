@@ -60,11 +60,11 @@ export function yearSec(h: Hero, span: number, fightSec: number): number {
 
 // 速さで割った後の、1年にかける時間 (ミリ秒)
 export const scaledMs = (yearMs: number, speed: number, ff: boolean): number => (ff ? yearMs / FF_SPEED : Math.max(MIN_SCALED_SEC * 1000, yearMs / speed));
-// 再生の状態 (中断→続きからで戻す)。自動で決めるかは Hero.auto が持つ
-export interface PlayState { speed: number; paused: boolean }
+// 再生の状態 (中断→続きからで戻す)。自動で決めるかは Hero.auto が持つ。bg: 別のタブに移っても進める
+export interface PlayState { speed: number; paused: boolean; bg: boolean }
 const KEY = 'play';
 export function loadPlay(): PlayState {
   const p = load<Partial<PlayState>>(KEY, {});
-  return { speed: SPEEDS.includes(p.speed as 1) ? p.speed! : 1, paused: p.paused === true };
+  return { speed: SPEEDS.includes(p.speed as 1) ? p.speed! : 1, paused: p.paused === true, bg: p.bg === true };
 }
 export const savePlay = (p: PlayState): void => save(KEY, p);
