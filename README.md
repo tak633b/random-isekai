@@ -1,12 +1,24 @@
-# Random Isekai
+<p align="center"><img src="docs/images/hero-en.png" width="640" alt="Random Isekai title screen: a pixel-art castle at night"></p>
 
-English | [日本語](README.ja.md)
+<h1 align="center">Random Isekai</h1>
+
+<p align="center"><b>You don't get to choose which world you're reborn into, or as what.</b></p>
+
+<p align="center">
+  <a href="https://randomisekai.com"><b>▶ Play in your browser (randomisekai.com)</b></a><br>
+  English | <a href="README.ja.md">日本語</a>
+</p>
+
+<p align="center">
+  <img src="docs/images/battle-en.png" width="49%" alt="A fight">
+  <img src="docs/images/album.png" width="49%" alt="The memory album">
+</p>
 
 A browser game where you live one whole life in another world, a year at a time, until it ends. Pick one of 16 worlds (a sword-and-sorcery kingdom, a land of shrines and samurai, a cultivation continent, a steam-powered capital, a neon megacity, a star empire, modern Earth with dungeons, a post-collapse wasteland and more) or let everything be random. Whether you survive each year is a roll of the dice, and the odds come from the world's danger, your race's lifespan, the status you were born into, your job, your stats, your cheat skill and whatever happened that year.
 
 You can also live the same setup hundreds of times and see how long people actually last in that world.
 
-Play in your browser: https://tak633b.github.io/random-isekai/
+Play in your browser: https://randomisekai.com
 
 ![A life in progress: the scene with family and companions at the top, the timeline on the left, portrait, stats and people on the right](docs/images/life-en.png)
 
@@ -42,12 +54,37 @@ Each new life is one more generation. The death record, the memorial and the chr
 
 ![Continue as someone else: the heirs still alive at the hero's death, each with a button to go on as them](docs/images/continue-en.png)
 
+## Looking back on a life
+
+**A breather.** At 5, 15, 30, 50 and 70 (in human-equivalent years) the game pauses once and the hero's life asks you a question about your own. Write one line and it goes on the death record. You can skip it or turn the questions off. When the game is deciding for you, or at 4× or faster, it moves on after 7 seconds.
+
+<p align="center"><img src="docs/images/pause.png" width="560" alt="A breather at 30, asking what you let go of recently (Japanese UI)"></p>
+
+**The life map.** One square per year, colored by what that year held (adventure, battle, work, family, loss, illness, fame…). Faded squares are the years left until the expected lifespan. Click a square to jump to that year. It sits beside the life in progress and on the death record.
+
+**The memory album.** Up to 12 key years (rebirth, marriage, big battles, narrow escapes, rising in rank) are kept as pictures. Write a last word to the hero and you can save a 1080×1350 PNG card with the album and the map.
+
+<p align="center">
+  <img src="docs/images/lifemap.png" width="36%" alt="The life map, one colored square per year">
+  <img src="docs/images/share.png" width="40%" alt="The share card: portrait, age, four album pictures, the map and a last word">
+</p>
+
+**Crossroads of the age.** Wars, great plagues and the Demon Lord's reign bring choices that depend on who you are.
+
+- War: answer the draft, run, or pay a substitute
+- Plague: leave town, stay and nurse the sick, or bar the door
+- Demon Lord: join the resistance, serve the Demon Lord, flee abroad, or keep your head down (those who served are named once the Demon Lord falls)
+
+**Family, faith and crime.** Twins, taking in war orphans, an orphaned hero being adopted by a childless couple, and the anniversaries of siblings who died. Faith drifts under the world's own gods, sometimes ends in conversion, and can split you from your parents before you reconcile. A tavern duel or bread stolen in a famine year leaves a record that cuts guild promotion to a quarter for six years. Each child makes the next less likely, and they come at least two years apart.
+
+**The brink.** When a monster nearly kills you, a few seconds play out before your fate is known. Only if you don't make it does the hero fall and the soul rise.
+
 ## How it plays
 
 1. On the title screen, choose "Reborn at random" or "Choose your rebirth".
 2. In setup you can pick the world, how strong magic and special powers are, how dangerous and war-torn it is, and your race, sex, status, talent, cheat skill, how you arrive (reborn as a baby, awakened later, summoned, or a native with no past life), how much you remember, and your name. Anything you leave on "Random" is decided at birth.
 3. The arrival scene tells you how your last life ended and where you were born this time.
-4. Advance one year, ten years, or to the end. When a choice comes up, you make it. A panel shows what is most likely to kill you this year.
+4. Advance one year, ten years, or to the end. Turn on "Run in background" and the life keeps running when you switch tabs. When a choice comes up, you make it. A panel shows what is most likely to kill you this year.
 5. When you die you get a record: age, cause, a one-line "why" with the numbers behind it, who was with you at the end, the main events and the full timeline.
 6. "Run this setup many times" lives it again 100 or 1000 times and sums up the results.
 
