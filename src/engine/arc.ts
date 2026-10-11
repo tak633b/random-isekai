@@ -8,6 +8,7 @@ import type { Foe, GuildRank, Hero, JobId, LogEntry } from './types';
 import { FIGHT_JOBS, JOBS, jobsFor } from './jobs';
 import { jobHeld } from './anchor';
 import { tacticAdv } from './tactic';
+import { recordDrag } from './crossroads';
 import { bump, log } from './bonds';
 import { CHEATS } from './cheats';
 import { heqOf } from './mortality';
@@ -196,7 +197,8 @@ export function promote(h: Hero): void {
   if (i === 4 && (years < 6 || h.level < 25)) return;
   if (i === 5 && (years < 10 || h.level < 40 || (f(h, 'arc.deed') && f(h, 'dragonSlayer') && f(h, 'demonKingSlain')))) return;
   const top = i === 3 ? 0.28 : i === 4 ? 0.35 : i === 5 ? 0.65 : 1;
-  const p = Math.max(i >= 3 ? 0 : 0.02, (0.18 + (h.stats.power - 40) / 250) * boost * (i >= 3 ? 0.35 : 1) * (i >= 5 ? 0.3 : 1) * top * (i >= 3 ? tacticAdv(h) : 1));
+  // 前科があるうちは昇格しにくい (crossroads.ts。年月で消える)
+  const p = Math.max(i >= 3 ? 0 : 0.02, (0.18 + (h.stats.power - 40) / 250) * boost * (i >= 3 ? 0.35 : 1) * (i >= 5 ? 0.3 : 1) * top * (i >= 3 ? tacticAdv(h) : 1)) * recordDrag(h);
   if (h.rng() < p) {
     h.rank = RANKS[i + 1]; bump(h, { fame: 4 + i * 3, wealth: 3 });
     h.level = Math.max(h.level, RANK_LV[h.rank]);

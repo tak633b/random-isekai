@@ -2,7 +2,8 @@
 import { openSheet } from './sheet';
 import type { Hero } from '../engine/types';
 import { randomSeed } from '../engine';
-import { keep, recordHTML, toRecord } from './records';
+import { keep, lastWordHTML, recordHTML, toRecord, updateRecord } from './records';
+import { saveShareCard } from './album';
 import { paintAll } from './pixel';
 import { Stage } from './stage';
 import { chronicleHTML, nearestYear, openLife } from './lifeview';
@@ -50,6 +51,10 @@ export function showDeath(h: Hero, nav: Nav): void {
   screen(`
   <main class="page death">
     ${recordHTML(r)}
+    <section class="panel lastwordbox"><h2>${esc(L(`最後に、${h.given}へ`, `A last word for ${h.given}`))}</h2>
+      <p class="note">${L('一言だけ (任意・80字まで)。この記録と、保存する画像に残る。', 'Just a few words, if you like (up to 80 characters). They stay with this record and the saved image.')}</p>
+      <label class="field"><span class="vh">${L('最後の一言', 'A last word')}</span><input id="lastword" maxlength="80" placeholder="${L('おつかれさま、とか', 'Rest well, maybe')}"></label>
+      <div class="choices"><button data-go="lastword">${L('残す', 'Keep it')}</button><button data-go="share">${L('画像で残す (PNG)', 'Save as an image (PNG)')}</button><span class="note" id="lwmsg" role="status"></span></div></section>
     ${g.soul ? `<section class="panel soulnote"><p>${esc(L(`${soulNames(g.soul)}が魂に刻まれた。次の転生へ持っていける。`, `${soulNames(g.soul)} ${g.soul.traits.length + (g.soul.cheat ? 1 : 0) > 1 ? 'were' : 'was'} etched into the soul. It will carry into your next rebirth.`))}</p></section>` : ''}
     ${grantHTML(g, isRandom(h))}
     ${heirsHTML(h)}
@@ -86,6 +91,8 @@ export function showDeath(h: Hero, nav: Nav): void {
     if (go === 'new') { if (isUnlocked(CUSTOM)) nav.setup(); else nav.title(); }
     if (go === 'title') nav.title();
     if (go === 'sheet') openSheet(h);
+    if (go === 'lastword') return lastWord();
+    if (go === 'share') { const m = document.getElementById('lwmsg')!; m.textContent = L('作っています…', 'Making it…'); void saveShareCard(r).then((ok) => { m.textContent = ok ? L('画像を保存した。', 'Image saved.') : L('画像を作れなかった。', 'Could not make the image.'); }); return; }
     if (go === 'post') void post();
     const m = t.closest<HTMLElement>('[data-mem]')?.dataset.mem;
     if (m) nav.memorial(Number(m));
@@ -133,6 +140,16 @@ export function showDeath(h: Hero, nav: Nav): void {
         <div class="choices"><button data-go="post" id="postbtn">${L('追悼館に残す', 'Leave it in the memorial')}</button><span class="note" id="postmsg" role="status"></span></div>`
       : memorialOffHTML());
   });
+
+  // 最後の一言: 記録に足し、記録の中にも出す
+  function lastWord(): void {
+    const v = (document.getElementById('lastword') as HTMLInputElement).value.replace(/\s+/g, ' ').trim().slice(0, 80);
+    if (!v) return;
+    updateRecord(r, { lastWord: v });
+    app.querySelector('.record .lastword')?.remove();
+    app.querySelector('.record .cause')?.insertAdjacentHTML('afterend', lastWordHTML(v));
+    document.getElementById('lwmsg')!.textContent = L('残した。', 'Kept.');
+  }
 
   async function post(): Promise<void> {
     const btn = document.getElementById('postbtn') as HTMLButtonElement;

@@ -19,6 +19,7 @@ import { maybeClose } from './closecall';
 import { cheatYear } from './cheatuse';
 import { econByRef, econDecisions, econYear } from './econ';
 import { moneyDue, moneyEvent, moneyEventByRef } from './moneyevents';
+import { crossroads, crossroadsByRef } from './crossroads';
 import { alliesFor, peopleYear } from './people';
 import { onArc } from './events';
 import { endLovers } from './events';
@@ -103,6 +104,8 @@ function draft(h: Hero): void {
   // 徴兵は前近代の軍で多く、近代以降 (tech 7 以上) は職業軍人が主になる
   if (h.sex === 'M' && e < 45 && statusRank(h.status) <= statusRank('commoner') && h.rng() < (h.world.tech >= 7 ? 0.05 : 0.25)) {
     h.flags.drafted = h.age;
+    // 主人公は召集令状として選ぶ (行く・逃げる・身代わり。crossroads.ts)。ほかの人の一生は今までどおり
+    if (!anchorsOf(h)) { h.flags.draftCall = h.age; return; }
     log(h, L(`徴兵され、${wja}戦に出ることになった。`, `Was conscripted and sent to war${wen}.`), 'battle', true).fight = fightOf(h, foeFor(h, 'war', ''));
   }
 }
@@ -385,9 +388,19 @@ export function choose(h: Hero, option: number): void {
 }
 
 function settlePending(h: Hero, decs: Decision[]): void {
-  h.pending.push(...decs);
+  const keep = heqOf(h) >= QUIET_HEQ ? decs.filter((d) => h.alive && !minorDecision(h, d)) : decs;
+  if (h.alive) h.pending.push(...keep);
   if (!h.auto) return;
   while (h.pending.length && h.alive) choose(h, h.pending[0].auto(h));
+}
+
+// 老いてからは小さな選択を出さない (人間換算65歳から)。作戦どおりにその場で決める。岐路・職・病・人質・縁談・大きな出来事は残す
+export const QUIET_HEQ = 65;
+export function minorDecision(h: Hero, d: Decision): boolean {
+  const ref = d.ref ?? '';
+  const minor = ref.startsWith('shop:') || ref.startsWith('train:') || /^mev:(shady|lend|invest|tax)/.test(ref) || (ref.startsWith('ev:') && !eventByRef(ref)?.big);
+  if (minor) (d.options[d.auto(h)] ?? d.options[0]).apply(h);
+  return minor;
 }
 
 export function advanceYear(h: Hero): void {
@@ -434,6 +447,8 @@ export function advanceYear(h: Hero): void {
   const ed = econDecisions(h);
   const me = moneyEvent(h); // 闇金・借金の頼み・身代金・持参金・儲け話・徴税官
   if (me) ed.push(me);
+  const xr = crossroads(h, die); // 時代の岐路・罪・信仰・家族 (crossroads.ts。横の乱数)
+  if (xr) ed.push(xr);
   if (ed.length) settlePending(h, ed);
   if (!h.alive) return;
   // 6. 能力
@@ -480,6 +495,7 @@ export function fromSaved(s: SavedHero): Hero {
     else if (ref.startsWith('sick:') || ref.startsWith('shop:')) { const d = econByRef(h, ref); if (d) h.pending.push(d); }
     else if (ref.startsWith('mev:')) { const d = moneyEventByRef(h, ref); if (d) h.pending.push(d); }
     else if (ref.startsWith('train:')) { const d = trainingByRef(h, ref); if (d) h.pending.push(d); }
+    else if (ref.startsWith('xr:')) { const d = crossroadsByRef(h, ref, die); if (d) h.pending.push(d); }
     else if (ref.startsWith('job:')) { const d = jobDecision(h, ref.slice(4).split(',') as JobId[]); if (d) h.pending.push(d); }
   }
   return h;

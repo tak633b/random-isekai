@@ -393,7 +393,11 @@ export interface Hero {
   sick?: { until: number; k: number }; // 病の治療の効き目 (その年齢まで、病の死の倍率)
   grown?: { pot: Record<'power' | 'mind' | 'charm', number>; g: Record<'power' | 'mind' | 'charm', number> }; // 子どもの能力の育ち: 生まれ持った値と、いま出ている割合 (engine/mortality.ts の growFrac)
   money?: MoneyDue;     // 何年か後に結末が出るお金の約束 (engine/moneyevents.ts)
+  notes?: PauseNote[];  // ひと息 (engine/reflect.ts) の問いと、遊ぶ人が残した一行 (空なら書かなかった)。人生の乱数には関わらない
 }
+
+// ひと息の一行。at は人間換算の節目、age はその時の実年齢
+export interface PauseNote { at: number; age: number; q: string; text: string }
 
 // 闇金の返済・貸した金・儲け話。結末 (out・mult) は選んだ年に決めておく
 export interface MoneyDue {

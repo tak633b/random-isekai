@@ -1,6 +1,6 @@
 // 死亡記録: 人生の終わりを1枚にまとめる。この端末の localStorage に残し、「過去の人生」で読み返せる
 import { levelOf } from '../engine/bonds';
-import type { Figure, Hazard, Hero, LogEntry, Role, SceneSpec, Setup, Tie } from '../engine/types';
+import type { Figure, Hazard, Hero, LogEntry, PauseNote, Role, SceneSpec, Setup, Tie } from '../engine/types';
 import { fateLine } from '../engine/people';
 import { CHEATS, heqOf, raceOf, randomSeed, statusName, summary } from '../engine';
 import { heroFigure, sceneOf, tieFigure, faceHTML, sceneHTML, paintAll } from './pixel';
@@ -13,6 +13,8 @@ import { FOE_NAME, RESULT_NAME } from './stage';
 import { genWord, lineageHTML, recordLineage, type RecordLineage } from './lineage';
 import { isEn, L, T } from '../i18n';
 import { adHTML } from './ads';
+import { albumCards, TAG_NAME, type AlbumCard } from './album';
+import { encodeKinds, lifeMapHTML } from './lifemap';
 
 const KEY = 'lives';
 const MAX = 20;
@@ -38,10 +40,14 @@ export interface LifeRecord {
   names?: [number, string][];  // 輪の人の名前 (年表の戦いの仲間に使う)
   circle?: { name: string; role: Role; face: Figure; fate: string }[]; // 関わった人たち
   lineage?: RecordLineage;     // 系譜 (第2代から)
+  kinds?: string;              // 一生の地図 (1年1文字。ui/lifemap.ts)
+  album?: AlbumCard[];         // 思い出のアルバム (ui/album.ts)
+  notes?: PauseNote[];         // ひと息に残した一行 (書いたものだけ)
+  lastWord?: string;           // 最後に、この人へ (遊んだ人の一言)
 }
 
 // 関わった人たち: 大事な役を先に、近かった順に多くて8人
-const KEY_ROLES: Role[] = ['spouse', 'companion', 'mentor', 'nemesis', 'child', 'lover', 'fiance', 'disciple', 'familiar', 'rival'];
+const KEY_ROLES: Role[] = ['spouse', 'companion', 'mentor', 'nemesis', 'child', 'sibling', 'lover', 'fiance', 'disciple', 'familiar', 'rival'];
 function circleOf(h: Hero): LifeRecord['circle'] {
   const rank = (t: Tie) => (KEY_ROLES.includes(t.role) ? 0 : 1);
   return [...h.people].sort((a, b) => rank(a) - rank(b) || b.bond - a.bond || a.id - b.id).slice(0, 8)
@@ -50,6 +56,7 @@ function circleOf(h: Hero): LifeRecord['circle'] {
 
 export function toRecord(h: Hero): LifeRecord {
   const s = summary(h);
+  const scene = sceneOf(h, s.lastWith);
   const gamey = h.world.tags.includes('gamey');
   const kids = h.people.filter((t) => t.role === 'child').length;
   const facts: [string, string][] = [
@@ -67,12 +74,20 @@ export function toRecord(h: Hero): LifeRecord {
     v: 1, date: new Date().toISOString(), setup: h.setup, name: h.name, worldName: T(h.world.name),
     age: h.age, heqAge: Math.round(heqOf(h)), ...(s.hazard ? { hazard: s.hazard } : {}),
     cause: s.cause ?? '', text: s.text ?? '', why: s.why ?? '',
-    face: heroFigure(h), scene: sceneOf(h, s.lastWith), facts,
+    face: heroFigure(h), scene, facts,
     lastWith: s.lastWith.map((t) => ({ name: t.name, role: t.role, face: tieFigure(h, t) })),
     highlights: s.highlights, log: [...h.log, ...aiOf(h)],
     names: h.people.map((t) => [t.id, t.name] as [number, string]), circle: circleOf(h),
     ...(recordLineage(h) ? { lineage: recordLineage(h) } : {}),
+    kinds: encodeKinds(h.kinds, h.age), album: albumCards(h, scene),
+    ...(h.notes?.some((n) => n.text) ? { notes: h.notes.filter((n) => n.text) } : {}),
   };
+}
+
+/** 保存した記録に後から足す (最後の一言)。日付と名で同じ記録を探す */
+export function updateRecord(r: LifeRecord, patch: Partial<LifeRecord>): void {
+  Object.assign(r, patch);
+  save(KEY, records().map((x) => (x.date === r.date && x.name === r.name ? { ...x, ...patch } : x)));
 }
 
 export const records = (): LifeRecord[] => load<LifeRecord[]>(KEY, []).filter((r) => r && r.v === 1);
@@ -105,6 +120,8 @@ export function logHTML(log: Entry[], newest = false, names?: Map<number, string
     `<li class="k-${e.kind}${e.big ? ' big' : ''}" title="${esc(KIND_NAME[e.kind])}">${kindIcon(e.kind)}${e.ai ? '<i class="aitag" title="AI">AI</i>' : ''}${markGifts(esc(e.text))}${e.fight ? `<small class="fight">${esc(fightNote(e.fight, names))}</small>` : ''}${e.why ? `<small class="why">${esc(e.why)}</small>` : ''}${who(e)}</li>`).join('')}</ul></li>`).join('')}</ol>`;
 }
 
+export const lastWordHTML = (w: string): string => `<p class="lastword"><small>${L('最後に、この人へ', 'A last word for them')}</small><b>${esc(L(`「${w}」`, `"${w}"`))}</b></p>`;
+
 export function recordHTML(r: LifeRecord): string {
   const no = `${r.setup.world.preset}-${String(r.setup.seed % 1e6).padStart(6, '0')}`;
   return `
@@ -118,10 +135,16 @@ export function recordHTML(r: LifeRecord): string {
       </div></div>
       ${lineageHTML(r.lineage, r.name)}
       <div class="cause"><b>${esc(r.cause)}</b><p>${esc(r.text)}</p>${r.why ? `<p class="why">${L('なぜ: ', 'Why: ')}${esc(r.why)}</p>` : ''}</div>
+      ${r.lastWord ? lastWordHTML(r.lastWord) : ''}
       <dl class="facts">${r.facts.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>
       <h3>${L('最後にそばにいた人', 'Who was there at the end')}</h3>
       ${r.lastWith.length ? `<ul class="lastwith">${r.lastWith.map((t) => `<li>${faceHTML(t.face)}<span><b>${esc(t.name)}</b><small>${esc(ROLE_NAME[t.role])}</small></span></li>`).join('')}</ul>`
         : `<p class="note">${L('そばには誰もいなかった。', 'No one was there.')}</p>`}
+      ${r.kinds ? `<h3>${L('一生の地図', 'Life map')}</h3>${lifeMapHTML(r.kinds)}` : ''}
+      ${r.album?.length ? `<h3>${L('思い出のアルバム', 'Album of memories')}</h3>
+        <ul class="album">${r.album.map((c) => `<li class="acard t-${c.tag}"><button class="acbtn" data-jump="${c.age}" title="${L('年表のこの年へ', 'Go to this year in the timeline')}" aria-label="${esc(`${ageText(c.age)} ${TAG_NAME[c.tag]}`)}">${sceneHTML(c.scene, TAG_NAME[c.tag])}</button>
+          <p class="actag"><b>${esc(TAG_NAME[c.tag])}</b><span>${ageText(c.age)}</span></p><p class="actext">${markGifts(esc(c.text))}</p></li>`).join('')}</ul>` : ''}
+      ${r.notes?.length ? `<h3>${L('ひと息に残した言葉', 'Words left at the pauses')}</h3><ul class="notes">${r.notes.map((n) => `<li><span>${ageText(n.age)}</span><div><small>${esc(n.q)}</small><p>${esc(n.text)}</p></div></li>`).join('')}</ul>` : ''}
       ${r.highlights.length ? `<h3>${L('主な出来事', 'Moments that mattered')}</h3><ul class="highlights">${r.highlights.map((e) => `<li><span>${ageText(e.age)}</span><div>${markGifts(esc(e.text))}</div></li>`).join('')}</ul>` : ''}
       ${r.circle?.length ? `<h3>${L('関わった人たち', 'The people in this life')}</h3><ul class="circle">${r.circle.map((c) => `<li>${faceHTML(c.face)}<span><b>${esc(c.name)}</b><small>${esc(ROLE_NAME[c.role])}</small><small class="fate">${esc(c.fate)}</small></span></li>`).join('')}</ul>` : ''}
       <details class="fulllog"><summary>${L(`年表の全体 (${r.log.length}件)`, `Full timeline (${r.log.length} entries)`)}</summary>${logHTML(r.log, false, new Map(r.names ?? []))}</details>

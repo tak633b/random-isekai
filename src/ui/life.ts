@@ -29,6 +29,9 @@ import { screen, type Nav } from './nav';
 import { L, T } from '../i18n';
 import { musicControl, musicLife } from './music';
 import { sfx, sfxLife } from './sfx';
+import { pauseDue, pauseQuestion, keepNote } from '../engine/reflect';
+import { openPause, pauseOff } from './pause';
+import { encodeKinds, lifeMapHTML } from './lifemap';
 
 // 老いと帰還のほかで亡くなった: 倒れる前に死の淵の演出を流す
 const acuteDeath = (x: Hero): boolean => { const hz = x.death?.hazard; return !x.alive && hz !== undefined && hz !== 'age' && hz !== 'return'; };
@@ -90,6 +93,7 @@ export function showLife(h: Hero, nav: Nav, resumed = false): void {
       <div class="panel" id="me"></div>
       <div class="panel"><h2>${L('人の輪', 'People')}</h2><div id="ring"></div></div>
       <div class="panel"><h2>${L('この1年の危険', "This year's dangers")}</h2><div id="risk"></div></div>
+      <div class="panel"><h2>${L('一生の地図', 'Life map')}</h2><div id="mapbox"></div><p class="note">${L('1マス1年。薄いマスは寿命の目安まで。押すとその年へ。', 'One square per year; faint squares run to the expected lifespan. Tap one to jump to that year.')}</p></div>
     </aside>
   </main>
   <div class="modal-back" id="modal" hidden><div class="modal" id="modalbody" role="dialog" aria-modal="true" aria-labelledby="dtitle"></div></div>`, (t) => {
@@ -159,7 +163,22 @@ export function showLife(h: Hero, nav: Nav, resumed = false): void {
   }
   // 選択が出たらそこで止まる (手で進めるとき)
   function step(n: number): void {
-    for (let i = 0; i < n && h.alive && !h.pending.length; i++) advanceYear(h);
+    for (let i = 0; i < n && h.alive && !h.pending.length && pausePending === null; i++) { const before = h.age; advanceYear(h); pauseCheck(before); }
+  }
+  // ひと息 (engine/reflect.ts): 人間換算の節目を越えた年に、問いを1つ。選択の後に出す。聞かない設定・裏で進めているときは、聞いたことにして飛ばす
+  let pausePending: number | null = null;
+  let pausing = false;
+  function pauseCheck(before: number): void {
+    const at = pauseDue(h, before);
+    if (at === null) return;
+    if (pauseOff() || document.hidden) keepNote(h, at, pauseQuestion(h, at), '');
+    else pausePending = at;
+  }
+  function openPauseIfDue(): void {
+    if (pausing || pausePending === null || !h.alive || (h.pending.length && !h.auto)) return;
+    const at = pausePending;
+    pausing = true;
+    openPause(h, at, h.auto || play.speed >= 4 || ff, () => { pausing = false; pausePending = null; persist(h); last = performance.now(); });
   }
   // 年が変わったら、その年に掛ける時間を決め直す
   function newYear(): void {
@@ -183,16 +202,19 @@ export function showLife(h: Hero, nav: Nav, resumed = false): void {
     // 裏で回すタイマーはブラウザに間引かれる (1秒〜1分おき) ので、そのあいだの時間をまとめて進める
     const dt = Math.min(document.hidden ? 60_000 : 250, t - last);
     last = t;
-    const waiting = h.pending.length > 0 && !h.auto;
+    const waiting = (h.pending.length > 0 && !h.auto) || pausing || pausePending !== null;
     if (!play.paused && !waiting && h.alive && (!document.hidden || play.bg) && !suspended) {
       progress += dt / scaledMs(yearMs, play.speed, ff);
       let n = 0;
       // 速いときは1フレームに何年か進め、描くのは最後に1回
       while (progress >= 1 && n < (document.hidden ? 200 : 8) && h.alive) {
+        const before = h.age;
         advanceYear(h);
         n++;
         newYear();
+        pauseCheck(before);
         if (h.pending.length && !h.auto) { ff = false; break; }
+        if (pausePending !== null) break;
       }
       if (n) {
         yearChecks();
@@ -237,7 +259,7 @@ export function showLife(h: Hero, nav: Nav, resumed = false): void {
 
   // ---- 選択のモーダル: 選ぶまで年は進まない。Esc では閉じない。Tab はモーダルの中だけを回る
   function nextModal(): void {
-    if (!h.pending.length || h.auto) return closeModal();
+    if (!h.pending.length || h.auto) { closeModal(); return openPauseIfDue(); }
     const d = h.pending[0];
     const m = document.getElementById('modal')!;
     if (!m.hidden && m.dataset.ref === String(h.log.length)) return;
@@ -343,6 +365,7 @@ export function showLife(h: Hero, nav: Nav, resumed = false): void {
     if (aiReady() && h.alive) ai.append(aiYearButton(h, (e) => { addAi(h, e); persist(h); render(); }));
     if (tab !== 'log') renderTab();
     document.getElementById('me')!.innerHTML = meHTML(h, heq, gamey);
+    document.getElementById('mapbox')!.innerHTML = lifeMapHTML(encodeKinds(h.kinds, h.age), Math.max(span, h.age + 1));
     document.getElementById('ring')!.innerHTML = ringHTML(h, sel);
     const risk = riskBreakdown(h).slice(0, 5);
     document.getElementById('risk')!.innerHTML = `<p class="bigrisk">${L('この1年で亡くなる確率', 'Chance of dying this year')} <b>${fmtPct(deathChance(h))}</b></p>

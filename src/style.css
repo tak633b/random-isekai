@@ -608,3 +608,35 @@ h1 .tickets, h2 .tickets, .tickets { font-family: var(--dot); color: var(--accen
 .musicctl [data-music], .musicctl [data-sfx] { padding: 3px 12px; font-size: 13px; min-height: 30px; }
 .musicctl [data-music][aria-pressed=true], .musicctl [data-sfx][aria-pressed=true] { border-color: #9fd3ff; color: #cfe8ff; box-shadow: 0 0 10px rgba(140, 200, 255, .35); }
 .musicvol { width: 90px; padding: 0; accent-color: #9fd3ff; }
+
+/* 一生の地図 (ui/lifemap.ts): 1マス1年。拡大してもぼかさない */
+.lifemap { display: grid; gap: 8px; }
+.mapcv { width: 100%; max-width: 300px; height: auto; image-rendering: pixelated; cursor: pointer; }
+.maplegend { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 12px; color: var(--sub); }
+.maplegend i { display: inline-block; width: 10px; height: 10px; margin-right: 4px; border-radius: 2px; vertical-align: -1px; }
+
+/* 思い出のアルバム (ui/album.ts) */
+.album { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr)); gap: 12px; }
+.acard { background: var(--bg2); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; min-width: 0; }
+.acard.t-death { border-color: var(--faint); }
+.acard.t-birth, .acard.t-marriage { border-color: var(--accent); }
+.acbtn { display: block; width: 100%; padding: 0; border: 0; border-radius: 0; background: #0c0b14; cursor: pointer; }
+.acbtn canvas.pix { width: 100%; height: auto; }
+.actag { display: flex; justify-content: space-between; gap: 8px; margin: 6px 10px 2px; font-size: 12.5px; }
+.actag b { color: var(--accent); font-family: var(--dot); font-weight: 400; }
+.actag span { color: var(--sub); }
+.actext { margin: 0 10px 10px; font-size: 13px; line-height: 1.55; }
+
+/* ひと息に残した言葉と、最後の一言 */
+.notes { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+.notes li { display: grid; grid-template-columns: 4.5em minmax(0, 1fr); gap: 8px; }
+.notes li > span { color: var(--accent); font-family: var(--dot); font-size: 13px; }
+.notes small { display: block; }
+.notes p { margin: 2px 0 0; }
+.lastword { display: grid; gap: 2px; margin: 10px 0; padding: 10px 12px; border-left: 3px solid var(--accent); background: var(--bg2); }
+.lastword b { font-weight: 400; font-size: 16px; }
+.lastwordbox input { width: 100%; }
+.modal-back.pause .modal { border-color: var(--magic); box-shadow: 0 0 40px rgb(124 196 216 / 0.18); }
+.modal-back.pause textarea { width: 100%; resize: vertical; }
+label.check { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--sub); }
+label.check input { width: auto; margin: 0; flex: none; }

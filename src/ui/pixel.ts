@@ -6,6 +6,7 @@ import { paintScene, tintOf, groundY, W, H } from './scene';
 import { paintSprite, SW, SH } from './sprite';
 import { paintPortrait } from './portrait';
 import { hash, type Pix } from './raster';
+import { paintLifeMaps } from './lifemap';
 
 export { W, H };
 
@@ -161,6 +162,7 @@ export function paintAll(root: ParentNode = document): void {
   root.querySelectorAll<HTMLCanvasElement>('canvas[data-scene]').forEach((cv) => {
     try { drawScene(cv, JSON.parse(cv.dataset.scene!) as SceneSpec); } catch { /* 同上 */ }
   });
+  paintLifeMaps(root); // 一生の地図 (lifemap.ts)
 }
 
 const attr = (v: unknown) => JSON.stringify(v).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
