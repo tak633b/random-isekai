@@ -19,6 +19,7 @@ import { ROLE_NAME, STAT_NAME, ageText, climbText, jobName, titlesOf } from './l
 import { openSheet } from './sheet';
 import { formatGold } from '../engine/econ';
 import { playSuspense } from './suspense';
+
 import { esc, load, save } from './dom';
 import { checkYear } from '../meta/tickets';
 import { isRandom, restoreMode, saveMode } from './mode';
@@ -28,6 +29,9 @@ import { screen, type Nav } from './nav';
 import { L, T } from '../i18n';
 import { musicControl, musicLife } from './music';
 import { sfx, sfxLife } from './sfx';
+
+// 老いと帰還のほかで亡くなった: 倒れる前に死の淵の演出を流す
+const acuteDeath = (x: Hero): boolean => { const hz = x.death?.hazard; return !x.alive && hz !== undefined && hz !== 'age' && hz !== 'return'; };
 
 // 途中の人生。1年進むたびに残し、亡くなったら消す
 const CURRENT = 'current';
@@ -213,14 +217,17 @@ export function showLife(h: Hero, nav: Nav, resumed = false): void {
     persist(h);
     // 戦いで倒れた年は、演出を見届けてから
     const lost = h.log.at(-1)?.fight?.result === 'lose' || h.log.some((e) => e.age === h.age && e.fight?.result === 'lose');
-    // 老いと帰還のほかは、倒れるまでの演出を挟む (九死に一生と途中まで同じ流れ)
-    const hz = h.death?.hazard;
-    const acute = hz !== undefined && hz !== 'age' && hz !== 'return';
+    // 老いと帰還のほかは、先に死の淵の演出 (九死に一生と途中まで同じ流れ) を流し、それから倒れて姿が立ちのぼる (stage の holdPass)
+    const acute = acuteDeath(h);
+    const fightWait = lost ? Math.min(FIGHT_MS, scaledMs(yearMs, play.speed, ff) * 0.85) : 0;
+    const PASS = reduced ? 1200 : 3400; // 倒れて、姿が立ちのぼるのを見届ける (stage.ts の PASS_MS)
+    const here = () => document.getElementById('scenecv') === cv;
+    const go = () => { if (here()) { stage.destroy(); nav.death(h); } };
     setTimeout(() => {
-      if (document.getElementById('scenecv') !== cv) return;
-      const go = () => { if (document.getElementById('scenecv') === cv) { stage.destroy(); nav.death(h); } };
-      if (acute) void playSuspense(h, hz!, false).then(go); else go();
-    }, reduced ? 1200 : lost ? Math.min(FIGHT_MS, scaledMs(yearMs, play.speed, ff) * 0.85) + 3400 : 3400); // 倒れて、姿が立ちのぼるのを見届けてから (stage.ts の PASS_MS)
+      if (!here()) return;
+      if (!acute) return go();
+      void playSuspense(h, h.death!.hazard, false).then(() => { if (!here()) return; stage.releasePass(); setTimeout(go, PASS); });
+    }, acute ? (reduced ? 0 : fightWait + 400) : PASS + fightWait);
   }
 
   // ---- 選択のモーダル: 選ぶまで年は進まない。Esc では閉じない。Tab はモーダルの中だけを回る
@@ -316,7 +323,7 @@ export function showLife(h: Hero, nav: Nav, resumed = false): void {
     controls();
     musicLife(h);
     sfxLife(h, ff || play.speed >= 8);
-    stage.show(h, { budgetMs: scaledMs(yearMs, play.speed, ff), fast: ff || play.speed >= 8 });
+    stage.show(h, { budgetMs: scaledMs(yearMs, play.speed, ff), fast: ff || play.speed >= 8, holdPass: acuteDeath(h) });
     const st = h.state;
     const chips = [st.war > 0 && L('戦争中', 'At war'), st.plague > 0 && L('大疫病', 'Plague'), st.famine > 0 && L('飢饉', 'Famine'), st.demonKing && L('魔王がいる', 'A Demon Lord reigns')].filter(Boolean) as string[];
     document.getElementById('scenecap')!.innerHTML = `${esc(T(h.world.name))}${chips.map((c) => `<span class="chip">${esc(c)}</span>`).join('')}`;

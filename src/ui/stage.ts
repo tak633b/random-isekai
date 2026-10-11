@@ -74,7 +74,8 @@ function swordMark(P: Pix, f: Fight): void {
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * Math.max(0, Math.min(1, t));
 
-export interface ShowOpts { budgetMs: number; fast: boolean }
+// holdPass: 亡くなった年でも、倒れて姿が立ちのぼるのを releasePass() まで待たせる (先に死の淵の演出を流すとき)
+export interface ShowOpts { budgetMs: number; fast: boolean; holdPass?: boolean }
 
 export class Stage {
   private spec: SceneSpec | null = null;
@@ -129,6 +130,7 @@ export class Stage {
   // 亡くなった年: 主人公が倒れ、半透明の姿 (光の輪と小さな翼) が立ちのぼって消える。元の世界へ帰った人は光の柱の中へ
   private passing: { fig: Figure; home: boolean; inCast: boolean } | null = null;
   private static PASS_MS = 3200;
+  private passAt: number | null = 0; // 倒れ始める時刻 (clock)。null は待たせている間
 
   // 人生の画面から: その年の場面を出す。同じ年なら作り直さない (速さのボタンを押しても演出は続く)
   show(h: Hero, o: ShowOpts): void {
@@ -150,6 +152,7 @@ export class Stage {
     const room = o.budgetMs * FIGHT_SHARE;
     this.mode = !fight ? 'full' : o.fast ? 'skip' : this.reduced || room < FIGHT_MIN_MS ? 'key' : 'full';
     this.fightMs = Math.min(FIGHT_MS, room);
+    this.passAt = o.holdPass ? null : fight ? this.fightMs * 0.85 : 0;
     this.phase = -2;
     this.magic = h.stats.mind > h.stats.power;
     // 動きを1コマに縮めたときは、結果の音だけ
@@ -168,6 +171,7 @@ export class Stage {
     this.key = JSON.stringify(spec).length + '|' + spec.seed;
     this.fight = null; this.foe = null; this.leaving = []; this.joining.clear();
     this.passing = passing ? { ...passing, fig: { ...passing.fig, dead: false }, inCast: false } : null;
+    this.passAt = 0;
     this.cap.hidden = true;
     this.setCast(spec, spec.figures.map((_, i) => -1 - i));
   }
@@ -219,13 +223,23 @@ export class Stage {
     return W / 2 + (a.slot - (n - 1) / 2) * gap - SW / 2;
   }
 
+  /** 待たせていた「倒れて、姿が立ちのぼる」を今から始める */
+  releasePass(): void {
+    if (this.passAt !== null) return;
+    this.passAt = this.clock;
+    this.draw();
+    this.wake();
+  }
+
   // 倒れた体と、立ちのぼる姿。t は倒れてからの時間 (動きを減らす設定では途中の一コマで止める)
   private drawPassing(P: Pix, y0: number, tint: number[], t: number): void {
     const ps = this.passing!;
-    const k = this.reduced || this.paused ? 0.45 : Math.min(1, t / Stage.PASS_MS); // 止めているときと動きを減らす設定では、途中の一コマ
-    if (k <= 0 && !this.reduced) return;
     const me = this.actors.find((a) => a.id === 'me');
     const x = me ? this.xOf(me) : W / 2 + 40 - SW / 2;
+    // 待たせている間 (t < 0) は、まだ立っている
+    if (t < 0) { if (!ps.inCast) blit(P, sprite(ps.fig, 'idle', 0), x, y0, tint); return; }
+    const k = this.reduced || this.paused ? 0.45 : Math.min(1, t / Stage.PASS_MS); // 止めているときと動きを減らす設定では、途中の一コマ
+    if (k <= 0 && !this.reduced) return;
     const cx = x + SW / 2;
     if (ps.home) {
       // 帰還: 足もとから光の柱が立ち、姿が薄れて上へ
@@ -311,7 +325,7 @@ export class Stage {
       if (alpha > 0) { blit(P, enemy(this.foe, epose, this.tick), ex, groundY(s) - ENEMY_H + 2, tint, eflash, alpha); drewEnemy = true; }
     }
     if (f && mode === 'skip') swordMark(P, f);
-    if (this.passing) this.drawPassing(P, y0, tint, f ? Math.max(0, this.clock - this.fightMs * 0.85) : this.clock);
+    if (this.passing) this.drawPassing(P, y0, tint, this.passAt === null ? -1 : Math.max(0, this.clock - this.passAt));
     P.put(this.cv);
     this.cv.dataset.enemy = drewEnemy ? '1' : '0';
     // 測定
