@@ -243,7 +243,7 @@ li.k-death { font-weight: 700; }
   .colmain, .colside { display: contents; }
   .lifegrid { gap: 0; }
   .scenebox { order: 1; } .manual { order: 2; margin-top: 0; } #me { order: 3; } .logpanel { order: 4; }
-  .colside > .panel:nth-child(2) { order: 5; } .colside > .panel:nth-child(3) { order: 6; }
+  .colside > .panel:nth-child(2) { order: 5; } .colside > .panel:nth-child(3) { order: 6; } .colside > .panel:nth-child(4) { order: 7; }
   .logbox { max-height: 55vh; }
   .yr { grid-template-columns: 3.6em 1fr; }
   .topbar { padding: 8px 12px; }
@@ -416,7 +416,7 @@ textarea { font: inherit; color: var(--text); background: var(--bg2); border: 1p
 .lineage .me { color: var(--text); font-weight: 700; }
 .mehead + .lineage { margin-top: 10px; }
 .heirs h2 { margin-bottom: 4px; }
-.heirlist { list-style: none; padding: 0; margin: 10px 0 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 8px; }
+.heirlist { list-style: none; padding: 0; margin: 10px 0 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr)); gap: 8px; }
 .heirlist li { display: flex; align-items: center; gap: 10px; padding: 8px; background: var(--bg2); border-radius: 8px; }
 .heirlist li span { display: grid; flex: 1; min-width: 0; line-height: 1.45; }
 .heirlist li button { flex: none; font-size: 13px; padding: 4px 10px; }

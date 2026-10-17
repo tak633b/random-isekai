@@ -53,7 +53,7 @@ export function showDeath(h: Hero, nav: Nav): void {
     ${recordHTML(r)}
     <section class="panel lastwordbox"><h2>${esc(L(`最後に、${h.given}へ`, `A last word for ${h.given}`))}</h2>
       <p class="note">${L('一言だけ (任意・80字まで)。この記録と、保存する画像に残る。', 'Just a few words, if you like (up to 80 characters). They stay with this record and the saved image.')}</p>
-      <label class="field"><span class="vh">${L('最後の一言', 'A last word')}</span><input id="lastword" maxlength="80" placeholder="${L('おつかれさま、とか', 'Rest well, maybe')}"></label>
+      <label class="field"><span class="vh">${L('最後の一言', 'A last word')}</span><input id="lastword" placeholder="${L('おつかれさま、とか', 'Rest well, maybe')}"></label>
       <div class="choices"><button data-go="lastword">${L('残す', 'Keep it')}</button><button data-go="share">${L('画像で残す (PNG)', 'Save as an image (PNG)')}</button><span class="note" id="lwmsg" role="status"></span></div></section>
     ${g.soul ? `<section class="panel soulnote"><p>${esc(L(`${soulNames(g.soul)}が魂に刻まれた。次の転生へ持っていける。`, `${soulNames(g.soul)} ${g.soul.traits.length + (g.soul.cheat ? 1 : 0) > 1 ? 'were' : 'was'} etched into the soul. It will carry into your next rebirth.`))}</p></section>` : ''}
     ${grantHTML(g, isRandom(h))}
@@ -111,6 +111,7 @@ export function showDeath(h: Hero, nav: Nav): void {
   // 墓の場面: 最後にそばにいた人が静かに立つ
   const grave = app.querySelector<HTMLCanvasElement>('.record > canvas.scene');
   if (grave) new Stage(grave).showSpec(r.scene, { fig: r.face, home: r.hazard === 'return' });
+  capChars(document.getElementById('lastword') as HTMLInputElement, 80);
   const leave = document.getElementById('leave')!;
   const alive = () => document.getElementById('leave') === leave;
 
@@ -136,14 +137,15 @@ export function showDeath(h: Hero, nav: Nav): void {
     if (!alive()) return;
     leave.innerHTML = `<h2>${L('追悼館に残す', 'Leave it in the memorial')}</h2>` + (ok
       ? `<p class="note">${L('ほかの人もこの人生を読めるようになる。一言は任意 (140字まで)。', 'Others will be able to read this life. A few words are optional (up to 140 characters).')}</p>
-        <label class="field"><span class="vh">${L('一言', 'A few words')}</span><textarea id="note" maxlength="140" rows="2" placeholder="${L('この人へ一言 (任意)', 'A few words for them (optional)')}"></textarea></label>
+        <label class="field"><span class="vh">${L('一言', 'A few words')}</span><textarea id="note" rows="2" placeholder="${L('この人へ一言 (任意)', 'A few words for them (optional)')}"></textarea></label>
         <div class="choices"><button data-go="post" id="postbtn">${L('追悼館に残す', 'Leave it in the memorial')}</button><span class="note" id="postmsg" role="status"></span></div>`
       : memorialOffHTML());
+    if (ok) capChars(document.getElementById('note') as HTMLTextAreaElement, 140);
   });
 
   // 最後の一言: 記録に足し、記録の中にも出す
   function lastWord(): void {
-    const v = (document.getElementById('lastword') as HTMLInputElement).value.replace(/\s+/g, ' ').trim().slice(0, 80);
+    const v = Array.from((document.getElementById('lastword') as HTMLInputElement).value.replace(/\s+/g, ' ').trim()).slice(0, 80).join('');
     if (!v) return;
     updateRecord(r, { lastWord: v });
     app.querySelector('.record .lastword')?.remove();
@@ -163,7 +165,16 @@ export function showDeath(h: Hero, nav: Nav): void {
       msg.innerHTML = `${res.ok ? L('残した。', 'Saved.') : L('この人生はもう館にある。', 'This life is already in the memorial.')} ${id !== undefined ? `<button data-mem="${Number(id)}">${L('追悼館で見る', 'See it in the memorial')}</button>` : ''}`;
     } else {
       btn.disabled = false;
-      msg.textContent = res.status === 429 ? L('少し時間をおいてから。', 'Please wait a little.') : `${L('残せなかった: ', 'Could not save: ')}${res.error}`;
+      msg.textContent = res.status === 429 ? L('少し時間をおいてから。', 'Please wait a little.')
+        : res.status === 400 && res.error.includes('not allowed') ? L('残せない言葉が含まれている。一言を書き直してほしい。', 'It contains words that can’t be kept. Please reword your note.')
+        : `${L('残せなかった: ', 'Could not save: ')}${res.error}`;
     }
   }
+}
+
+// maxlength は UTF-16 で数えるので絵文字などで早く切れる。サーバ (validate.mjs) と同じくコードポイントで切る。変換中は切らない
+function capChars(el: HTMLInputElement | HTMLTextAreaElement, max: number): void {
+  const cap = (): void => { const c = Array.from(el.value); if (c.length > max) el.value = c.slice(0, max).join(''); };
+  el.addEventListener('input', (e) => { if (!(e as InputEvent).isComposing) cap(); });
+  el.addEventListener('compositionend', cap);
 }

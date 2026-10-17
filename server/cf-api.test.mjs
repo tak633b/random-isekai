@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
 import { join } from 'node:path';
-import { handle, LIMITS } from './cf-api.mjs';
+import { handle, ipKey, LIMITS } from './cf-api.mjs';
 import { COOKIE, forgetKeys, verifyGoogleIdToken } from './account.mjs';
 import { blocked } from './moderation.mjs';
 import { validEntry } from './validate.mjs';
@@ -33,9 +33,10 @@ function fakeD1() {
 const ADMIN = 'test-admin-token-0123456789';
 function api() {
   const env = { DB: fakeD1(), ADMIN_TOKEN: ADMIN };
-  const call = async (method, path, { body, ip = '203.0.113.1', auth, now } = {}) => {
+  // 画面と同じく、POST は同じ Origin から Content-Type: application/json で送る
+  const call = async (method, path, { body, ip = '203.0.113.1', auth, now, origin = 'https://x.test', ct = 'application/json' } = {}) => {
     const headers = { 'CF-Connecting-IP': ip };
-    if (body !== undefined) headers['Content-Type'] = 'application/json';
+    if (method !== 'GET') { if (origin) headers.Origin = origin; if (ct) headers['Content-Type'] = ct; }
     if (auth) headers.Authorization = `Bearer ${auth}`;
     const r = await handle(new Request(`https://x.test${path}`, { method, headers, body: typeof body === 'string' ? body : body && JSON.stringify(body) }), env, now);
     return { status: r.status, j: await r.json() };
@@ -167,6 +168,29 @@ describe('Cloudflare 版の API', () => {
     expect((await call('GET', '/api/memorial')).j.meta.total).toBe(0);
     expect((await call('POST', `/api/memorial/${id}/candle`)).status).toBe(404);
     expect((await call('POST', `/api/memorial/${id}/report`, { ip: '10.0.0.4' })).status).toBe(404);
+  });
+
+  it('CSRF: 館への投稿・ろうそく・報告は、よその Origin・Origin 無し・JSON でない本文を 403 で断り、何も残さない', async () => {
+    const { call, env } = api();
+    const id = (await call('POST', '/api/memorial', { body: entry() })).j.data.id;
+    for (const bad of [{ origin: 'https://evil.example' }, { origin: null }, { ct: 'text/plain' }, { ct: null }]) {
+      expect((await call('POST', '/api/memorial', { body: entry(), ...bad })).status).toBe(403);
+      expect((await call('POST', `/api/memorial/${id}/candle`, bad)).status).toBe(403);
+      expect((await call('POST', `/api/memorial/${id}/report`, bad)).status).toBe(403);
+    }
+    expect(env.DB.raw.prepare('SELECT COUNT(*) AS n FROM memorial').get().n).toBe(1);
+    expect(env.DB.raw.prepare('SELECT candles, reports FROM memorial').get()).toEqual({ candles: 0, reports: 0 });
+  });
+
+  it('IPv6 は /64 ごとに1人: 同じ /64 の中で番地を替えても制限に掛かり、別の /64 は別に数える', async () => {
+    const { call } = api();
+    const now = 1_800_000_000_000;
+    const ips = ['2001:db8:1:2::1', '2001:db8:1:2:aaaa::2', '2001:0db8:0001:0002:ffff:ffff:ffff:3'];
+    for (const ip of ips) expect((await call('POST', '/api/memorial', { body: entry(), now, ip })).status).toBe(201);
+    expect((await call('POST', '/api/memorial', { body: entry(), now, ip: '2001:db8:1:2::4' })).status).toBe(429);
+    expect((await call('POST', '/api/memorial', { body: entry(), now, ip: '2001:db8:1:3::1' })).status).toBe(201);
+    expect(ipKey('2001:db8::1')).toBe('2001:db8:0:0::/64');
+    expect(ipKey('203.0.113.1')).toBe('203.0.113.1');
   });
 
   it('管理者: 秘密が無いと 401 (道が無ければ 404)、あれば隠す・戻す・報告の一覧', async () => {

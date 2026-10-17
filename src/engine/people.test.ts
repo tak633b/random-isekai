@@ -220,3 +220,15 @@ describe('保存と再開', () => {
     expect(checked).toBeGreaterThan(200);
   });
 });
+
+describe('生まれた時の家族', () => {
+  it('主人公・親・きょうだいの名前が重ならない (直す前は 3000 seed 中 67 人生で重なっていた。2026-10-18 実測)', () => {
+    const dups: number[] = [];
+    for (let s = 1; s <= 3000; s++) {
+      const h = createHero(setup(s));
+      const names = [h.given, ...h.people.filter((t) => t.role === 'mother' || t.role === 'father' || t.role === 'sibling').map((t) => t.name)];
+      if (new Set(names).size !== names.length) dups.push(s);
+    }
+    expect(dups).toEqual([]);
+  });
+});

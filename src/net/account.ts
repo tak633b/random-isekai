@@ -117,7 +117,7 @@ export async function initAccount(): Promise<void> {
   addEventListener('pagehide', () => {
     if (!dirty || !state.signedIn) return;
     // ponytail: keepalive の本文は 64KB まで。何百も遊んだ記録は超えて送れないことがある (直前の送信で足りていることが多い)
-    void api('PUT', '/progress', { data: loadProgress(), baseRev: rev }, true);
+    void api('PUT', '/progress', { data: loadProgress(), baseRev: rev, ...(resetting ? { reset: true } : {}) }, true);
   });
   const r = await api<{ signedIn: boolean }>('GET', '/auth/me');
   if (r.ok && r.data.signedIn) signedIn();

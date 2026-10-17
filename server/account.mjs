@@ -66,7 +66,7 @@ const setCookie = (value, maxAgeS) => `${COOKIE}=${value}; Max-Age=${maxAgeS}; P
 const withCookie = (res, c) => { res.headers.append('Set-Cookie', c); return res; };
 
 // 同じ所から JSON で来たものだけ (よそのページのフォームや fetch で状態を変えさせない)
-function sameOrigin(request) {
+export function sameOrigin(request) {
   const ct = (request.headers.get('Content-Type') ?? '').split(';')[0].trim().toLowerCase();
   return ct === 'application/json' && request.headers.get('Origin') === new URL(request.url).origin;
 }

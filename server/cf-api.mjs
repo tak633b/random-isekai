@@ -2,7 +2,7 @@
 // 道と返す形は server/server.mjs と同じ。足したのは 報告 (N 件で非表示) と、管理者の非表示。
 // 残すのはゲームの記録だけ。IP はそのまま残さず、ADMIN_TOKEN を鍵にした HMAC にして制限と報告の数えに使う。
 import { ENUMS, Invalid, LIST_MAX, MAX_BODY, validEntry } from './validate.mjs';
-import { accountRoute } from './account.mjs';
+import { accountRoute, sameOrigin } from './account.mjs';
 
 const LANGS = new Set(ENUMS.lang);
 export const REPORT_HIDE = 3; // この人数が報告したら非表示 (env.REPORT_HIDE で変えられる)
@@ -41,6 +41,17 @@ function sameSecret(a, b) {
   return d === 0;
 }
 
+// IPv6 は /64 ごとに1人と数える (1人が /64 の中で番地を替えて制限をすり抜けないように)。
+// '::' を 0 で埋めて前の4つだけ取る。ponytail: 末尾が IPv4 の形 (::ffff:1.2.3.4) は1つと数えるのでずれるが、前の4つは 0 のままで困らない
+export function ipKey(ip) {
+  if (!ip.includes(':')) return ip;
+  const [a, b] = ip.toLowerCase().split('::');
+  const head = a ? a.split(':') : [];
+  const tail = b ? b.split(':') : [];
+  const all = b === undefined ? head : [...head, ...Array(Math.max(0, 8 - head.length - tail.length)).fill('0'), ...tail];
+  return `${all.slice(0, 4).map((g) => g.replace(/^0+(?=.)/, '')).join(':')}::/64`;
+}
+
 /** 窓の中で limit 回までなら true */
 export async function allow(db, kind, who, now = Date.now()) {
   const [limit, win] = LIMITS[kind];
@@ -76,7 +87,7 @@ async function route(request, env, now) {
   const url = new URL(request.url);
   const p = url.pathname;
   const m = request.method;
-  const ip = request.headers.get('CF-Connecting-IP') ?? '';
+  const ip = ipKey(request.headers.get('CF-Connecting-IP') ?? '');
   const who = () => hmac(env.ADMIN_TOKEN, ip);
 
   if (m === 'GET' && p === '/api/health') return json(200, { success: true, data: { ok: true } });
@@ -95,6 +106,9 @@ async function route(request, env, now) {
     ]);
     return json(200, { success: true, data: rows.results.map(rowOut), meta: { total: total.results[0].n, offset, limit } });
   }
+
+  // CSRF: 状態を変える道は、同じ Origin から JSON で来たものだけ。管理の道は Bearer なので curl から使えるよう外す
+  if (m !== 'GET' && !p.startsWith('/api/admin/') && !sameOrigin(request)) return ng(403, 'forbidden');
 
   const one = p.match(/^\/api\/memorial\/(\d{1,15})$/);
   if (m === 'GET' && one) {

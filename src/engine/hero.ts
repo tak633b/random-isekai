@@ -170,8 +170,17 @@ export function createHero(setup: Setup): Hero {
   const sibAges = Array.from({ length: older }, (_, i) => 2 + i * 2 + Math.floor(rng() * 2) + start);
   const sibSex = sibAges.map(() => (rng() < 0.5 ? 'F' : 'M') as Sex);
   const kin = nm.family ?? null;
-  const parentNames = [personName(rng, world, 'F', status, kin).given, personName(rng, world, 'M', status, kin).given];
-  const sibNames = sibSex.map((s) => personName(rng, world, s, status, kin).given);
+  // 家族で同じ名前が重ならないように、重なったときだけ引き直す。引き直しは別の乱数で (今までの乱数の並びを変えない)
+  const used = new Set([h.given]);
+  const redraw = makeRng((setup.seed ^ 0x85ebca6b) >>> 0);
+  const famName = (s: Sex): string => {
+    let g = personName(rng, world, s, status, kin).given;
+    for (let i = 0; i < 4 && used.has(g); i++) g = personName(redraw, world, s, status, kin).given;
+    used.add(g);
+    return g;
+  };
+  const parentNames = [famName('F'), famName('M')];
+  const sibNames = sibSex.map(famName);
   if (arr !== 'summoned') {
     if (status !== 'orphan') {
       addTie(h, { name: parentNames[0], role: 'mother', race, sex: 'F', age: mAge });

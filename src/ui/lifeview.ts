@@ -154,9 +154,9 @@ function lifeHTML(h: Hero, o: OtherLife): string {
   };
   const before = o.log.filter((e) => !cut(e.age)), after = o.log.filter((e) => cut(e.age));
   const causeBox = o.death ? `<div class="cause"><b>${esc(o.death.label)}</b><p>${esc(o.death.text)}</p>${deathEntry?.why ? `<p class="why">${L('なぜ: ', 'Why: ')}${esc(deathEntry.why)}</p>` : ''}</div>` : '';
-  const items = before.map(row).join('') + (after.length && !h.alive ? `<li class="sep">${L(`ここから先は、${h.given}が亡くなった後のこと`, `What follows is after ${h.given} died`)}</li>${after.map(row).join('')}` : '');
+  const items = before.map(row).join('') + (after.length && !h.alive ? `<li class="sep">${L(`ここから先は、${esc(h.given)}が亡くなった後のこと`, `What follows is after ${esc(h.given)} died`)}</li>${after.map(row).join('')}` : '');
   const later = after.length && h.alive
-    ? `<details class="future"><summary>${L(`この先のこと (${h.given}の今より後。${after.length}件)`, `What lies ahead (after ${h.given}'s present; ${after.length})`)}</summary>${future ? causeBox : ''}<ol class="otherlog">${after.map(row).join('')}</ol></details>` : '';
+    ? `<details class="future"><summary>${L(`この先のこと (${esc(h.given)}の今より後。${after.length}件)`, `What lies ahead (after ${esc(h.given)}'s present; ${after.length})`)}</summary>${future ? causeBox : ''}<ol class="otherlog">${after.map(row).join('')}</ol></details>` : '';
   return `<p class="kicker">${L('この人の一生', 'A life')}</p><h2 id="lifetitle">${esc(o.name)}</h2>
     <dl class="facts">${facts.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${markGifts(esc(v))}</dd></div>`).join('')}</dl>
     ${future ? '' : causeBox}

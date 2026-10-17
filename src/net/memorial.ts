@@ -94,7 +94,7 @@ export async function listMemorial(offset = 0, limit = 20, lang?: 'ja' | 'en'): 
 
 export const getMemorial = (id: number): Promise<MemorialResult<MemorialEntry>> => call(`/memorial/${id}`);
 
-export const lightCandle = (id: number): Promise<MemorialResult<{ candles: number }>> => call(`/memorial/${id}/candle`, { method: 'POST' });
+export const lightCandle = (id: number): Promise<MemorialResult<{ candles: number }>> => call(`/memorial/${id}/candle`, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
 
 /** 載せるべきでない記録を知らせる。同じ人は1件に1回、何人かが知らせると非表示になる (Cloudflare 版のサーバ) */
-export const reportMemorial = (id: number): Promise<MemorialResult<{ reported: boolean }>> => call(`/memorial/${id}/report`, { method: 'POST' });
+export const reportMemorial = (id: number): Promise<MemorialResult<{ reported: boolean }>> => call(`/memorial/${id}/report`, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
